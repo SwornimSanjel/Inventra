@@ -32,7 +32,7 @@
 
     <div class="topbar-user" style="cursor:pointer">
       <div>
-        <span class="user-name">System Admin</span>
+        <span class="user-name">Swornim Sanjel</span>
         <span class="user-role">System Admin</span>
       </div>
       <div class="avatar">SA</div>

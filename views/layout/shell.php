@@ -12,6 +12,8 @@
   <link rel="stylesheet" href="<?= BASE_URL ?>public/css/global.css">
   <link rel="stylesheet" href="<?= BASE_URL ?>public/css/sidebar.css">
   <link rel="stylesheet" href="<?= BASE_URL ?>public/css/topbar.css">
+  <link rel="stylesheet" href="<?= BASE_URL ?>public/css/dashboard.css">
+  <link rel="stylesheet" href="<?= BASE_URL ?>public/css/users.css">
 </head>
 <body>
   <div class="app-layout">
@@ -20,7 +22,9 @@
     <div class="app-main">
       <?php require __DIR__ . '/../partials/topbar.php'; ?>
 
-      <main class="app-content"></main>
+      <main class="app-content">
+        <?php if ($url === 'admin/products') require __DIR__ . '/../admin/products.php'; ?>
+      </main>
     </div>
   </div>
 </body>
