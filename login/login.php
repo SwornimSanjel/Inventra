@@ -18,7 +18,9 @@ if(isset($_GET['error'])) {
     <div class="container">
         
         <div class="header">
-            <div class="logo"></div> 
+            <div class="logo">
+                <img src="../public/images/inventra-logo.png" alt="logo">
+            </div> 
             <h1>Inventra</h1>
             <p class="tagline">Comprehensive stock tracking and inventory movement monitoring</p>
         </div>
@@ -28,7 +30,7 @@ if(isset($_GET['error'])) {
                 <div class="error-box"><?php echo $error_message; ?></div>
             <?php endif; ?>
 
-            <form method="POST" action="">
+            <form method="POST" action="authenticate.php">
                 <div class="field">
                     <label>USERNAME OR EMAIL</label>
                     <input type="text" name="username" placeholder="example@inventra.com" required>
@@ -50,7 +52,7 @@ if(isset($_GET['error'])) {
                 <button type="submit" class="btn">Log In</button>
             </form>
             <p class="footer">
-                Forgot your password? <a href="" class="admin-link">Contact your administrator.</a>
+               <a href="" class="forgot"> Forgot your password?</a>
             </p>
         </div>
         
