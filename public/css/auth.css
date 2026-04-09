@@ -1,4 +1,9 @@
-*{box-sizing:border-box;margin:0;padding:0}
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0
+}
+
 body{
   font-family:'DM Sans',sans-serif;
   background:#f7f8fa;
@@ -7,6 +12,7 @@ body{
 
 .auth-wrapper{
   min-height:100vh;
+
   display:flex;
   align-items:center;
   justify-content:center;
@@ -38,6 +44,7 @@ body{
   margin-bottom:16px;
 }
 
+
 .form-group label{
   display:block;
   font-size:.78rem;
@@ -63,6 +70,52 @@ body{
   box-shadow:0 0 0 4px rgba(47,54,64,.08);
 }
 
+.password-field{
+  position:relative;
+}
+
+.password-field input{
+  padding-right:50px;
+}
+
+.password-toggle{
+  position:absolute;
+  top:50%;
+  right:12px;
+  transform:translateY(-50%);
+  width:28px;
+  height:28px;
+  border:none;
+  background:transparent;
+  color:#6b7280;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.password-toggle svg{
+  width:18px;
+  height:18px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+.password-toggle .icon-eye-open{
+  display:none;
+}
+
+.password-toggle.is-visible .icon-eye-open{
+  display:block;
+}
+
+.password-toggle.is-visible .icon-eye-closed{
+  display:none;
+}
+
 .otp-group{
   display:flex;
   gap:10px;
@@ -86,11 +139,20 @@ body{
   box-shadow:0 0 0 4px rgba(47,54,64,.08);
 }
 
+
+
 .otp-message{
   min-height:20px;
   font-size:.82rem;
   color:#ef4444;
   margin-bottom:12px;
+}
+
+.field-message{
+  min-height:20px;
+  font-size:.82rem;
+  color:#ef4444;
+  margin-top:8px;
 }
 
 .btn-primary{
@@ -100,6 +162,8 @@ body{
   width:100%;
   height:46px;
   border:none;
+
+
   border-radius:10px;
   background:#2f3640;
   color:#fff;
@@ -130,6 +194,28 @@ body{
   font-weight:500;
 }
 
+.auth-card-success{
+  text-align:center;
+}
+
+.status-icon{
+  width:72px;
+  height:72px;
+  margin:0 auto 18px;
+  color:#16a34a;
+}
+
+.status-icon svg{
+  width:100%;
+  height:100%;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:4;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+
 .alert{
   padding:12px 14px;
   border-radius:10px;
@@ -137,12 +223,16 @@ body{
   font-size:.9rem;
 }
 
+
 .alert-error{
   background:#fee2e2;
   color:#991b1b;
 }
 
+
 .alert-success{
   background:#d1fae5;
   color:#065f46;
 }
+
+

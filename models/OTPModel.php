@@ -1,16 +1,20 @@
 <?php
+
 require_once __DIR__ . '/../config/database.php';
 
-class OTPModel {
+class OTPModel
+{
     private PDO $db;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->db = Database::connect();
     }
 
-    public function createOrReplaceOTP(int $userId, string $email, string $otp, string $expiresAt): void {
-        $delete = $this->db->prepare("DELETE FROM password_resets WHERE email = ?");
-        $delete->execute([$email]);
+    public function createOrReplaceOTP(int $userId, string $email, string $otp, string $expiresAt): void
+    {
+        $deleteStmt = $this->db->prepare("DELETE FROM password_resets WHERE email = ?");
+        $deleteStmt->execute([$email]);
 
         $stmt = $this->db->prepare("
             INSERT INTO password_resets (user_id, email, otp_code, attempts, is_verified, reset_token, expires_at, verified_at, created_at)
@@ -19,7 +23,8 @@ class OTPModel {
         $stmt->execute([$userId, $email, $otp, $expiresAt]);
     }
 
-    public function findLatestByEmail(string $email): ?array {
+    public function findLatestByEmail(string $email): ?array
+    {
         $stmt = $this->db->prepare("
             SELECT * FROM password_resets
             WHERE email = ?
@@ -31,12 +36,14 @@ class OTPModel {
         return $row ?: null;
     }
 
-    public function incrementAttempts(int $id): void {
+    public function incrementAttempts(int $id): void
+    {
         $stmt = $this->db->prepare("UPDATE password_resets SET attempts = attempts + 1 WHERE id = ?");
         $stmt->execute([$id]);
     }
 
-    public function markVerified(int $id, string $resetToken): void {
+    public function markVerified(int $id, string $resetToken): void
+    {
         $stmt = $this->db->prepare("
             UPDATE password_resets
             SET is_verified = 1, reset_token = ?, verified_at = NOW()
@@ -45,7 +52,8 @@ class OTPModel {
         $stmt->execute([$resetToken, $id]);
     }
 
-    public function findVerifiedByToken(string $token): ?array {
+    public function findVerifiedByToken(string $token): ?array
+    {
         $stmt = $this->db->prepare("
             SELECT * FROM password_resets
             WHERE reset_token = ? AND is_verified = 1
@@ -56,4 +64,13 @@ class OTPModel {
         $row = $stmt->fetch();
         return $row ?: null;
     }
+
+    public function deleteByEmail(string $email): void
+    {
+        $stmt = $this->db->prepare("DELETE FROM password_resets WHERE email = ?");
+        $stmt->execute([$email]);
+    }
 }
+
+
+

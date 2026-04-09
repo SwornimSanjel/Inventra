@@ -1,7 +1,10 @@
 <?php
+
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+
+date_default_timezone_set('Asia/Kathmandu');
 
 session_start();
 
@@ -38,8 +41,13 @@ if (strpos($url, 'auth/') === 0) {
         exit;
     }
 
-    if ($url === 'auth/reset-password' && $_SERVER['REQUEST_METHOD'] === 'GET') {
-        $authController->showResetPassword();
+    if ($url === 'auth/reset-password' && ($_SERVER['REQUEST_METHOD'] === 'GET' || $_SERVER['REQUEST_METHOD'] === 'POST')) {
+        $authController->resetPassword();
+        exit;
+    }
+
+    if ($url === 'auth/password-updated' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+        $authController->showPasswordUpdated();
         exit;
     }
 }

@@ -22,7 +22,9 @@
   --topbar-h:56px;
 }
 
-html { font-size: 16px; }
+html {
+  font-size: 16px;
+}
 
 body{
   font-family:'DM Sans',system-ui,sans-serif;
@@ -72,6 +74,8 @@ a:hover{
   margin-bottom:20px;
 }
 
+
+
 .btn-primary{
   display:inline-flex;
   align-items:center;
@@ -117,6 +121,7 @@ a:hover{
   transform:translateY(-1px);
 }
 
+
 .btn-outline{
   display:inline-flex;
   align-items:center;
@@ -125,6 +130,7 @@ a:hover{
   padding:0 18px;
   height:40px;
   border-radius:var(--radius);
+
   font-size:.875rem;
   font-weight:600;
   cursor:pointer;
@@ -182,9 +188,11 @@ a:hover{
   background:#fff;
 }
 
+
 .products-search-input::placeholder{
   color:var(--muted);
 }
+
 
 .products-count{
   font-size:.8rem;

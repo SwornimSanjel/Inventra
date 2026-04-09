@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+  
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,6 +16,7 @@
   <link rel="stylesheet" href="<?= BASE_URL ?>public/css/dashboard.css">
   <link rel="stylesheet" href="<?= BASE_URL ?>public/css/users.css">
 </head>
+
 <body>
   <div class="app-layout">
     <?php require __DIR__ . '/../partials/admin_sidebar.php'; ?>
@@ -25,7 +27,10 @@
       <main class="app-content">
         <?php if ($url === 'admin/products') require __DIR__ . '/../admin/products.php'; ?>
       </main>
+    
     </div>
   </div>
+
 </body>
 </html>
+

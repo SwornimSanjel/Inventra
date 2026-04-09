@@ -13,19 +13,21 @@
 --     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 -- );
 
--- CREATE TABLE users (
+-- CREATE TABLE admin (
 --     id INT AUTO_INCREMENT PRIMARY KEY,
 --     full_name VARCHAR(100) NOT NULL,
---     email VARCHAR(255) NOT NULL UNIQUE
+--     email VARCHAR(255) NOT NULL UNIQUE,
+--     password_hash VARCHAR(255) DEFAULT NULL,
+--     role VARCHAR(20) NOT NULL DEFAULT 'admin'
 -- );
 
--- INSERT INTO users (full_name, email)
--- VALUES ('Swornim Sanjel', 'yourgmail@gmail.com');
+-- INSERT INTO admin (full_name, email, role)
+-- VALUES ('Swornim Sanjel', 'yourgmail@gmail.com', 'admin');
 
 -- //email connection: otp one
 
--- SELECT * FROM users;
+-- SELECT * FROM admin;
 
--- UPDATE users
+-- UPDATE admin
 -- SET email = 'xettrikenzon@gmail.com'
 -- WHERE email = 'yourgmail@gmail.com';

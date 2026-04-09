@@ -1,8 +1,10 @@
 <?php
-class Database {
+class Database
+{
     private static ?PDO $pdo = null;
 
-    public static function connect(): PDO {
+    public static function connect(): PDO
+    {
         if (self::$pdo === null) {
             self::$pdo = new PDO(
                 'mysql:host=127.0.0.1;dbname=inventra_1;charset=utf8mb4',

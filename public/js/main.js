@@ -16,7 +16,9 @@ if (notifBtn && notifDrop) {
   });
 }
 
+
 var gSearch = document.getElementById('globalSearch');
+
 if (gSearch) {
   gSearch.addEventListener('input', function() {
     var q = this.value.toLowerCase();
@@ -24,4 +26,6 @@ if (gSearch) {
       row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
     });
   });
+
 }
+
