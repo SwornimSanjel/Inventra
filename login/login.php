@@ -1,9 +1,22 @@
 <?php
 $error_message = ""; 
+$info_message = "";
+
 if(isset($_GET['error'])) {
-    $error_message = "Invalid username or password. Please try again.";
+    if ($_GET['error'] === 'session_expired') {
+        $error_message = "Your session has expired. Please log in again.";
+    } elseif ($_GET['error'] === 'unauthorized') {
+        $error_message = "You do not have permission to access that page.";
+    } else {
+        $error_message = "Invalid username or password. Please try again.";
+    }
+}
+
+if(isset($_GET['logout'])) {
+    $info_message = "You have been logged out successfully.";
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,6 +39,9 @@ if(isset($_GET['error'])) {
         </div>
 
         <div class="card">
+            <?php if($info_message): ?>
+                <div class="info-box"><?php echo $info_message; ?></div>
+            <?php endif; ?>
             <?php if($error_message): ?>
                 <div class="error-box"><?php echo $error_message; ?></div>
             <?php endif; ?>

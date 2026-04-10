@@ -1,3 +1,7 @@
+<?php
+require_once __DIR__ . '/../includes/auth.php';
+// Staff users only — admins should use the Admin Dashboard
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -50,9 +54,9 @@
 </head>
 <body>
     <div class="container">
-        <h1>Welcome to User Dashboard</h1>
+        <h1>Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>!</h1>
         <p>This page is currently under construction.</p>
-        <a href="../login/login.php" class="btn">Log Out</a>
+        <a href="../login/logout.php" class="btn">Log Out</a>
     </div>
 </body>
 </html>

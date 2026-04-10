@@ -31,7 +31,6 @@
                 Back to Login <i class="fa-solid fa-arrow-right"></i>
             </a>
         </div>
-        
     </main>
 
     <script src="PasswordSuccess.js"></script>

@@ -1,7 +1,7 @@
 <aside class="sidebar">
     <div class="brand">
         <!-- Add your logo image path to the src below -->
-        <img src=" " alt="" class="brand-logo">
+         <img src="../public/images/inventra-logo.png" alt="logo">
         <div class="brand-text">
             <h2>Inventra</h2>
             <p>INVENTORY MANAGEMENT</p>
@@ -17,6 +17,6 @@
     </nav>
 
     <div class="sidebar-footer">
-        <button class="btn-logout" onclick="window.location.href='login.php'"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</button>
+        <button class="btn-logout" onclick="window.location.href='../login/logout.php'"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</button>
     </div>
 </aside>

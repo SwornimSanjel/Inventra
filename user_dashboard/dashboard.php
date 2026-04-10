@@ -1,6 +1,5 @@
 <?php
-//php logic goes here 
-
+require_once __DIR__ . '/../includes/auth.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">

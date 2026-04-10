@@ -1,5 +1,6 @@
 <?php
-    //php logic goes here.
+    require_once __DIR__ . '/../includes/auth.php';
+    requireRole('admin');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -34,7 +35,7 @@
             </nav>
 
             <div class="sidebar-footer">
-                <button class="btn-logout"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</button>
+                <button class="btn-logout" onclick="window.location.href='../login/logout.php'"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</button>
             </div>
         </aside>
 

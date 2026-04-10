@@ -1,3 +1,7 @@
+<?php
+require_once __DIR__ . '/../includes/auth.php';
+requireRole('admin');
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -35,7 +39,7 @@
     <div class="sidebar-bottom">
       <button class="logout">
         <i class="fa-solid fa-right-from-bracket"></i>
-        <a href="../login/login.php">Logout </a>
+        <a href="../login/logout.php" class="btn-logout">Logout</a>
       </button>
     </div>
 
@@ -58,7 +62,7 @@
 
           <div class="profile">
             <div>
-              <h4>Dipana</h4>
+              <h4><?php echo htmlspecialchars($_SESSION['username']); ?></h4>
               <span>System Admin</span>
             </div>
             <img src="https://i.pravatar.cc/40" alt="">
@@ -127,7 +131,7 @@
             <tbody>
               <tr>
                 <td>1</td>
-                <td><i class="fa-solid fa-laptop"></i> MacBook Pro 14”</td>
+                <td><i class="fa-solid fa-laptop"></i> MacBook Pro 14"</td>
                 <td class="low">4</td>
                 <td>10/40</td>
                 <td><span class="badge low">LOW</span></td>
