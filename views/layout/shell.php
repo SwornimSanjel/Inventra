@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="<?= BASE_URL ?>public/css/topbar.css">
   <link rel="stylesheet" href="<?= BASE_URL ?>public/css/dashboard.css">
   <link rel="stylesheet" href="<?= BASE_URL ?>public/css/users.css">
+  <link rel="stylesheet" href="<?= BASE_URL ?>public/css/settings.css">
 </head>
 
 <body>
@@ -26,10 +27,16 @@
 
       <main class="app-content">
         <?php if ($url === 'admin/products') require __DIR__ . '/../admin/products.php'; ?>
+        <?php if ($url === 'admin/settings') require __DIR__ . '/../admin/settings.php'; ?>
       </main>
     
     </div>
   </div>
+
+  <script src="<?= BASE_URL ?>public/js/main.js"></script>
+  <?php if ($url === 'admin/settings'): ?>
+    <script src="<?= BASE_URL ?>public/js/settings.js"></script>
+  <?php endif; ?>
 
 </body>
 </html>
