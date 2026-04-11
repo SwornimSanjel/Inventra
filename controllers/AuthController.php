@@ -50,7 +50,7 @@ class AuthController
         $otp = (string) random_int(100000, 999999);
         $expiresAt = date('Y-m-d H:i:s', strtotime('+10 minutes'));
 
-        $this->otpModel->createOrReplaceOTP((int) $user['id'], $email, $otp, $expiresAt);
+        $this->otpModel->createOTP((int) $user['id'], $email, $otp, $expiresAt);
         $this->sendOtpEmail($email, $user['full_name'], $otp);
 
         $_SESSION['reset_email'] = $email;
@@ -69,7 +69,7 @@ class AuthController
         $success = $_SESSION['auth_success'] ?? '';
 
         if ($email !== '') {
-            $record = $this->otpModel->findLatestByEmail($email);
+            $record = $this->otpModel->findLatestActiveOTPByEmail($email) ?? $this->otpModel->findLatestByEmail($email);
             if ($record && !empty($record['expires_at'])) {
                 $otpExpiresAt = $record['expires_at'];
                 $_SESSION['otp_expires_at'] = $otpExpiresAt;
@@ -106,22 +106,16 @@ class AuthController
             exit;
         }
 
-        $record = $this->otpModel->findLatestByEmail($email);
+        $record = $this->otpModel->findLatestActiveOTPByEmail($email);
 
         if (!$record) {
-            $_SESSION['auth_error'] = 'Invalid OTP';
+            $_SESSION['auth_error'] = 'No valid OTP found. Please request a new OTP.';
             header('Location: index.php?url=auth/verify-otp');
             exit;
         }
 
         if ((int) $record['attempts'] >= 5) {
             $_SESSION['auth_error'] = 'Too many attempts. Please resend OTP.';
-            header('Location: index.php?url=auth/verify-otp');
-            exit;
-        }
-
-        if (strtotime($record['expires_at']) < time()) {
-            $_SESSION['auth_error'] = 'OTP expired. Please resend OTP.';
             header('Location: index.php?url=auth/verify-otp');
             exit;
         }
@@ -165,7 +159,7 @@ class AuthController
         $otp = (string) random_int(100000, 999999);
         $expiresAt = date('Y-m-d H:i:s', strtotime('+10 minutes'));
 
-        $this->otpModel->createOrReplaceOTP((int) $user['id'], $email, $otp, $expiresAt);
+        $this->otpModel->createOTP((int) $user['id'], $email, $otp, $expiresAt);
         $this->sendOtpEmail($email, $user['full_name'], $otp);
 
         $_SESSION['otp_expires_at'] = $expiresAt;
@@ -189,13 +183,6 @@ class AuthController
 
         if ($resetToken !== '') {
             $resetRecord = $this->otpModel->findVerifiedByToken($resetToken);
-        }
-
-        if (!$resetRecord && $verifiedEmail !== '') {
-            $latestRecord = $this->otpModel->findLatestByEmail($verifiedEmail);
-            if ($latestRecord && (int) $latestRecord['is_verified'] === 1) {
-                $resetRecord = $latestRecord;
-            }
         }
 
         if (!$resetRecord) {
@@ -225,7 +212,6 @@ class AuthController
                 $hash = password_hash($password, PASSWORD_BCRYPT);
 
                 if ($this->userModel->updatePassword($verifiedEmail, $hash)) {
-                    $this->otpModel->deleteByEmail($verifiedEmail);
                     $this->logPasswordReset($verifiedEmail);
                     $this->sendPasswordChangedEmail($verifiedEmail);
 

@@ -11,16 +11,26 @@ class OTPModel
         $this->db = Database::connect();
     }
 
-    public function createOrReplaceOTP(int $userId, string $email, string $otp, string $expiresAt): void
+    public function createOTP(int $userId, string $email, string $otp, string $expiresAt): int
     {
-        $deleteStmt = $this->db->prepare("DELETE FROM password_resets WHERE email = ?");
-        $deleteStmt->execute([$email]);
-
         $stmt = $this->db->prepare("
-            INSERT INTO password_resets (user_id, email, otp_code, attempts, is_verified, reset_token, expires_at, verified_at, created_at)
-            VALUES (?, ?, ?, 0, 0, NULL, ?, NULL, NOW())
+            INSERT INTO password_resets (
+                user_id,
+                email,
+                otp_code,
+                attempts,
+                is_verified,
+                reset_token,
+                expires_at,
+                verified_at,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, 0, 0, NULL, ?, NULL, NOW(), NOW())
         ");
         $stmt->execute([$userId, $email, $otp, $expiresAt]);
+
+        return (int) $this->db->lastInsertId();
     }
 
     public function findLatestByEmail(string $email): ?array
@@ -36,9 +46,30 @@ class OTPModel
         return $row ?: null;
     }
 
+    public function findLatestActiveOTPByEmail(string $email): ?array
+    {
+        $stmt = $this->db->prepare("
+            SELECT *
+            FROM password_resets
+            WHERE email = ?
+              AND is_verified = 0
+              AND expires_at > NOW()
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1
+        ");
+        $stmt->execute([$email]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
+
     public function incrementAttempts(int $id): void
     {
-        $stmt = $this->db->prepare("UPDATE password_resets SET attempts = attempts + 1 WHERE id = ?");
+        $stmt = $this->db->prepare("
+            UPDATE password_resets
+            SET attempts = attempts + 1, updated_at = NOW()
+            WHERE id = ?
+        ");
         $stmt->execute([$id]);
     }
 
@@ -46,7 +77,7 @@ class OTPModel
     {
         $stmt = $this->db->prepare("
             UPDATE password_resets
-            SET is_verified = 1, reset_token = ?, verified_at = NOW()
+            SET is_verified = 1, reset_token = ?, verified_at = NOW(), updated_at = NOW()
             WHERE id = ?
         ");
         $stmt->execute([$resetToken, $id]);
@@ -63,12 +94,6 @@ class OTPModel
         $stmt->execute([$token]);
         $row = $stmt->fetch();
         return $row ?: null;
-    }
-
-    public function deleteByEmail(string $email): void
-    {
-        $stmt = $this->db->prepare("DELETE FROM password_resets WHERE email = ?");
-        $stmt->execute([$email]);
     }
 }
 

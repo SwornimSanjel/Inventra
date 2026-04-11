@@ -8,5 +8,8 @@ CREATE TABLE password_resets (
     reset_token VARCHAR(255) DEFAULT NULL,
     expires_at DATETIME NOT NULL,
     verified_at DATETIME DEFAULT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_password_resets_email_status_created (email, is_verified, expires_at, created_at),
+    INDEX idx_password_resets_reset_token (reset_token)
 );
