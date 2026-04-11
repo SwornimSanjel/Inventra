@@ -27,7 +27,7 @@
 
       <main class="app-content">
         <?php if ($url === 'admin/products') require __DIR__ . '/../admin/products.php'; ?>
-        <?php if ($url === 'admin/settings') require __DIR__ . '/../admin/settings.php'; ?>
+        <?php if ($url === 'admin/settings') require __DIR__ . '/../admin/settings_page.php'; ?>
       </main>
     
     </div>

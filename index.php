@@ -52,6 +52,36 @@ if (strpos($url, 'auth/') === 0) {
     }
 }
 
+if (strpos($url, 'admin/settings') === 0) {
+    require_once __DIR__ . '/controllers/SettingsController.php';
+    $settingsController = new SettingsController();
+
+    if ($url === 'admin/settings/data' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+        $settingsController->getProfileData();
+        exit;
+    }
+
+    if ($url === 'admin/settings/profile' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $settingsController->updateProfile();
+        exit;
+    }
+
+    if ($url === 'admin/settings/password' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $settingsController->updatePassword();
+        exit;
+    }
+
+    if ($url === 'admin/settings/notifications' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $settingsController->updateNotifications();
+        exit;
+    }
+
+    if ($url === 'admin/settings' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+        $settingsController->show();
+        exit;
+    }
+}
+
 $allowed = [
     'admin/dashboard',
     'admin/users',

@@ -16,6 +16,7 @@ class AuthController
     public function __construct()
     {
         $this->userModel = new UserModel();
+        $this->userModel->ensurePasswordHistorySchema();
         $this->otpModel = new OTPModel();
     }
 

@@ -116,6 +116,15 @@
   font-size: 0.82rem;
 }
 
+.settings-upload-file {
+  color: #425066;
+  font-size: 0.82rem;
+}
+
+.settings-file-input {
+  display: none;
+}
+
 .settings-form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -246,6 +255,26 @@
   font-size: 0.78rem;
 }
 
+.settings-alert {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-size: 0.88rem;
+}
+
+.settings-alert--success {
+  background: #edf8f1;
+  border-color: #b8dfc6;
+  color: #22633b;
+}
+
+.settings-alert--error {
+  background: #fff1f1;
+  border-color: #f2bcbc;
+  color: #b33232;
+}
+
 .settings-actions {
   display: flex;
   justify-content: flex-end;
@@ -308,6 +337,8 @@
   position: absolute;
   inset: 0;
   opacity: 0;
+  width: 1px;
+  height: 1px;
   cursor: pointer;
 }
 

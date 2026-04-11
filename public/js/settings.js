@@ -1,4 +1,5 @@
 (function () {
+  var page = document.querySelector('.settings-page');
   var tabs = Array.prototype.slice.call(document.querySelectorAll('[data-settings-tab]'));
   var panels = Array.prototype.slice.call(document.querySelectorAll('[data-settings-panel]'));
 
@@ -6,7 +7,11 @@
     return;
   }
 
+  var activeTabName = page ? page.getAttribute('data-active-tab') || 'profile' : 'profile';
+
   function activateTab(name) {
+    activeTabName = name;
+
     tabs.forEach(function (tab) {
       var active = tab.getAttribute('data-settings-tab') === name;
       tab.classList.toggle('is-active', active);
@@ -23,6 +28,8 @@
       activateTab(tab.getAttribute('data-settings-tab'));
     });
   });
+
+  activateTab(activeTabName);
 
   Array.prototype.slice.call(document.querySelectorAll('.settings-password-toggle')).forEach(function (button) {
     button.addEventListener('click', function () {
@@ -104,8 +111,11 @@
     if (next && nextValue.trim() === '') {
       setError(next, 'New password is required.');
       valid = false;
-    } else if (next && !/[!@#$^&_]/.test(nextValue)) {
-      setError(next, 'Use at least one !@#$_');
+    } else if (next && nextValue.length < 8) {
+      setError(next, 'Use at least 8 characters.');
+      valid = false;
+    } else if (next && !/[^A-Za-z0-9]/.test(nextValue)) {
+      setError(next, 'Use at least one special character.');
       valid = false;
     } else {
       setError(next, '');
@@ -122,6 +132,41 @@
     }
 
     return valid;
+  }
+
+  var avatarInput = document.getElementById('settingsAvatarInput');
+  var avatarPreview = document.getElementById('settingsAvatarPreview');
+  var avatarFileName = document.getElementById('settingsAvatarFileName');
+
+  Array.prototype.slice.call(document.querySelectorAll('[data-upload-trigger]')).forEach(function (button) {
+    button.addEventListener('click', function () {
+      var targetId = button.getAttribute('data-upload-trigger');
+      var input = targetId ? document.getElementById(targetId) : null;
+      if (input) {
+        input.click();
+      }
+    });
+  });
+
+  if (avatarInput) {
+    avatarInput.addEventListener('change', function () {
+      var file = avatarInput.files && avatarInput.files[0] ? avatarInput.files[0] : null;
+
+      if (!file) {
+        if (avatarFileName) {
+          avatarFileName.textContent = '';
+        }
+        return;
+      }
+
+      if (avatarFileName) {
+        avatarFileName.textContent = file.name;
+      }
+
+      if (avatarPreview && window.URL && typeof window.URL.createObjectURL === 'function') {
+        avatarPreview.src = window.URL.createObjectURL(file);
+      }
+    });
   }
 
   Array.prototype.slice.call(document.querySelectorAll('.settings-panel form, .settings-panel')).forEach(function (form) {
@@ -169,8 +214,6 @@
     });
 
     form.addEventListener('submit', function (event) {
-      event.preventDefault();
-
       var valid = true;
 
       Array.prototype.slice.call(form.querySelectorAll('.settings-input')).forEach(function (field) {
@@ -184,11 +227,15 @@
       }
 
       if (!valid) {
+        event.preventDefault();
         var firstInvalid = form.querySelector('.settings-input.is-invalid');
         if (firstInvalid) {
           firstInvalid.focus();
         }
+        return;
       }
+
+      activateTab(form.getAttribute('data-settings-panel'));
     });
   });
 })();
