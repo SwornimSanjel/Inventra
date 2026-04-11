@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../models/UserModel.php';
+require_once __DIR__ . '/../models/AdminSession.php';
 
 class SettingsController
 {
@@ -8,10 +9,12 @@ class SettingsController
     private const MAX_AVATAR_BYTES = 5242880;
 
     private UserModel $userModel;
+    private AdminSession $adminSession;
 
     public function __construct()
     {
         $this->userModel = new UserModel();
+        $this->adminSession = new AdminSession($this->userModel);
         $this->userModel->ensureAdminSettingsSchema();
         $this->userModel->ensurePasswordHistorySchema();
     }
@@ -186,66 +189,7 @@ class SettingsController
 
     private function requireAuthenticatedAdmin(): array
     {
-        $admin = $this->resolveAuthenticatedAdmin();
-
-        if ($admin !== null) {
-            return $admin;
-        }
-
-        http_response_code(403);
-        echo 'Unauthorized';
-        exit;
-    }
-
-    private function resolveAuthenticatedAdmin(): ?array
-    {
-        $candidateIds = [
-            $_SESSION['admin_id'] ?? null,
-            $_SESSION['user_id'] ?? null,
-            $_SESSION['auth_user_id'] ?? null,
-        ];
-
-        foreach ($candidateIds as $candidateId) {
-            if (is_numeric($candidateId)) {
-                $admin = $this->userModel->findSettingsProfileById((int) $candidateId);
-                if ($admin !== null) {
-                    $_SESSION['admin_id'] = $admin['id'];
-                    $_SESSION['admin_email'] = $admin['email'];
-                    return $admin;
-                }
-            }
-        }
-
-        $candidateEmails = [
-            $_SESSION['admin_email'] ?? null,
-            $_SESSION['user_email'] ?? null,
-            $_SESSION['email'] ?? null,
-        ];
-
-        foreach ($candidateEmails as $candidateEmail) {
-            if (is_string($candidateEmail) && trim($candidateEmail) !== '') {
-                $user = $this->userModel->findByEmail(trim($candidateEmail));
-                if ($user !== null) {
-                    $admin = $this->userModel->findSettingsProfileById((int) $user['id']);
-                    if ($admin !== null) {
-                        $_SESSION['admin_id'] = $admin['id'];
-                        $_SESSION['admin_email'] = $admin['email'];
-                        return $admin;
-                    }
-                }
-            }
-        }
-
-        if ($this->isLocalDevelopmentRequest()) {
-            $fallback = $this->userModel->findFirstAdmin();
-            if ($fallback !== null) {
-                $_SESSION['admin_id'] = (int) $fallback['id'];
-                $_SESSION['admin_email'] = (string) $fallback['email'];
-                return $this->userModel->findSettingsProfileById((int) $fallback['id']);
-            }
-        }
-
-        return null;
+        return $this->adminSession->requireAuthenticatedAdmin();
     }
 
     private function buildSettingsViewState(array $admin): array
@@ -379,14 +323,5 @@ class SettingsController
     private function isValidSettingsPassword(string $password): bool
     {
         return (bool) preg_match('/^(?=.*[^A-Za-z0-9]).{8,}$/', $password);
-    }
-
-    private function isLocalDevelopmentRequest(): bool
-    {
-        $serverName = strtolower((string) ($_SERVER['SERVER_NAME'] ?? ''));
-        $remoteAddr = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
-
-        return in_array($serverName, ['localhost', '127.0.0.1', '::1'], true)
-            || in_array($remoteAddr, ['127.0.0.1', '::1'], true);
     }
 }

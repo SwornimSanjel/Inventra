@@ -82,6 +82,21 @@ if (strpos($url, 'admin/settings') === 0) {
     }
 }
 
+if (strpos($url, 'admin/notifications') === 0) {
+    require_once __DIR__ . '/controllers/NotificationController.php';
+    $notificationController = new NotificationController();
+
+    if ($url === 'admin/notifications/data' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+        $notificationController->getData();
+        exit;
+    }
+
+    if ($url === 'admin/notifications/mark-all-read' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $notificationController->markAllAsRead();
+        exit;
+    }
+}
+
 $allowed = [
     'admin/dashboard',
     'admin/users',
