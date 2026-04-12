@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock Update</title>
+
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="stock-update.css">
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+<div class="dashboard">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+<div class="sidebar-top">
+<div class="logo">
+<h2>Inventra</h2>
+<p>Inventory Management</p>
+</div>
+
+<nav class="menu">
+<a href="../index.php"><i class="fa-solid fa-chart-line"></i>Dashboard</a>
+<a><i class="fa-solid fa-users"></i>Users</a>
+<a href="../products/products.php"><i class="fa-solid fa-box"></i>Products</a>
+<a class="active" href="index.html"><i class="fa-solid fa-arrows-rotate"></i>Stock Update</a>
+<a><i class="fa-solid fa-gear"></i>Settings</a>
+</nav>
+</div>
+
+<div class="sidebar-bottom">
+<button class="logout">
+<i class="fa-solid fa-right-from-bracket"></i>
+Logout
+</button>
+</div>
+</aside>
+
+
+<div class="main">
+
+<header class="header">
+<div class="header-inner">
+
+<div class="search-wrapper">
+<i class="fa-solid fa-magnifying-glass"></i>
+<input type="text" placeholder="Search anything...">
+</div>
+
+<div class="header-right">
+<i class="fa-regular fa-bell notification"></i>
+
+<div class="profile">
+<div>
+<h4>Dipana</h4>
+<span>System Admin</span>
+</div>
+<img src="https://i.pravatar.cc/40">
+</div>
+
+</div>
+</div>
+</header>
+
+
+
+<main class="content">
+<div class="container">
+
+<div class="stock-header">
+<div>
+<h1>Record Stock Movement</h1>
+<p>Log precise inventory flow and transaction details for ledger accuracy.</p>
+</div>
+
+<div class="last-record">
+Last record: 2 hours ago
+</div>
+</div>
+
+
+
+<div class="stock-grid">
+
+<div class="left">
+
+<div class="card">
+<div class="card-header">
+<h3>Stock Details</h3>
+
+<div class="toggle">
+<button id="stockInBtn" class="active">STOCK IN</button>
+<button id="stockOutBtn">STOCK OUT</button>
+</div>
+</div>
+
+<label>Product Name</label>
+<select id="product"></select>
+
+<label>Quantity</label>
+<div class="qty">
+<button id="minus">-</button>
+<input type="number" id="quantity" value="1">
+<button id="plus">+</button>
+</div>
+
+<label>Movement Notes</label>
+<textarea id="notes"></textarea>
+
+</div>
+
+
+
+<div class="card">
+<h3>Buyer / Seller Details</h3>
+
+<div class="two">
+<div>
+<label>Full Name</label>
+<input type="text" id="fullname">
+</div>
+
+<div>
+<label>Contact Number</label>
+<input type="text" id="contact">
+</div>
+</div>
+
+<div class="two">
+<div>
+<label>Amount per piece</label>
+<input type="number" id="price">
+</div>
+
+<div>
+<label>Total Amount</label>
+<input type="text" id="total" readonly>
+</div>
+</div>
+
+</div>
+
+</div>
+
+
+
+<div class="right">
+
+<div class="card">
+<h3>Payment Status</h3>
+
+<label>Status</label>
+<select id="paymentStatus">
+<option value="paid">Paid</option>
+<option value="unpaid">Unpaid</option>
+</select>
+
+<div class="payment-toggle">
+<button class="active">Cash</button>
+<button>Card</button>
+</div>
+
+</div>
+
+
+
+<div class="card" id="stockInStatus">
+<h3>Incoming Stock Status</h3>
+
+<label class="radio">
+<input type="radio" name="in" value="order_dispatched" checked>
+Order Dispatched
+</label>
+
+<label class="radio">
+<input type="radio" name="in" value="in_transit">
+In Transit
+</label>
+
+<label class="radio">
+<input type="radio" name="in" value="received">
+Received at Warehouse
+</label>
+
+</div>
+
+
+
+<div class="card hidden" id="stockOutStatus">
+<h3>Movement Status</h3>
+
+<label class="radio">
+<input type="radio" name="out" value="dispatched" checked>
+Dispatched from Warehouse
+</label>
+
+<label class="radio">
+<input type="radio" name="out" value="hub">
+Stock Received at Hub
+</label>
+
+<label class="radio">
+<input type="radio" name="out" value="delivered">
+Delivery Confirmed
+</label>
+
+</div>
+
+</div>
+</div>
+
+
+
+<div class="stock-footer">
+<button class="cancel">Cancel</button>
+<button class="save">Record Movement</button>
+</div>
+
+
+</div>
+</main>
+
+</div>
+</div>
+
+<script src="stock-update.js"></script>
+
+</body>
+</html>

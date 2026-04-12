@@ -1,0 +1,234 @@
+/* override dashboard container */
+.content .container{
+max-width:100% !important;
+width:100% !important;
+}
+
+/* header */
+.stock-header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:20px;
+}
+
+.last-record{
+font-size:13px;
+color:#6b7280;
+}
+
+/* grid layout */
+.stock-grid{
+display:flex;
+gap:20px;
+align-items:flex-start;
+width:100%;
+position:relative;
+z-index:1;
+}
+
+.left{
+flex:2;
+display:flex;
+flex-direction:column;
+gap:20px;
+min-width:0;
+}
+
+.right{
+flex:1;
+display:flex;
+flex-direction:column;
+gap:20px;
+min-width:320px;
+}
+
+/* card */
+.card{
+background:#fff;
+padding:20px;
+border-radius:10px;
+border:1px solid #e5e7eb;
+width:100%;
+position:relative;
+z-index:1;
+}
+
+.card-header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:15px;
+}
+
+/* toggle */
+.toggle{
+display:flex;
+gap:5px;
+}
+
+.toggle button{
+padding:6px 14px;
+border:1px solid #e5e7eb;
+background:white;
+cursor:pointer;
+border-radius:6px;
+font-size:12px;
+}
+
+.toggle .active{
+background:#111827;
+color:white;
+}
+
+/* form */
+label{
+display:block;
+margin-top:10px;
+margin-bottom:5px;
+font-size:13px;
+font-weight:500;
+}
+
+input,select,textarea{
+width:100%;
+padding:10px;
+border:1px solid #e5e7eb;
+border-radius:6px;
+font-size:14px;
+background:white;
+}
+
+textarea{
+resize:none;
+height:80px;
+}
+
+/* qty */
+.qty{
+display:flex;
+}
+
+.qty button{
+width:40px;
+border:1px solid #e5e7eb;
+background:white;
+cursor:pointer;
+}
+
+.qty input{
+text-align:center;
+}
+
+/* two column */
+.two{
+display:flex;
+gap:15px;
+}
+
+.two > div{
+flex:1;
+}
+
+/* payment */
+.payment-toggle{
+display:flex;
+gap:5px;
+margin-top:10px;
+}
+
+.payment-toggle button{
+flex:1;
+padding:8px;
+border:1px solid #e5e7eb;
+background:white;
+border-radius:6px;
+cursor:pointer;
+}
+
+.payment-toggle .active{
+background:#10b981;
+color:white;
+}
+
+/* radio */
+.radio{
+display:flex;
+align-items:center;
+gap:10px;
+padding:10px;
+border:1px solid #e5e7eb;
+border-radius:6px;
+margin-top:10px;
+cursor:pointer;
+}
+
+.radio input{
+width:auto;
+}
+
+.radio.active{
+background:#ecfdf5;
+border-color:#10b981;
+}
+
+/* footer */
+.stock-footer{
+display:flex;
+justify-content:flex-end;
+gap:10px;
+margin-top:20px;
+position:relative;
+z-index:50;
+background:#f9fafb;
+padding-top:10px;
+}
+
+.cancel{
+padding:10px 16px;
+border:1px solid #e5e7eb;
+background:white;
+border-radius:6px;
+cursor:pointer;
+}
+
+.save{
+padding:10px 16px;
+background:#111827;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
+/* hide */
+.hidden{
+display:none;
+}
+
+/* click fix */
+button{
+pointer-events:auto;
+}
+
+/* layout fix */
+.dashboard{
+display:flex;
+min-height:100vh;
+}
+
+.main{
+flex:1;
+display:flex;
+flex-direction:column;
+}
+
+.content{
+flex:1;
+position:relative;
+z-index:1;
+}
+
+.container{
+width:100%;
+}

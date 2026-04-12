@@ -17,17 +17,39 @@
 <!-- SIDEBAR -->
 <aside class="sidebar">
 <div class="sidebar-top">
+
 <div class="logo">
 <h2>Inventra</h2>
 <p>Inventory Management</p>
 </div>
 
 <nav class="menu">
-<a class="active"><i class="fa-solid fa-chart-line"></i>Dashboard</a>
-<a><i class="fa-solid fa-users"></i>Users</a>
-<a href="products/products.php"><i class="fa-solid fa-box"></i>Products</a>
-<a><i class="fa-solid fa-arrows-rotate"></i>Stock Update</a>
-<a><i class="fa-solid fa-gear"></i>Settings</a>
+
+<a class="active" href="index.php">
+<i class="fa-solid fa-chart-line"></i>
+Dashboard
+</a>
+
+<a href="#">
+<i class="fa-solid fa-users"></i>
+Users
+</a>
+
+<a href="products/products.php">
+<i class="fa-solid fa-box"></i>
+Products
+</a>
+
+<a href="stock-update/index.html">
+<i class="fa-solid fa-arrows-rotate"></i>
+Stock Update
+</a>
+
+<a href="#">
+<i class="fa-solid fa-gear"></i>
+Settings
+</a>
+
 </nav>
 </div>
 
@@ -38,7 +60,6 @@ Logout
 </button>
 </div>
 </aside>
-
 
 <!-- MAIN -->
 <div class="main">
@@ -66,15 +87,12 @@ Logout
 </div>
 </header>
 
-
 <main class="content">
 <div class="container">
 
 <h1>Overview</h1>
 
-<!-- STATS -->
 <div class="stats">
-
 <div class="card">
 <p>Total Products</p>
 <h2 id="totalProducts">0</h2>
@@ -94,10 +112,7 @@ Logout
 <p>Low Stock Items</p>
 <h2 id="lowStockItems">0</h2>
 </div>
-
 </div>
-
-
 
 <div class="panel">
 
@@ -111,10 +126,11 @@ Logout
 </div>
 </div>
 
-<a href="#" id="viewAllBtn">View All</a>
+<button id="viewAllBtn" class="view-all-btn">
+View All
+</button>
 
 </div>
-
 
 <table>
 <thead>
@@ -129,7 +145,6 @@ Logout
 
 <tbody id="lowStockTable">
 </tbody>
-
 </table>
 
 </div>

@@ -1,19 +1,9 @@
 <?php
 
 header("Content-Type: application/json");
-
-session_start();
-
-/* PROTECT ADMIN ENDPOINT */
-if(!isset($_SESSION['admin'])){
-http_response_code(401);
-echo json_encode(["error"=>"Unauthorized"]);
-exit;
-}
-
 require_once __DIR__ . "/../../config/db.php";
 
-
+/* STOCK STATUS FUNCTION */
 function getStockStatus($qty, $lower, $upper){
 
     if($qty == 0){
@@ -24,7 +14,7 @@ function getStockStatus($qty, $lower, $upper){
         return "Low";
     }
 
-    if($qty <= $lower + 5){
+    if($qty <= ($lower + 5)){
         return "Medium";
     }
 
@@ -44,28 +34,39 @@ $limit = 4;
 $offset = ($page - 1) * $limit;
 
 
-/* SUMMARY */
+/* ================= SUMMARY ================= */
 
-$totalProducts = $conn->query("SELECT COUNT(*) as total FROM products")
-->fetch_assoc()['total'];
+$totalProducts = 0;
+$totalCategories = 0;
+$activeUsers = 0;
+$lowStockCount = 0;
 
-$totalCategories = $conn->query("SELECT COUNT(*) as total FROM categories")
-->fetch_assoc()['total'];
+/* total products */
+$res = $conn->query("SELECT COUNT(*) as total FROM products");
+if($res) $totalProducts = (int)$res->fetch_assoc()['total'];
 
-$activeUsers = $conn->query("
+/* total categories */
+$res = $conn->query("SELECT COUNT(*) as total FROM categories");
+if($res) $totalCategories = (int)$res->fetch_assoc()['total'];
+
+/* active users */
+$res = $conn->query("
 SELECT COUNT(*) as total 
 FROM users 
 WHERE status='active'
-")->fetch_assoc()['total'];
+");
+if($res) $activeUsers = (int)$res->fetch_assoc()['total'];
 
-$lowStockCount = $conn->query("
+/* low stock count */
+$res = $conn->query("
 SELECT COUNT(*) as total 
 FROM products 
-WHERE qty < lower_limit
-")->fetch_assoc()['total'];
+WHERE qty <= (lower_limit + 5)
+");
+if($res) $lowStockCount = (int)$res->fetch_assoc()['total'];
 
 
-/* LOW STOCK LIST */
+/* ================= LOW STOCK LIST ================= */
 
 $query = "
 SELECT 
@@ -75,7 +76,7 @@ qty,
 lower_limit,
 upper_limit
 FROM products
-WHERE qty < lower_limit
+WHERE qty <= (lower_limit + 5)
 ORDER BY qty ASC
 ";
 
@@ -87,12 +88,13 @@ $result = $conn->query($query);
 
 $lowStock = [];
 
+if($result){
 while($row = $result->fetch_assoc()){
 
 $lowStock[] = [
-"id" => $row['id'],
+"id" => (int)$row['id'],
 "name" => $row['name'],
-"stock" => $row['qty'],
+"stock" => (int)$row['qty'],
 "threshold" => "L:".$row['lower_limit']." / U:".$row['upper_limit'],
 "status" => getStockStatus(
 $row['qty'],
@@ -102,27 +104,33 @@ $row['upper_limit']
 ];
 
 }
+}
 
 
-/* PAGINATION */
+/* ================= PAGINATION ================= */
 
-$totalLow = $conn->query("
+$totalLow = 0;
+
+$res = $conn->query("
 SELECT COUNT(*) as total 
 FROM products 
-WHERE qty < lower_limit
-")->fetch_assoc()['total'];
+WHERE qty <= (lower_limit + 5)
+");
+
+if($res) $totalLow = (int)$res->fetch_assoc()['total'];
 
 $totalPages = ceil($totalLow / $limit);
 
 
-/* RESPONSE */
+/* ================= RESPONSE ================= */
 
 echo json_encode([
+
 "summary" => [
-"total_products" => (int)$totalProducts,
-"total_categories" => (int)$totalCategories,
-"active_users" => (int)$activeUsers,
-"low_stock_items" => (int)$lowStockCount
+"total_products" => $totalProducts,
+"total_categories" => $totalCategories,
+"active_users" => $activeUsers,
+"low_stock_items" => $lowStockCount
 ],
 
 "low_stock" => $lowStock,
