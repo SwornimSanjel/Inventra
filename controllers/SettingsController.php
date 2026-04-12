@@ -109,7 +109,16 @@ class SettingsController
 
         $this->userModel->updateAdminProfile((int) $admin['id'], $firstName, $lastName, $email, $phone, $avatarPath);
 
-        $_SESSION['admin_email'] = $email;
+        $updatedAdmin = $this->userModel->findSettingsProfileById((int) $admin['id']);
+        if ($updatedAdmin !== null) {
+            $_SESSION['admin_id'] = (int) $updatedAdmin['id'];
+            $_SESSION['admin_email'] = (string) $updatedAdmin['email'];
+            $_SESSION['admin_name'] = (string) $updatedAdmin['full_name'];
+            $_SESSION['admin_avatar'] = (string) ($updatedAdmin['avatar'] ?? '');
+        } else {
+            $_SESSION['admin_email'] = $email;
+        }
+
         $_SESSION['settings_flash']['profile'] = [
             'message' => 'Profile updated successfully.',
             'message_type' => 'success',

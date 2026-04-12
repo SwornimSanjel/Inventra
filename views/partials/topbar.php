@@ -5,6 +5,7 @@ $topbarUnreadCount = $topbarUnreadCount ?? 0;
 
 $topbarName = trim((string) ($topbarAdmin['full_name'] ?? 'Admin User'));
 $topbarRole = trim((string) ($topbarAdmin['role'] ?? 'System Admin'));
+$topbarAvatar = trim((string) ($topbarAdmin['avatar'] ?? ''));
 $topbarInitials = '';
 
 foreach (array_slice(array_values(array_filter(explode(' ', $topbarName))), 0, 2) as $part) {
@@ -17,6 +18,21 @@ if ($topbarInitials === '') {
 
 if ($topbarRole !== '') {
     $topbarRole = ucwords(str_replace(['_', '-'], ' ', strtolower($topbarRole)));
+}
+
+if ($topbarAvatar !== '') {
+    $avatarPath = parse_url($topbarAvatar, PHP_URL_PATH);
+    $basePath = parse_url(BASE_URL, PHP_URL_PATH) ?: '/';
+
+    if (is_string($avatarPath) && $avatarPath !== '' && strpos($avatarPath, $basePath) === 0) {
+        $relativeAvatarPath = ltrim(substr($avatarPath, strlen($basePath)), '/');
+        $absoluteAvatarPath = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativeAvatarPath);
+        $avatarVersion = @filemtime($absoluteAvatarPath);
+
+        if ($avatarVersion) {
+            $topbarAvatar .= (strpos($topbarAvatar, '?') === false ? '?' : '&') . 'v=' . $avatarVersion;
+        }
+    }
 }
 
 $notifIcons = [
@@ -107,14 +123,18 @@ $notifIcons = [
             </div>
         </div>
 
-        <div class="topbar-user">
+        <a class="topbar-user" href="index.php?url=admin/settings" aria-label="Open profile settings">
             <div>
                 <span class="user-name"><?= htmlspecialchars($topbarName) ?></span>
                 <span class="user-role"><?= htmlspecialchars($topbarRole !== '' ? $topbarRole : 'Admin') ?></span>
             </div>
             <div class="avatar">
-                <?= htmlspecialchars($topbarInitials) ?>
+                <?php if ($topbarAvatar !== ''): ?>
+                    <img src="<?= htmlspecialchars($topbarAvatar) ?>" alt="<?= htmlspecialchars($topbarName) ?>">
+                <?php else: ?>
+                    <?= htmlspecialchars($topbarInitials) ?>
+                <?php endif; ?>
             </div>
-        </div>
+        </a>
     </div>
 </header>

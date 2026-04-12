@@ -79,6 +79,8 @@ class AdminSession
     {
         $_SESSION['admin_id'] = (int) $admin['id'];
         $_SESSION['admin_email'] = (string) $admin['email'];
+        $_SESSION['admin_name'] = (string) ($admin['full_name'] ?? '');
+        $_SESSION['admin_avatar'] = (string) ($admin['avatar'] ?? '');
     }
 
     private function isLocalDevelopmentRequest(): bool

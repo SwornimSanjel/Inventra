@@ -366,6 +366,16 @@ button.notif-popover__mark-all {
     border-radius: 10px;
     transition: background 0.2s ease;
     user-select: none;
+    color: inherit;
+    text-decoration: none;
+}
+
+.topbar-user:visited,
+.topbar-user:hover,
+.topbar-user:focus,
+.topbar-user:active {
+    color: inherit;
+    text-decoration: none;
 }
 
 .topbar-user:hover {
@@ -399,6 +409,14 @@ button.notif-popover__mark-all {
     font-size: .8rem;
     flex-shrink: 0;
     transition: transform 0.2s ease, background 0.2s ease;
+    overflow: hidden;
+}
+
+.avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
 .topbar-user:hover .avatar {
