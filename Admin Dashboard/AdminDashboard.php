@@ -29,7 +29,7 @@ requireRole('admin');
 
       <nav class="menu">
         <a class="active"><i class="fa-solid fa-chart-line"></i>Dashboard</a>
-        <a><i class="fa-solid fa-users"></i>Users</a>
+        <a href = "../Userpage_Admin/AdminUserManage.php"><i class="fa-solid fa-users"></i>Users</a>
         <a><i class="fa-solid fa-box"></i>Products</a>
         <a><i class="fa-solid fa-arrows-rotate"></i>Stock Update</a>
         <a><i class="fa-solid fa-gear"></i>Settings</a>

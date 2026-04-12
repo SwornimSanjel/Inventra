@@ -46,13 +46,9 @@ body {
 }
 
 .brand-logo {
-    height: 40px; /* Default height to make space */
+    height: 35px;
     width: auto;
-    object-fit: contain; /* Prevents stretching */
-    /* Placeholder styles below - remove when actual logo is loaded */
-    min-width: 40px;
-    background-color: #f1f5f9;
-    border-radius: 8px;
+    object-fit: contain;
 }
 
 .brand-text {

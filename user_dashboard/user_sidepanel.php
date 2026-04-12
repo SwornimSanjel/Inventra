@@ -1,7 +1,7 @@
 <aside class="sidebar">
     <div class="brand">
         <!-- Add your logo image path to the src below -->
-         <img src="../public/images/inventra-logo.png" alt="logo">
+         <img src="../public/images/inventra-logo.png" alt="logo" class="brand-logo">
         <div class="brand-text">
             <h2>Inventra</h2>
             <p>INVENTORY MANAGEMENT</p>

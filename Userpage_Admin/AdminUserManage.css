@@ -53,6 +53,18 @@ button {
     padding: 12px 20px;
 }
 
+.btn-primary:hover,
+.btn-save:hover {
+    background: #0f172a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.3);
+}
+
+.btn-primary:active,
+.btn-save:active {
+    transform: translateY(0);
+}
+
 .btn-logout {
     width: 100%;
     padding: 12px;
@@ -73,9 +85,14 @@ button {
     border: 1px solid #e2e8f0;
 }
 
+.btn-cancel:hover {
+    background: #f1f5f9;
+}
+
 .btn-save {
     flex: 2;
     padding: 14px;
+    transition: all 0.2s ease;
 }
 
 .btn-icon {
@@ -86,11 +103,30 @@ button {
     cursor: pointer;
     color: #64748b;
     margin-right: 5px;
+    transition: all 0.2s ease;
+}
+
+.btn-icon:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
 }
 
 .btn-delete:hover {
     color: #e11d48;
     background: #fff1f2;
+    border-color: #fecdd3;
+}
+
+.btn-toggle {
+    font-size: 18px;
+    border: none;
+    background: transparent;
+    padding: 6px 8px;
+}
+
+.btn-toggle:hover {
+    background: transparent;
+    transform: scale(1.15);
 }
 
 .btn-close {
@@ -99,6 +135,11 @@ button {
     font-size: 20px;
     cursor: pointer;
     color: #94a3b8;
+    transition: color 0.2s;
+}
+
+.btn-close:hover {
+    color: #475569;
 }
 
 /*3. SIDEBAR*/
@@ -120,12 +161,9 @@ button {
 }
 
 .brand-logo {
-    height: 40px;
+    height: 35px;
     width: auto;
     object-fit: contain;
-    min-width: 40px;
-    background: #f1f5f9;
-    border-radius: 8px;
 }
 
 .brand-text {
@@ -286,6 +324,12 @@ button {
     min-width: 150px;
     cursor: pointer;
     font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.filter-group select:focus {
+    border-color: #94a3b8;
+    outline: none;
 }
 
 .table-container {
@@ -320,6 +364,14 @@ td {
     font-size: 14px;
 }
 
+tr[data-user-id] {
+    transition: background 0.15s ease;
+}
+
+tr[data-user-id]:hover {
+    background: #f8fafc;
+}
+
 .user-cell {
     font-weight: 600;
     color: #0f172a;
@@ -351,6 +403,17 @@ td {
     color: #065f46;
     font-size: 12px;
     font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.badge-status:hover {
+    opacity: 0.85;
+}
+
+.status-active {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #d1fae5;
 }
 
 .status-inactive {
@@ -408,6 +471,18 @@ td {
     border-radius: 16px;
     padding: 32px;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+    animation: modalSlideIn 0.25s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-15px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .modal-header {
@@ -447,12 +522,25 @@ td {
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     font-family: inherit;
+    transition: border-color 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #94a3b8;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.1);
 }
 
 .gen-pass {
     color: #3b82f6;
     cursor: pointer;
     text-transform: none;
+    transition: color 0.2s;
+}
+
+.gen-pass:hover {
+    color: #2563eb;
 }
 
 .input-icon-wrap {
@@ -479,4 +567,91 @@ td {
     color: #94a3b8;
     display: flex;
     gap: 8px;
+}
+
+/* 7. TOAST NOTIFICATIONS */
+
+.toast-container {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.toast {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    pointer-events: auto;
+    opacity: 0;
+    transform: translateX(40px);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    min-width: 300px;
+    max-width: 450px;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-success {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.toast-success i {
+    color: #10b981;
+    font-size: 18px;
+}
+
+.toast-error {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.toast-error i {
+    color: #ef4444;
+    font-size: 18px;
+}
+
+.toast span {
+    flex: 1;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.5;
+    padding: 4px;
+    line-height: 1;
+    transition: opacity 0.2s;
+}
+
+.toast-close:hover {
+    opacity: 1;
+}
+
+/* 8. LOADING STATE */
+.loading-row td {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }
