@@ -1,0 +1,213 @@
+<?php
+
+require_once __DIR__ . '/../models/AdminSession.php';
+require_once __DIR__ . '/../models/UserManagementModel.php';
+
+use PHPMailer\PHPMailer\PHPMailer;
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+class UsersController
+{
+    private AdminSession $adminSession;
+    private UserManagementModel $userManagementModel;
+
+    public function __construct()
+    {
+        $this->adminSession = new AdminSession();
+        $this->userManagementModel = new UserManagementModel();
+        $this->userManagementModel->ensureSchema();
+    }
+
+    public function show(): void
+    {
+        $admin = $this->adminSession->requireAuthenticatedAdmin();
+
+        $usersPageState = [
+            'current_admin' => $admin,
+            'users_api_base' => 'index.php?url=admin/users',
+        ];
+
+        $url = 'admin/users';
+        require __DIR__ . '/../views/layout/shell.php';
+    }
+
+    public function getUsers(): void
+    {
+        $this->adminSession->requireAuthenticatedAdmin();
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'users' => $this->userManagementModel->getUsers(
+                trim((string) ($_GET['role'] ?? '')),
+                trim((string) ($_GET['status'] ?? ''))
+            ),
+        ]);
+        exit;
+    }
+
+    public function createUser(): void
+    {
+        $this->adminSession->requireAuthenticatedAdmin();
+
+        $fullName = trim((string) ($_POST['full_name'] ?? ''));
+        $email = trim((string) ($_POST['email'] ?? ''));
+        $username = trim((string) ($_POST['username'] ?? ''));
+        $role = trim((string) ($_POST['role'] ?? 'User'));
+        $password = (string) ($_POST['password'] ?? '');
+
+        if ($fullName === '' || $email === '' || $username === '' || $password === '') {
+            $this->jsonError('All fields are required.');
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->jsonError('Please enter a valid email address.');
+        }
+
+        if ($this->userManagementModel->existsByUsernameOrEmail($username, $email)) {
+            $this->jsonError('Username or email already exists.');
+        }
+
+        $this->userManagementModel->createUser($fullName, $email, $username, $password, $role);
+
+        $emailSent = false;
+        $message = 'User created successfully.';
+
+        try {
+            $emailSent = $this->sendCredentialsEmail($email, $fullName, $username, $password, $role);
+            if ($emailSent) {
+                $message = 'Credentials sent successfully to email.';
+            }
+        } catch (Throwable $e) {
+            error_log('Failed to send credentials email to ' . $email . ': ' . $e->getMessage());
+            $message = 'User created successfully. Email could not be sent.';
+        }
+
+        $this->jsonSuccess([
+            'message' => $message,
+            'email_sent' => $emailSent,
+        ]);
+    }
+
+    public function updateUser(): void
+    {
+        $this->adminSession->requireAuthenticatedAdmin();
+
+        $userId = (int) ($_POST['user_id'] ?? 0);
+        $fullName = trim((string) ($_POST['full_name'] ?? ''));
+        $email = trim((string) ($_POST['email'] ?? ''));
+        $username = trim((string) ($_POST['username'] ?? ''));
+        $role = trim((string) ($_POST['role'] ?? 'User'));
+
+        if ($userId <= 0 || $fullName === '' || $email === '' || $username === '') {
+            $this->jsonError('All fields are required.');
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->jsonError('Please enter a valid email address.');
+        }
+
+        if ($this->userManagementModel->existsByUsernameOrEmail($username, $email, $userId)) {
+            $this->jsonError('Username or email already in use by another user.');
+        }
+
+        if (!$this->userManagementModel->findById($userId)) {
+            $this->jsonError('User not found.');
+        }
+
+        $this->userManagementModel->updateUser($userId, $fullName, $email, $username, $role);
+        $this->jsonSuccess(['message' => 'User updated successfully.']);
+    }
+
+    public function toggleStatus(): void
+    {
+        $this->adminSession->requireAuthenticatedAdmin();
+
+        $userId = (int) ($_POST['user_id'] ?? 0);
+        if ($userId <= 0) {
+            $this->jsonError('Invalid user ID.');
+        }
+
+        $newStatus = $this->userManagementModel->toggleStatus($userId);
+        if ($newStatus === null) {
+            $this->jsonError('User not found.');
+        }
+
+        $this->jsonSuccess([
+            'message' => 'User status updated to ' . $newStatus . '.',
+            'new_status' => $newStatus,
+        ]);
+    }
+
+    public function deleteUser(): void
+    {
+        $this->adminSession->requireAuthenticatedAdmin();
+
+        $userId = (int) ($_POST['user_id'] ?? 0);
+        if ($userId <= 0) {
+            $this->jsonError('Invalid user ID.');
+        }
+
+        if (isset($_SESSION['user_id']) && $userId === (int) $_SESSION['user_id']) {
+            $this->jsonError('You cannot delete your own account.');
+        }
+
+        if (!$this->userManagementModel->findById($userId)) {
+            $this->jsonError('User not found.');
+        }
+
+        $this->userManagementModel->deleteUser($userId);
+        $this->jsonSuccess(['message' => 'User deleted successfully.']);
+    }
+
+    private function sendCredentialsEmail(string $toEmail, string $fullName, string $username, string $password, string $role): bool
+    {
+        $mailConfig = require __DIR__ . '/../config/mail.php';
+
+        $mail = new PHPMailer(true);
+        $mail->isSMTP();
+        $mail->Host = $mailConfig['host'];
+        $mail->SMTPAuth = true;
+        $mail->Username = $mailConfig['username'];
+        $mail->Password = $mailConfig['password'];
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+        $mail->Port = $mailConfig['port'];
+
+        $mail->setFrom($mailConfig['from_email'], $mailConfig['from_name']);
+        $mail->addAddress($toEmail, $fullName);
+        $mail->isHTML(true);
+        $mail->Subject = 'Your Inventra Account Credentials';
+        $mail->Body = "
+            <h2>Welcome to Inventra</h2>
+            <p>Your account has been created successfully.</p>
+            <p><strong>Full name:</strong> {$fullName}</p>
+            <p><strong>Username:</strong> {$username}</p>
+            <p><strong>Password:</strong> {$password}</p>
+            <p><strong>Role:</strong> {$role}</p>
+            <p>Please change your password after your first login.</p>
+        ";
+
+        $mail->AltBody = "Welcome to Inventra!\nFull name: {$fullName}\nUsername: {$username}\nPassword: {$password}\nRole: {$role}\nPlease change your password after your first login.";
+
+        $mail->send();
+        return true;
+    }
+
+    private function jsonError(string $message): void
+    {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'message' => $message,
+        ]);
+        exit;
+    }
+
+    private function jsonSuccess(array $payload = []): void
+    {
+        header('Content-Type: application/json');
+        echo json_encode(array_merge(['success' => true], $payload));
+        exit;
+    }
+}

@@ -59,7 +59,10 @@ $products[] = $row;
 
 $count = $totalRows;
 ?>
+<<<<<<< HEAD
 
+=======
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -150,6 +153,7 @@ color:white;
 
 <div class="dashboard">
 
+<<<<<<< HEAD
 <!-- SIDEBAR -->
 <aside class="sidebar">
 <div class="sidebar-top">
@@ -222,6 +226,9 @@ Logout
 </div>
 </header>
 
+=======
+<div class="main">
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 <main class="content">
 <div class="container">
 
@@ -248,8 +255,13 @@ Logout
 <div class="product-count">
 <?= $count ?> products
 </div>
+<<<<<<< HEAD
 
 </form>
+=======
+</form>
+
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 </div>
 
 <button class="add-product" onclick="openModal()">
@@ -296,12 +308,38 @@ Add Product
 <i class="fa-solid fa-pen" onclick='editProduct(<?= json_encode($p) ?>)'></i>
 <i class="fa-solid fa-trash" onclick="deleteProduct(<?= $p['id'] ?>)"></i>
 </td>
+<<<<<<< HEAD
+=======
+
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 </tr>
 <?php endforeach; ?>
 </tbody>
 
 </table>
 
+<<<<<<< HEAD
+=======
+<div class="pagination">
+
+<?php if($page > 1): ?>
+<a href="?page=<?= $page-1 ?>&search=<?= $search ?>&status=<?= $status ?>">Prev</a>
+<?php endif; ?>
+
+<?php for($i=1;$i<=$totalPages;$i++): ?>
+<a href="?page=<?= $i ?>&search=<?= $search ?>&status=<?= $status ?>"
+class="<?= $page==$i?'active':'' ?>">
+<?= $i ?>
+</a>
+<?php endfor; ?>
+
+<?php if($page < $totalPages): ?>
+<a href="?page=<?= $page+1 ?>&search=<?= $search ?>&status=<?= $status ?>">Next</a>
+<?php endif; ?>
+
+</div>
+
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 </div>
 
 </div>
@@ -309,18 +347,126 @@ Add Product
 </div>
 </div>
 
+<<<<<<< HEAD
 <script>
 function deleteProduct(id){
+=======
+<!-- ADD / EDIT MODAL -->
+<div id="productModal" class="modal">
+<div class="modal-box">
+
+<div class="modal-header">
+<h3 id="modalTitle">Add Product</h3>
+<span class="close" onclick="closeModal()">&times;</span>
+</div>
+
+<form id="productForm" enctype="multipart/form-data">
+
+<input type="hidden" name="id" id="productId">
+
+<div class="form-grid">
+
+<input type="text" name="name" placeholder="Product name" required>
+<input type="text" name="category" placeholder="Category" required>
+
+<input type="number" name="qty" placeholder="Quantity" required>
+<input type="number" name="price" placeholder="Price" required>
+
+<input type="number" name="lower" placeholder="Lower limit" required>
+<input type="number" name="upper" placeholder="Upper limit" required>
+
+<input type="file" name="image">
+
+<textarea name="description" placeholder="Description"></textarea>
+
+</div>
+
+<button type="submit" class="save-btn">Save Product</button>
+
+</form>
+
+</div>
+</div>
+
+<script>
+
+let editMode = false;
+
+function openModal(){
+editMode = false
+document.getElementById("modalTitle").innerText="Add Product"
+document.getElementById("productModal").style.display="flex"
+document.getElementById("productForm").reset()
+}
+
+function closeModal(){
+document.getElementById("productModal").style.display="none"
+}
+
+function editProduct(product){
+
+editMode = true
+
+document.getElementById("modalTitle").innerText="Edit Product"
+document.getElementById("productModal").style.display="flex"
+
+document.getElementById("productId").value = product.id
+document.querySelector('[name="name"]').value = product.name
+document.querySelector('[name="category"]').value = product.category
+document.querySelector('[name="qty"]').value = product.qty
+document.querySelector('[name="price"]').value = product.unit_price
+document.querySelector('[name="lower"]').value = product.lower_limit
+document.querySelector('[name="upper"]').value = product.upper_limit
+document.querySelector('[name="description"]').value = product.description
+}
+
+document.getElementById("productForm").addEventListener("submit",function(e){
+e.preventDefault()
+
+let formData = new FormData(this)
+
+let url = editMode 
+? "../../api/products/update_product.php"
+: "../../api/products/add_product.php";
+
+fetch(url,{
+method:"POST",
+body:formData
+})
+.then(res=>res.json())
+.then(()=>{
+closeModal()
+location.reload()
+})
+})
+
+function deleteProduct(id){
+
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 if(!confirm("Delete product?")) return
 
 fetch("../../api/products/delete_product.php",{
 method:"POST",
+<<<<<<< HEAD
 headers:{'Content-Type':'application/x-www-form-urlencoded'},
 body:"id="+id
 })
 .then(res=>res.json())
 .then(()=>location.reload())
 }
+=======
+headers:{
+'Content-Type':'application/x-www-form-urlencoded'
+},
+body:"id="+id
+})
+.then(res=>res.json())
+.then(()=>{
+location.reload()
+})
+}
+
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 </script>
 
 </body>

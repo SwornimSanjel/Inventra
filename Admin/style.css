@@ -23,18 +23,23 @@ min-height:100vh;
 width:240px;
 background:#fff;
 border-right:1px solid #e5e7eb;
+<<<<<<< HEAD
 padding:20px 16px;
 display:flex;
 flex-direction:column;
 }
 
 .sidebar-top{
+=======
+padding:20px;
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 display:flex;
 flex-direction:column;
 }
 
 .sidebar-bottom{
 margin-top:auto;
+<<<<<<< HEAD
 padding-top:20px;
 }
 
@@ -43,6 +48,11 @@ padding-top:20px;
 margin-bottom:10px;
 }
 
+=======
+}
+
+/* LOGO */
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 .logo h2{
 font-size:16px;
 font-weight:600;
@@ -51,11 +61,15 @@ font-weight:600;
 .logo p{
 font-size:12px;
 color:#9ca3af;
+<<<<<<< HEAD
 margin-top:2px;
+=======
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 }
 
 /* MENU */
 .menu{
+<<<<<<< HEAD
 margin-top:20px;
 display:flex;
 flex-direction:column;
@@ -64,10 +78,21 @@ gap:6px;
 
 .menu a{
 padding:11px 14px;
+=======
+margin-top:28px;
+display:flex;
+flex-direction:column;
+gap:8px;
+}
+
+.menu a{
+padding:10px 14px;
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 border-radius:10px;
 color:#6b7280;
 display:flex;
 align-items:center;
+<<<<<<< HEAD
 gap:12px;
 font-size:14px;
 transition:.2s;
@@ -82,6 +107,12 @@ text-align:center;
 
 .menu a span{
 flex:1;
+=======
+gap:10px;
+font-size:14px;
+transition:.2s;
+text-decoration:none;
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 }
 
 .menu a.active,
@@ -104,7 +135,10 @@ align-items:center;
 gap:8px;
 cursor:pointer;
 transition:.2s;
+<<<<<<< HEAD
 font-weight:500;
+=======
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 }
 
 .logout:hover{
@@ -141,7 +175,10 @@ width:100%;
 padding:10px 14px 10px 38px;
 border-radius:12px;
 border:1px solid #e5e7eb;
+<<<<<<< HEAD
 outline:none;
+=======
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 }
 
 .search-wrapper i{
@@ -160,10 +197,13 @@ align-items:center;
 gap:16px;
 }
 
+<<<<<<< HEAD
 .notification{
 cursor:pointer;
 }
 
+=======
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 /* PROFILE */
 .profile{
 display:flex;
@@ -182,7 +222,10 @@ color:#9ca3af;
 
 .profile img{
 width:30px;
+<<<<<<< HEAD
 height:30px;
+=======
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 border-radius:50%;
 }
 
@@ -202,7 +245,12 @@ font-weight:600;
 margin-bottom:16px;
 }
 
+<<<<<<< HEAD
 /* DASHBOARD STATS */
+=======
+/* ================= DASHBOARD STATS ================= */
+
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 .stats{
 display:grid;
 grid-template-columns:repeat(4,1fr);
@@ -232,7 +280,12 @@ font-weight:600;
 border-left:4px solid #ef4444;
 }
 
+<<<<<<< HEAD
 /* PANEL */
+=======
+/* ================= PANEL ================= */
+
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 .panel{
 margin-top:20px;
 background:#fff;
@@ -241,7 +294,10 @@ border-radius:16px;
 overflow:hidden;
 }
 
+<<<<<<< HEAD
 /* PANEL HEADER */
+=======
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 .panel-header{
 display:flex;
 justify-content:space-between;
@@ -252,8 +308,13 @@ border-bottom:1px solid #f1f5f9;
 
 .panel-title{
 display:flex;
+<<<<<<< HEAD
 align-items:flex-start;
 gap:12px;
+=======
+gap:12px;
+align-items:flex-start;
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 }
 
 .panel-title i{
@@ -271,6 +332,7 @@ font-size:12px;
 color:#6b7280;
 }
 
+<<<<<<< HEAD
 #viewAllBtn{
 font-size:13px;
 color:#2563eb;
@@ -281,10 +343,24 @@ border:none;
 }
 
 #viewAllBtn:hover{
+=======
+.panel-header a{
+font-size:12px;
+color:#2563eb;
+text-decoration:none;
+font-weight:500;
+}
+
+.panel-header a:hover{
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 text-decoration:underline;
 }
 
 /* TABLE */
+<<<<<<< HEAD
+=======
+
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 table{
 width:100%;
 border-collapse:separate;
@@ -313,7 +389,39 @@ tbody tr:hover td{
 background:#f9fafb;
 }
 
+<<<<<<< HEAD
 /* BADGES */
+=======
+/* STOCK COLORS */
+
+.low{
+color:#ef4444;
+font-weight:500;
+}
+
+.medium{
+color:#f59e0b;
+font-weight:500;
+}
+
+.out-of-stock{
+color:#ef4444;
+font-weight:500;
+}
+
+.overstock{
+color:#3b82f6;
+font-weight:500;
+}
+
+.adequate{
+color:#22c55e;
+font-weight:500;
+}
+
+/* BADGES */
+
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 .badge{
 padding:5px 12px;
 border-radius:999px;
@@ -321,6 +429,7 @@ font-size:11px;
 font-weight:600;
 }
 
+<<<<<<< HEAD
 .badge.low{ background:#fee2e2; color:#ef4444; }
 .badge.medium{ background:#fef3c7; color:#f59e0b; }
 .badge.out-of-stock{ background:#fee2e2; color:#ef4444; }
@@ -328,6 +437,35 @@ font-weight:600;
 .badge.adequate{ background:#dcfce7; color:#22c55e; }
 
 /* PAGINATION */
+=======
+.badge.low{
+background:#fee2e2;
+color:#ef4444;
+}
+
+.badge.medium{
+background:#fef3c7;
+color:#f59e0b;
+}
+
+.badge.out-of-stock{
+background:#fee2e2;
+color:#ef4444;
+}
+
+.badge.overstock{
+background:#dbeafe;
+color:#3b82f6;
+}
+
+.badge.adequate{
+background:#dcfce7;
+color:#22c55e;
+}
+
+/* PAGINATION */
+
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 .pagination{
 display:flex;
 justify-content:flex-end;
@@ -355,7 +493,73 @@ background:#111827;
 color:white;
 }
 
+<<<<<<< HEAD
 /* RESPONSIVE */
+=======
+/* MODAL */
+
+.modal{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.4);
+display:none;
+align-items:center;
+justify-content:center;
+z-index:9999;
+}
+
+.modal-box{
+background:white;
+padding:25px;
+border-radius:10px;
+width:500px;
+}
+
+.modal-header{
+display:flex;
+justify-content:space-between;
+margin-bottom:15px;
+}
+
+.close{
+cursor:pointer;
+font-size:22px;
+}
+
+.form-grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px;
+}
+
+.form-grid textarea{
+grid-column:span 2;
+height:80px;
+}
+
+.save-btn{
+margin-top:15px;
+width:100%;
+padding:12px;
+background:#111827;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
+/* RESPONSIVE */
+
+@media(max-width:1100px){
+.stats{
+grid-template-columns:1fr 1fr;
+}
+}
+
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 @media(max-width:768px){
 
 .sidebar{
@@ -370,6 +574,7 @@ padding:16px;
 grid-template-columns:1fr;
 }
 
+<<<<<<< HEAD
 }
 /* ============================= */
 /* PRODUCTS HEADER */
@@ -446,4 +651,10 @@ display:flex;
 align-items:center;
 gap:6px;
 font-size:13px;
+=======
+.header-inner{
+padding:16px;
+}
+
+>>>>>>> a797a55778273531d31c9c9dc672c4d4fa66ebad
 }
