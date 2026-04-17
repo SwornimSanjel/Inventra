@@ -58,9 +58,9 @@ class UsersController
         $email = trim((string) ($_POST['email'] ?? ''));
         $username = trim((string) ($_POST['username'] ?? ''));
         $role = trim((string) ($_POST['role'] ?? 'User'));
-        $password = (string) ($_POST['password'] ?? '');
+        $password = $this->buildDefaultPassword($fullName);
 
-        if ($fullName === '' || $email === '' || $username === '' || $password === '') {
+        if ($fullName === '' || $email === '' || $username === '') {
             $this->jsonError('All fields are required.');
         }
 
@@ -88,11 +88,11 @@ class UsersController
         try {
             $emailSent = $this->sendCredentialsEmail($email, $fullName, $username, $password, $role);
             if ($emailSent) {
-                $message = 'Credentials sent successfully to email.';
+                $message = 'User created successfully. Default password is ' . $password . ' and it was also sent by email.';
             }
         } catch (Throwable $e) {
             error_log('Failed to send credentials email to ' . $email . ': ' . $e->getMessage());
-            $message = 'User created successfully. Email could not be sent.';
+            $message = 'User created successfully. Default password is ' . $password . '.';
         }
 
         $this->jsonSuccess([
@@ -204,13 +204,29 @@ class UsersController
             <p><strong>Username:</strong> {$username}</p>
             <p><strong>Password:</strong> {$password}</p>
             <p><strong>Role:</strong> {$role}</p>
+            <p>This account uses the default first-login password format: first name in lowercase + @123.</p>
+            <p>You can sign in with this password for your first login.</p>
+            <p>If you prefer, you can also use the Forgot Password option with your registered email to set a new password yourself.</p>
             <p>Please change your password after your first login.</p>
         ";
 
-        $mail->AltBody = "Welcome to Inventra!\nFull name: {$fullName}\nUsername: {$username}\nPassword: {$password}\nRole: {$role}\nPlease change your password after your first login.";
+        $mail->AltBody = "Welcome to Inventra!\nFull name: {$fullName}\nUsername: {$username}\nPassword: {$password}\nRole: {$role}\nThis account uses the default first-login password format: first name in lowercase + @123.\nUse this password for your first login, or use Forgot Password with your registered email.\nPlease change your password after your first login.";
 
         $mail->send();
         return true;
+    }
+
+    private function buildDefaultPassword(string $fullName): string
+    {
+        $normalized = trim(preg_replace('/\s+/', ' ', strtolower($fullName)) ?? '');
+        $firstName = explode(' ', $normalized)[0] ?? '';
+        $firstName = preg_replace('/[^a-z]/', '', $firstName) ?? '';
+
+        if ($firstName === '') {
+            $firstName = 'user';
+        }
+
+        return $firstName . '@123';
     }
 
     private function jsonError(string $message): void

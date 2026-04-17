@@ -21,8 +21,6 @@
   var confirmDelete = document.getElementById('confirmDeleteUser');
   var toastWrap = document.getElementById('usersToastWrap');
   var openCreateButton = document.getElementById('openCreateUserModal');
-  var generatePasswordButton = document.getElementById('generateUserPassword');
-  var createPasswordInput = document.getElementById('createUserPassword');
   var customSelects = Array.prototype.slice.call(document.querySelectorAll('[data-select-root]'));
   var users = [];
   var deleteUserId = null;
@@ -41,9 +39,7 @@
     !deleteLabel ||
     !confirmDelete ||
     !toastWrap ||
-    !openCreateButton ||
-    !generatePasswordButton ||
-    !createPasswordInput
+    !openCreateButton
   ) {
     return;
   }
@@ -137,7 +133,6 @@
   function resetModalState(modal) {
     if (modal === createModal) {
       createForm.reset();
-      createPasswordInput.type = 'password';
       syncCustomSelect(createForm.querySelector('[data-select-root]'), 'User');
     }
 
@@ -392,21 +387,6 @@
   });
 
   searchInput.addEventListener('input', renderUsers);
-
-  generatePasswordButton.addEventListener('click', function () {
-    var chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-    var password = '';
-
-    for (var i = 0; i < 12; i += 1) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-
-    createPasswordInput.value = password;
-    createPasswordInput.type = 'text';
-    window.setTimeout(function () {
-      createPasswordInput.type = 'password';
-    }, 1200);
-  });
 
   customSelects.forEach(function (root) {
     var trigger = root.querySelector('[data-select-trigger]');

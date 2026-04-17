@@ -71,7 +71,7 @@
 
             <p class="auth-helper-copy">
                 <a href="index.php?url=auth/forgot-password" class="auth-helper-link">Forgot your password?</a>
-                Contact your administrator.
+                <span>Enter your registered email to reset it.</span>
             </p>
         </div>
     </div>

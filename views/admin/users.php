@@ -130,11 +130,9 @@ $usersApiBase = $usersPageState['users_api_base'] ?? 'index.php?url=admin/users'
                 </label>
             </div>
             <label>
-                <span>Initial Password</span>
-                <div class="users-password-row">
-                    <input type="password" name="password" id="createUserPassword" required>
-                    <button type="button" class="btn-outline users-generate-btn" id="generateUserPassword">Generate</button>
-                </div>
+                <span>Default Password</span>
+                <input type="text" value="firstname@123" readonly>
+                <small class="muted">New accounts will use the first name in lowercase plus `@123`, for example `shirish@123`.</small>
             </label>
             <div class="users-modal-actions">
                 <button type="button" class="btn-outline" data-close-modal="createUserModal">Cancel</button>
