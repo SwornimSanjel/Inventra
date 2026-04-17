@@ -27,6 +27,14 @@ class UserManagementModel
                 UNIQUE KEY uniq_users_email (email)
             )
         ");
+
+        $this->db->exec("
+            ALTER TABLE users
+                ADD COLUMN IF NOT EXISTS phone VARCHAR(30) NULL AFTER email,
+                ADD COLUMN IF NOT EXISTS avatar VARCHAR(255) NULL AFTER status,
+                ADD COLUMN IF NOT EXISTS notify_low_stock TINYINT(1) NOT NULL DEFAULT 1 AFTER avatar,
+                ADD COLUMN IF NOT EXISTS notify_weekly_summary TINYINT(1) NOT NULL DEFAULT 1 AFTER notify_low_stock
+        ");
     }
 
     public function getUsers(string $role = '', string $status = ''): array
@@ -151,7 +159,7 @@ class UserManagementModel
 
     private function normalizeUser(array $user): array
     {
-        $role = (string) ($user['role'] ?? 'staff');
+        $role = $this->normalizeRoleInput((string) ($user['role'] ?? 'staff'));
 
         return [
             'id' => (int) $user['id'],

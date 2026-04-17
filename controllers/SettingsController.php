@@ -1,23 +1,24 @@
 <?php
 
-require_once __DIR__ . '/../models/UserModel.php';
+require_once __DIR__ . '/../models/AccountModel.php';
 require_once __DIR__ . '/../models/AdminSession.php';
 require_once __DIR__ . '/../helpers/session.php';
+require_once __DIR__ . '/../vendor/autoload.php';
+
+use PHPMailer\PHPMailer\PHPMailer;
 
 class SettingsController
 {
     private const PROFILE_UPLOAD_DIR = __DIR__ . '/../public/uploads/images/profile';
     private const MAX_AVATAR_BYTES = 5242880;
 
-    private UserModel $userModel;
+    private AccountModel $accountModel;
     private AdminSession $adminSession;
 
     public function __construct()
     {
-        $this->userModel = new UserModel();
-        $this->adminSession = new AdminSession($this->userModel);
-        $this->userModel->ensureAdminSettingsSchema();
-        $this->userModel->ensurePasswordHistorySchema();
+        $this->accountModel = new AccountModel();
+        $this->adminSession = new AdminSession($this->accountModel);
     }
 
     public function show(): void
@@ -75,7 +76,7 @@ class SettingsController
             $errors['email'] = 'Email address is required.';
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $errors['email'] = 'Please enter a valid email address.';
-        } elseif ($this->userModel->emailExistsForOtherAdmin($email, (int) $admin['id'])) {
+        } elseif ($this->accountModel->emailExistsForOtherAccount($email, (string) ($admin['source'] ?? 'admin'), (int) $admin['id'])) {
             $errors['email'] = 'That email address is already in use.';
         }
 
@@ -108,12 +109,14 @@ class SettingsController
             $this->redirectToSettings('profile');
         }
 
-        $this->userModel->updateAdminProfile((int) $admin['id'], $firstName, $lastName, $email, $phone, $avatarPath);
+        $this->accountModel->updateProfile($admin, $firstName, $lastName, $email, $phone, $avatarPath);
 
-        $updatedAdmin = $this->userModel->findSettingsProfileById((int) $admin['id']);
+        $updatedAccount = $this->accountModel->findByIdAndSource((int) $admin['id'], (string) ($admin['source'] ?? 'admin'));
+        $updatedAdmin = $updatedAccount !== null ? $this->accountModel->findSettingsProfile($updatedAccount) : null;
         if ($updatedAdmin !== null) {
-            inventra_set_authenticated_admin([
+            inventra_set_authenticated_user([
                 'id' => (int) $updatedAdmin['id'],
+                'source' => (string) ($updatedAdmin['source'] ?? ($admin['source'] ?? 'admin')),
                 'email' => (string) $updatedAdmin['email'],
                 'full_name' => (string) $updatedAdmin['full_name'],
                 'role' => (string) ($updatedAdmin['role_value'] ?? 'admin'),
@@ -143,7 +146,7 @@ class SettingsController
 
         if (trim($currentPassword) === '') {
             $errors['current_password'] = 'Current password is required.';
-        } elseif (!$this->userModel->verifyPasswordById((int) $admin['id'], $currentPassword)) {
+        } elseif (!$this->accountModel->verifyPassword($admin, $currentPassword)) {
             $errors['current_password'] = 'Current password is incorrect.';
         }
 
@@ -169,7 +172,8 @@ class SettingsController
         }
 
         $hash = password_hash($newPassword, PASSWORD_BCRYPT);
-        $this->userModel->updatePasswordById((int) $admin['id'], $hash);
+        $this->accountModel->updatePassword($admin, $hash);
+        $this->sendPasswordChangedEmail((string) $admin['email'], (string) ($admin['full_name'] ?? ''));
 
         $_SESSION['settings_flash']['security'] = [
             'message' => 'Password updated successfully.',
@@ -186,8 +190,8 @@ class SettingsController
         $lowStockAlerts = isset($_POST['low_stock_alerts']) && (string) $_POST['low_stock_alerts'] === '1';
         $weeklySummaryReports = isset($_POST['weekly_summary_reports']) && (string) $_POST['weekly_summary_reports'] === '1';
 
-        $this->userModel->updateNotificationPreferences(
-            (int) $admin['id'],
+        $this->accountModel->updateNotificationPreferences(
+            $admin,
             $lowStockAlerts,
             $weeklySummaryReports
         );
@@ -290,7 +294,9 @@ class SettingsController
         }
 
         $extension = $allowedMimeTypes[$mimeType];
-        $fileName = sprintf('admin_%s_%s.%s', (string) ($_SESSION['admin_id'] ?? 'user'), bin2hex(random_bytes(8)), $extension);
+        $accountId = (string) (inventra_authenticated_user_id() ?? 'user');
+        $accountSource = (string) (inventra_authenticated_user_source() ?? 'account');
+        $fileName = sprintf('account_%s_%s_%s.%s', $accountSource, $accountId, bin2hex(random_bytes(8)), $extension);
         $destination = self::PROFILE_UPLOAD_DIR . DIRECTORY_SEPARATOR . $fileName;
 
         if (!move_uploaded_file($tmpName, $destination)) {
@@ -336,5 +342,53 @@ class SettingsController
     private function isValidSettingsPassword(string $password): bool
     {
         return (bool) preg_match('/^(?=.*[!@#]).{8,}$/', $password);
+    }
+
+    private function sendPasswordChangedEmail(string $toEmail, string $name = ''): void
+    {
+        if (trim($toEmail) === '') {
+            return;
+        }
+
+        try {
+            $mailConfig = require __DIR__ . '/../config/mail.php';
+
+            $mail = new PHPMailer(true);
+            $mail->isSMTP();
+            $mail->Host = $mailConfig['host'];
+            $mail->SMTPAuth = true;
+            $mail->Username = $mailConfig['username'];
+            $mail->Password = $mailConfig['password'];
+            $mail->SMTPSecure = $this->resolveMailEncryption($mailConfig);
+            $mail->Port = $mailConfig['port'];
+            $mail->Timeout = 20;
+            $mail->CharSet = 'UTF-8';
+
+            $mail->setFrom($mailConfig['from_email'], $mailConfig['from_name']);
+            $mail->addAddress($toEmail, $name);
+
+            $mail->isHTML(true);
+            $mail->Subject = 'Your Inventra password was changed';
+            $mail->Body = '
+                <h2>Password Updated</h2>
+                <p>Your Inventra account password was changed successfully.</p>
+                <p>If this was not you, please contact support immediately.</p>
+            ';
+            $mail->AltBody = "Your Inventra account password was changed successfully.\nIf this was not you, please contact support immediately.";
+
+            $mail->send();
+        } catch (Throwable $e) {
+            error_log('Password change email failed for ' . $toEmail . ': ' . $e->getMessage());
+        }
+    }
+
+    private function resolveMailEncryption(array $mailConfig): string
+    {
+        $encryption = strtolower(trim((string) ($mailConfig['encryption'] ?? 'ssl')));
+
+        return match ($encryption) {
+            'tls', 'starttls' => PHPMailer::ENCRYPTION_STARTTLS,
+            default => PHPMailer::ENCRYPTION_SMTPS,
+        };
     }
 }

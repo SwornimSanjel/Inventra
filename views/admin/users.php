@@ -4,7 +4,7 @@ $usersApiBase = $usersPageState['users_api_base'] ?? 'index.php?url=admin/users'
 
 <div class="page-header users-header">
     <div>
-        <p class="page-subtitle dashboard-page__intro">Create, update, and manage staff access from the main admin panel.</p>
+        <p class="page-subtitle dashboard-page__intro">Create, update, and manage user access from the main admin panel.</p>
     </div>
     <button class="btn-primary" type="button" id="openCreateUserModal">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

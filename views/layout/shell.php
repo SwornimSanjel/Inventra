@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <?php
-require_once __DIR__ . '/../../models/UserModel.php';
+require_once __DIR__ . '/../../models/AccountModel.php';
 require_once __DIR__ . '/../../models/AdminSession.php';
 require_once __DIR__ . '/../../models/NotificationModel.php';
 
@@ -17,11 +17,11 @@ $topbarNotifications = [];
 $topbarUnreadCount = 0;
 
 if (strpos($url, 'admin/') === 0) {
-  $topbarUserModel = new UserModel();
-  $topbarAdminSession = new AdminSession($topbarUserModel);
+  $topbarAccountModel = new AccountModel();
+  $topbarAdminSession = new AdminSession($topbarAccountModel);
   $topbarAdmin = $topbarAdminSession->resolveAuthenticatedAdmin();
 
-  if ($topbarAdmin !== null) {
+  if ($topbarAdmin !== null && (($topbarAdmin['source'] ?? 'admin') === 'admin')) {
     $topbarNotificationModel = new NotificationModel();
     $topbarNotificationModel->ensureSchema();
     $topbarNotifications = $topbarNotificationModel->buildNotificationViewData(

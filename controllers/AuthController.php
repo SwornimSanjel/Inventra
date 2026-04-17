@@ -1,7 +1,8 @@
 <?php
 
-require_once __DIR__ . '/../models/UserModel.php';
+require_once __DIR__ . '/../models/AccountModel.php';
 require_once __DIR__ . '/../models/OTPModel.php';
+require_once __DIR__ . '/../models/AdminSession.php';
 require_once __DIR__ . '/../helpers/session.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
@@ -11,14 +12,15 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 class AuthController
 {
-    private UserModel $userModel;
+    private AccountModel $accountModel;
     private OTPModel $otpModel;
+    private AdminSession $adminSession;
 
     public function __construct()
     {
-        $this->userModel = new UserModel();
-        $this->userModel->ensurePasswordHistorySchema();
+        $this->accountModel = new AccountModel();
         $this->otpModel = new OTPModel();
+        $this->adminSession = new AdminSession($this->accountModel);
     }
 
     public function showForgotPassword(): void
@@ -38,8 +40,9 @@ class AuthController
         ]);
 
         if (inventra_is_authenticated()) {
+            $this->adminSession->resolveAuthenticatedAccount();
             inventra_auth_debug_log('show_login:redirect_dashboard');
-            header('Location: index.php?url=admin/dashboard');
+            header('Location: index.php?url=' . inventra_default_authenticated_url());
             exit;
         }
 
@@ -84,9 +87,22 @@ class AuthController
             exit;
         }
 
-        $user = $this->userModel->findForAuthentication($identifier);
+        $matchingAccounts = $this->accountModel->findAccountsByIdentifier($identifier, true);
 
-        if (!$user || empty($user['password_hash']) || !password_verify($password, (string) $user['password_hash'])) {
+        if (count($matchingAccounts) > 1) {
+            $_SESSION['auth_error'] = 'Multiple accounts match that login. Please contact an administrator.';
+            header('Location: index.php?url=login');
+            exit;
+        }
+
+        $user = $matchingAccounts[0] ?? null;
+
+        if (
+            !$user ||
+            empty($user['password_hash']) ||
+            empty($user['is_active']) ||
+            !password_verify($password, (string) $user['password_hash'])
+        ) {
             inventra_auth_debug_log('login:invalid_credentials', [
                 'user_found' => (bool) $user,
             ]);
@@ -96,10 +112,12 @@ class AuthController
         }
 
         session_regenerate_id(true);
-        inventra_set_authenticated_admin($user);
+        inventra_set_authenticated_user($user);
 
         inventra_auth_debug_log('login:success', [
-            'admin_id' => (int) $user['id'],
+            'account_id' => (int) $user['id'],
+            'source' => (string) ($user['source'] ?? ''),
+            'role' => (string) ($user['role'] ?? ''),
             'email' => (string) $user['email'],
             'session_after_regenerate' => session_id(),
             'is_authenticated' => inventra_is_authenticated(),
@@ -107,13 +125,13 @@ class AuthController
 
         unset($_SESSION['auth_error'], $_SESSION['auth_success'], $_SESSION['auth_old']);
 
-        header('Location: index.php?url=admin/dashboard');
+        header('Location: index.php?url=' . inventra_default_authenticated_url());
         exit;
     }
 
     public function sendOtp(): void
     {
-        $email = trim($_POST['email'] ?? '');
+        $email = trim((string) ($_POST['email'] ?? ''));
 
         if ($email === '') {
             $_SESSION['auth_error'] = 'Please enter your email.';
@@ -121,7 +139,15 @@ class AuthController
             exit;
         }
 
-        $user = $this->userModel->findByEmail($email);
+        $matchingAccounts = $this->accountModel->findAccountsByEmail($email, true);
+
+        if (count($matchingAccounts) > 1) {
+            $_SESSION['auth_error'] = 'Multiple accounts use this email. Please contact an administrator.';
+            header('Location: index.php?url=auth/forgot-password');
+            exit;
+        }
+
+        $user = $matchingAccounts[0] ?? null;
 
         if (!$user) {
             $_SESSION['auth_error'] = 'No account found with this email.';
@@ -129,20 +155,29 @@ class AuthController
             exit;
         }
 
-        $otp = (string) random_int(100000, 999999);
-        $expiresAt = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+        $accountEmail = trim((string) ($user['email'] ?? ''));
+        $accountName = trim((string) ($user['full_name'] ?? ''));
 
-        $this->otpModel->createOTP((int) $user['id'], $email, $otp, $expiresAt);
-        try {
-            $this->sendOtpEmail($email, $user['full_name'], $otp);
-        } catch (Throwable $e) {
-            $_SESSION['auth_error'] = 'Unable to send OTP email right now. Please try again.';
-            error_log('OTP email failed for ' . $email . ': ' . $e->getMessage());
+        if ($accountEmail === '') {
+            $_SESSION['auth_error'] = 'This account does not have a valid email address saved.';
             header('Location: index.php?url=auth/forgot-password');
             exit;
         }
 
-        $_SESSION['reset_email'] = $email;
+        $otp = (string) random_int(100000, 999999);
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+
+        $this->otpModel->createOTP((int) $user['id'], $accountEmail, $otp, $expiresAt);
+        try {
+            $this->sendOtpEmail($accountEmail, $accountName, $otp);
+        } catch (Throwable $e) {
+            $_SESSION['auth_error'] = 'Unable to send OTP email right now. Please try again.';
+            error_log('OTP email failed for ' . $accountEmail . ': ' . $e->getMessage());
+            header('Location: index.php?url=auth/forgot-password');
+            exit;
+        }
+
+        $_SESSION['reset_email'] = $accountEmail;
         $_SESSION['otp_expires_at'] = $expiresAt;
         $_SESSION['auth_success'] = 'OTP sent successfully.';
         header('Location: index.php?url=auth/verify-otp');
@@ -237,7 +272,15 @@ class AuthController
             exit;
         }
 
-        $user = $this->userModel->findByEmail($email);
+        $matchingAccounts = $this->accountModel->findAccountsByEmail($email, true);
+
+        if (count($matchingAccounts) > 1) {
+            $_SESSION['auth_error'] = 'Multiple accounts use this email. Please contact an administrator.';
+            header('Location: index.php?url=auth/forgot-password');
+            exit;
+        }
+
+        $user = $matchingAccounts[0] ?? null;
 
         if (!$user) {
             $_SESSION['auth_error'] = 'No account found with this email.';
@@ -245,19 +288,29 @@ class AuthController
             exit;
         }
 
+        $accountEmail = trim((string) ($user['email'] ?? ''));
+        $accountName = trim((string) ($user['full_name'] ?? ''));
+
+        if ($accountEmail === '') {
+            $_SESSION['auth_error'] = 'This account does not have a valid email address saved.';
+            header('Location: index.php?url=auth/forgot-password');
+            exit;
+        }
+
         $otp = (string) random_int(100000, 999999);
         $expiresAt = date('Y-m-d H:i:s', strtotime('+10 minutes'));
 
-        $this->otpModel->createOTP((int) $user['id'], $email, $otp, $expiresAt);
+        $this->otpModel->createOTP((int) $user['id'], $accountEmail, $otp, $expiresAt);
         try {
-            $this->sendOtpEmail($email, $user['full_name'], $otp);
+            $this->sendOtpEmail($accountEmail, $accountName, $otp);
         } catch (Throwable $e) {
             $_SESSION['auth_error'] = 'Unable to resend OTP email right now. Please try again.';
-            error_log('OTP resend email failed for ' . $email . ': ' . $e->getMessage());
+            error_log('OTP resend email failed for ' . $accountEmail . ': ' . $e->getMessage());
             header('Location: index.php?url=auth/verify-otp');
             exit;
         }
 
+        $_SESSION['reset_email'] = $accountEmail;
         $_SESSION['otp_expires_at'] = $expiresAt;
         $_SESSION['auth_success'] = 'OTP resent successfully.';
         header('Location: index.php?url=auth/verify-otp');
@@ -307,9 +360,17 @@ class AuthController
             } else {
                 $hash = password_hash($password, PASSWORD_BCRYPT);
 
-                if ($this->userModel->updatePassword($verifiedEmail, $hash)) {
+                $matchingAccounts = $this->accountModel->findAccountsByEmail($verifiedEmail, true);
+
+                if (count($matchingAccounts) > 1) {
+                    $error = 'Multiple accounts use this email. Please contact an administrator.';
+                } elseif (!empty($matchingAccounts[0]) && $this->accountModel->updatePassword($matchingAccounts[0], $hash)) {
+                    $account = $matchingAccounts[0];
+                    $accountEmail = trim((string) ($account['email'] ?? $verifiedEmail));
+                    $accountName = trim((string) ($account['full_name'] ?? ''));
+
                     $this->logPasswordReset($verifiedEmail);
-                    $this->sendPasswordChangedEmail($verifiedEmail);
+                    $this->sendPasswordChangedEmail($accountEmail, $accountName);
 
                     unset(
                         $_SESSION['reset_email'],
@@ -322,9 +383,9 @@ class AuthController
 
                     header('Location: index.php?url=auth/password-updated');
                     exit;
+                } else {
+                    $error = 'Unable to update password. Please try again.';
                 }
-
-                $error = 'Unable to update password. Please try again.';
             }
         } else {
             $error = $_SESSION['auth_error'] ?? '';
@@ -342,9 +403,75 @@ class AuthController
         require __DIR__ . '/../views/layout/auth-shell.php';
     }
 
+    public function showAccountHome(): void
+    {
+        $account = $this->adminSession->requireAuthenticatedAccount();
+
+        if (($account['role'] ?? 'user') === 'admin') {
+            header('Location: index.php?url=admin/dashboard');
+            exit;
+        }
+
+        $error = $_SESSION['auth_error'] ?? '';
+        $success = $_SESSION['auth_success'] ?? '';
+        unset($_SESSION['auth_error'], $_SESSION['auth_success']);
+
+        $view = 'account_home';
+        require __DIR__ . '/../views/layout/auth-shell.php';
+    }
+
+    public function changeOwnPassword(): void
+    {
+        $account = $this->adminSession->requireAuthenticatedAccount();
+
+        if (($account['role'] ?? 'user') === 'admin') {
+            header('Location: index.php?url=admin/settings');
+            exit;
+        }
+
+        $error = '';
+        $success = '';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $currentPassword = (string) ($_POST['current_password'] ?? '');
+            $password = (string) ($_POST['password'] ?? '');
+            $confirmPassword = (string) ($_POST['confirm_password'] ?? '');
+
+            if ($currentPassword === '') {
+                $error = 'Current password is required.';
+            } elseif (!$this->accountModel->verifyPassword($account, $currentPassword)) {
+                $error = 'Current password is incorrect.';
+            } elseif ($password === '') {
+                $error = 'Password is required.';
+            } elseif (!$this->isValidPassword($password)) {
+                $error = 'Password must be at least 8 characters and include at least one of !, @, or #.';
+            } elseif ($password !== $confirmPassword) {
+                $error = 'Passwords do not match.';
+            } else {
+                $hash = password_hash($password, PASSWORD_BCRYPT);
+
+                if ($this->accountModel->updatePassword($account, $hash)) {
+                    $this->sendPasswordChangedEmail((string) $account['email'], (string) ($account['full_name'] ?? ''));
+                    $_SESSION['auth_success'] = 'Password updated successfully.';
+                    header('Location: index.php?url=account/password');
+                    exit;
+                }
+
+                $error = 'Unable to update password. Please try again.';
+            }
+        } else {
+            $error = $_SESSION['auth_error'] ?? '';
+            $success = $_SESSION['auth_success'] ?? '';
+            unset($_SESSION['auth_error'], $_SESSION['auth_success']);
+        }
+
+        $view = 'account_password';
+        require __DIR__ . '/../views/layout/auth-shell.php';
+    }
+
     public function logout(): void
     {
-        inventra_clear_authenticated_admin();
+        inventra_clear_authenticated_user();
         $_SESSION = [];
 
         if (ini_get('session.use_cookies')) {
@@ -399,7 +526,7 @@ class AuthController
         $mail->send();
     }
 
-    private function sendPasswordChangedEmail(string $toEmail): void
+    private function sendPasswordChangedEmail(string $toEmail, string $name = ''): void
     {
         try {
             $mailConfig = require __DIR__ . '/../config/mail.php';
@@ -416,7 +543,7 @@ class AuthController
             $mail->CharSet = 'UTF-8';
 
             $mail->setFrom($mailConfig['from_email'], $mailConfig['from_name']);
-            $mail->addAddress($toEmail);
+            $mail->addAddress($toEmail, $name);
 
             $mail->isHTML(true);
             $mail->Subject = 'Your Inventra password was changed';
@@ -425,6 +552,7 @@ class AuthController
                 <p>Your Inventra account password was changed successfully.</p>
                 <p>If this was not you, please contact support immediately.</p>
             ';
+            $mail->AltBody = "Your Inventra account password was changed successfully.\nIf this was not you, please contact support immediately.";
 
             $mail->send();
         } catch (Throwable $e) {

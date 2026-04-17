@@ -1,19 +1,19 @@
 <?php
 
-require_once __DIR__ . '/../models/UserModel.php';
+require_once __DIR__ . '/../models/AccountModel.php';
 require_once __DIR__ . '/../models/AdminSession.php';
 require_once __DIR__ . '/../models/NotificationModel.php';
 
 class NotificationController
 {
-    private UserModel $userModel;
+    private AccountModel $accountModel;
     private AdminSession $adminSession;
     private NotificationModel $notificationModel;
 
     public function __construct()
     {
-        $this->userModel = new UserModel();
-        $this->adminSession = new AdminSession($this->userModel);
+        $this->accountModel = new AccountModel();
+        $this->adminSession = new AdminSession($this->accountModel);
         $this->notificationModel = new NotificationModel();
         $this->notificationModel->ensureSchema();
     }
@@ -21,6 +21,16 @@ class NotificationController
     public function getData(): void
     {
         $admin = $this->adminSession->requireAuthenticatedAdmin();
+
+        if (($admin['source'] ?? 'admin') !== 'admin') {
+            $this->respondJson([
+                'success' => true,
+                'data' => [
+                    'notifications' => [],
+                    'unread_count' => 0,
+                ],
+            ]);
+        }
 
         $notifications = $this->notificationModel->buildNotificationViewData(
             $this->notificationModel->getNotificationsForUser((int) $admin['id'])
@@ -38,6 +48,15 @@ class NotificationController
     public function markAllAsRead(): void
     {
         $admin = $this->adminSession->requireAuthenticatedAdmin();
+
+        if (($admin['source'] ?? 'admin') !== 'admin') {
+            $this->respondJson([
+                'success' => true,
+                'message' => 'No notifications available for this account.',
+                'unread_count' => 0,
+            ]);
+        }
+
         $this->notificationModel->markAllAsReadForUser((int) $admin['id']);
 
         $this->respondJson([

@@ -13,6 +13,11 @@ define('BASE_URL', './');
 
 $url = isset($_GET['url']) ? trim($_GET['url'], '/') : '';
 
+if (inventra_is_authenticated()) {
+    require_once __DIR__ . '/models/AdminSession.php';
+    (new AdminSession())->resolveAuthenticatedAccount();
+}
+
 if ($url === 'login' || strpos($url, 'auth/') === 0) {
     require_once __DIR__ . '/controllers/AuthController.php';
     $authController = new AuthController();
@@ -62,8 +67,28 @@ if ($url === 'login' || strpos($url, 'auth/') === 0) {
         exit;
     }
 
+    if ($url === 'auth/account-password' && ($_SERVER['REQUEST_METHOD'] === 'GET' || $_SERVER['REQUEST_METHOD'] === 'POST')) {
+        $authController->changeOwnPassword();
+        exit;
+    }
+
     if ($url === 'auth/logout') {
         $authController->logout();
+        exit;
+    }
+}
+
+if (strpos($url, 'account') === 0) {
+    require_once __DIR__ . '/controllers/AuthController.php';
+    $authController = new AuthController();
+
+    if ($url === 'account/password' && ($_SERVER['REQUEST_METHOD'] === 'GET' || $_SERVER['REQUEST_METHOD'] === 'POST')) {
+        $authController->changeOwnPassword();
+        exit;
+    }
+
+    if (($url === 'account' || $url === 'account/home') && $_SERVER['REQUEST_METHOD'] === 'GET') {
+        $authController->showAccountHome();
         exit;
     }
 }
@@ -149,6 +174,9 @@ if (strpos($url, 'admin/notifications') === 0) {
 }
 
 $allowed = [
+    'account',
+    'account/home',
+    'account/password',
     'admin/dashboard',
     'admin/users',
     'admin/products',
@@ -157,18 +185,19 @@ $allowed = [
 ];
 
 if ($url === '') {
-    $url = inventra_is_authenticated() ? 'admin/dashboard' : 'login';
+    $url = inventra_is_authenticated() ? inventra_default_authenticated_url() : 'login';
 }
 
 if (!in_array($url, $allowed, true)) {
-    $url = inventra_is_authenticated() ? 'admin/dashboard' : 'login';
+    $url = inventra_is_authenticated() ? inventra_default_authenticated_url() : 'login';
 }
 
 if (strpos($url, 'admin/') === 0) {
     require_once __DIR__ . '/models/AdminSession.php';
 
     $routeGuard = new AdminSession();
-    if ($routeGuard->resolveAuthenticatedAdmin() === null) {
+    $account = $routeGuard->resolveAuthenticatedAccount();
+    if ($account === null) {
         inventra_auth_debug_log('route_guard:redirect_login', [
             'url' => $url,
             'auth_session' => $_SESSION['auth'] ?? null,
@@ -177,6 +206,12 @@ if (strpos($url, 'admin/') === 0) {
         ]);
         $_SESSION['auth_error'] = 'Please log in to continue.';
         header('Location: index.php?url=login');
+        exit;
+    }
+
+    if (($account['role'] ?? 'user') !== 'admin') {
+        $_SESSION['auth_error'] = 'You do not have permission to access that page.';
+        header('Location: index.php?url=account');
         exit;
     }
 }

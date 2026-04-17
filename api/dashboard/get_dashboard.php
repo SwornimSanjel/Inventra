@@ -3,13 +3,23 @@
 header('Content-Type: application/json');
 
 require_once __DIR__ . '/../../helpers/session.php';
+require_once __DIR__ . '/../../models/AdminSession.php';
 require_once __DIR__ . '/../../helpers/stock_status.php';
 require_once __DIR__ . '/../../config/db.php';
 
 inventra_bootstrap_session();
 
-if (!inventra_is_authenticated()) {
+ $adminSession = new AdminSession();
+ $account = $adminSession->resolveAuthenticatedAccount();
+
+if ($account === null) {
     http_response_code(401);
+    echo json_encode(['error' => 'Unauthorized']);
+    exit;
+}
+
+if (($account['role'] ?? 'user') !== 'admin') {
+    http_response_code(403);
     echo json_encode(['error' => 'Unauthorized']);
     exit;
 }
@@ -99,7 +109,7 @@ if ($usersResult instanceof mysqli_result) {
             'id' => (int) $row['id'],
             'full_name' => $row['full_name'],
             'email' => $row['email'],
-            'role' => ucfirst((string) $row['role']),
+            'role' => strtolower((string) ($row['role'] ?? '')) === 'admin' ? 'Admin' : 'User',
             'status' => ucfirst((string) $row['status']),
         ];
     }

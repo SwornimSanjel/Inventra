@@ -1,23 +1,36 @@
 <?php
 
-require_once __DIR__ . '/UserModel.php';
+require_once __DIR__ . '/AccountModel.php';
 require_once __DIR__ . '/../helpers/session.php';
 
 class AdminSession
 {
-    private UserModel $userModel;
+    private AccountModel $accountModel;
 
-    public function __construct(?UserModel $userModel = null)
+    public function __construct(?AccountModel $accountModel = null)
     {
-        $this->userModel = $userModel ?? new UserModel();
+        $this->accountModel = $accountModel ?? new AccountModel();
     }
 
     public function requireAuthenticatedAdmin(): array
     {
-        $admin = $this->resolveAuthenticatedAdmin();
+        $account = $this->requireAuthenticatedAccount();
 
-        if ($admin !== null) {
-            return $admin;
+        if (($account['role'] ?? 'user') === 'admin') {
+            return $this->resolveAuthenticatedAdmin() ?? $account;
+        }
+
+        $_SESSION['auth_error'] = 'You do not have permission to access that page.';
+        header('Location: index.php?url=' . inventra_default_authenticated_url());
+        exit;
+    }
+
+    public function requireAuthenticatedAccount(): array
+    {
+        $account = $this->resolveAuthenticatedAccount();
+
+        if ($account !== null) {
+            return $account;
         }
 
         $_SESSION['auth_error'] = 'Please log in to continue.';
@@ -25,50 +38,62 @@ class AdminSession
         exit;
     }
 
-    public function resolveAuthenticatedAdmin(): ?array
+    public function resolveAuthenticatedAccount(): ?array
     {
         if (!inventra_is_authenticated()) {
             return null;
         }
 
-        $candidateIds = [inventra_authenticated_admin_id()];
+        $accountId = inventra_authenticated_user_id();
+        $source = inventra_authenticated_user_source();
 
-        foreach ($candidateIds as $candidateId) {
-            if (is_numeric($candidateId)) {
-                $admin = $this->userModel->findSettingsProfileById((int) $candidateId);
-                if ($admin !== null) {
-                    $this->syncSession($admin);
-                    return $admin;
-                }
+        if (is_numeric($accountId) && is_string($source) && trim($source) !== '') {
+            $account = $this->accountModel->findByIdAndSource((int) $accountId, trim($source));
+            if ($account !== null && !empty($account['is_active'])) {
+                $this->syncSession($account);
+                return $account;
             }
         }
 
-        $candidateEmails = [inventra_authenticated_admin_email()];
-
-        foreach ($candidateEmails as $candidateEmail) {
-            if (is_string($candidateEmail) && trim($candidateEmail) !== '') {
-                $user = $this->userModel->findByEmail(trim($candidateEmail));
-                if ($user !== null) {
-                    $admin = $this->userModel->findSettingsProfileById((int) $user['id']);
-                    if ($admin !== null) {
-                        $this->syncSession($admin);
-                        return $admin;
-                    }
-                }
+        $fallbackEmail = inventra_authenticated_user_email();
+        if (is_string($fallbackEmail) && trim($fallbackEmail) !== '') {
+            $account = $this->accountModel->findUniqueByEmail(trim($fallbackEmail), true);
+            if ($account !== null) {
+                $this->syncSession($account);
+                return $account;
             }
         }
 
+        inventra_clear_authenticated_user();
         return null;
     }
 
-    private function syncSession(array $admin): void
+    public function resolveAuthenticatedAdmin(): ?array
     {
-        inventra_set_authenticated_admin([
-            'id' => (int) $admin['id'],
-            'email' => (string) $admin['email'],
-            'full_name' => (string) ($admin['full_name'] ?? ''),
-            'role' => (string) ($admin['role_value'] ?? $admin['role'] ?? 'admin'),
+        $account = $this->resolveAuthenticatedAccount();
+
+        if ($account === null || ($account['role'] ?? 'user') !== 'admin') {
+            return null;
+        }
+
+        $profile = $this->accountModel->findSettingsProfile($account);
+
+        return $profile !== null
+            ? array_merge($account, $profile)
+            : $account;
+    }
+
+    private function syncSession(array $account): void
+    {
+        inventra_set_authenticated_user([
+            'id' => (int) $account['id'],
+            'source' => (string) ($account['source'] ?? 'admin'),
+            'email' => (string) $account['email'],
+            'full_name' => (string) ($account['full_name'] ?? ''),
+            'role' => (string) ($account['role'] ?? 'user'),
         ]);
-        $_SESSION['admin_avatar'] = (string) ($admin['avatar'] ?? '');
+
+        $profile = $this->accountModel->findSettingsProfile($account);
+        $_SESSION['admin_avatar'] = (string) ($profile['avatar'] ?? '');
     }
 }

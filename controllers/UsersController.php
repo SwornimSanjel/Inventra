@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../models/AdminSession.php';
+require_once __DIR__ . '/../models/AccountModel.php';
 require_once __DIR__ . '/../models/UserManagementModel.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
@@ -10,11 +11,13 @@ require_once __DIR__ . '/../vendor/autoload.php';
 class UsersController
 {
     private AdminSession $adminSession;
+    private AccountModel $accountModel;
     private UserManagementModel $userManagementModel;
 
     public function __construct()
     {
         $this->adminSession = new AdminSession();
+        $this->accountModel = new AccountModel();
         $this->userManagementModel = new UserManagementModel();
         $this->userManagementModel->ensureSchema();
     }
@@ -69,6 +72,14 @@ class UsersController
             $this->jsonError('Username or email already exists.');
         }
 
+        if ($this->accountModel->emailExistsForOtherAccount($email, 'users', 0)) {
+            $this->jsonError('Email address is already used by another account.');
+        }
+
+        if ($this->accountModel->usernameExistsForOtherAccount($username, 'users', 0)) {
+            $this->jsonError('Username or email already exists.');
+        }
+
         $this->userManagementModel->createUser($fullName, $email, $username, $password, $role);
 
         $emailSent = false;
@@ -112,6 +123,14 @@ class UsersController
             $this->jsonError('Username or email already in use by another user.');
         }
 
+        if ($this->accountModel->emailExistsForOtherAccount($email, 'users', $userId)) {
+            $this->jsonError('Email address is already used by another account.');
+        }
+
+        if ($this->accountModel->usernameExistsForOtherAccount($username, 'users', $userId)) {
+            $this->jsonError('Username is already used by another account.');
+        }
+
         if (!$this->userManagementModel->findById($userId)) {
             $this->jsonError('User not found.');
         }
@@ -149,7 +168,7 @@ class UsersController
             $this->jsonError('Invalid user ID.');
         }
 
-        if (isset($_SESSION['user_id']) && $userId === (int) $_SESSION['user_id']) {
+        if (inventra_authenticated_user_source() === 'users' && $userId === (int) inventra_authenticated_user_id()) {
             $this->jsonError('You cannot delete your own account.');
         }
 

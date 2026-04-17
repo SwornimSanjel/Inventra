@@ -2,7 +2,7 @@
 $profile = [
     'first_name' => 'Swornim',
     'last_name' => 'Sanjel',
-    'email' => 'admin@inventra.com',
+    'email' => '',
     'phone' => '+977 9841222890',
     'role' => 'System Admin',
     'photo' => '/inventra-ui/public/images/me.jpg',

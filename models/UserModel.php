@@ -322,9 +322,10 @@ class UserModel
         }
 
         $avatar = str_replace('\\', '/', trim($avatar));
+        $baseUrl = defined('BASE_URL') ? BASE_URL : './';
 
         if (strpos($avatar, 'public/') === 0) {
-            return BASE_URL . ltrim($avatar, '/');
+            return $baseUrl . ltrim($avatar, '/');
         }
 
         return $avatar;
@@ -343,6 +344,5 @@ class UserModel
         $insert->execute([$adminId, $currentHash]);
     }
 }
-
 
 

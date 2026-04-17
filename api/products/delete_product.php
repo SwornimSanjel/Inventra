@@ -3,12 +3,22 @@
 header('Content-Type: application/json');
 
 require_once __DIR__ . '/../../helpers/session.php';
+require_once __DIR__ . '/../../models/AdminSession.php';
 require_once __DIR__ . '/../../config/db.php';
 
 inventra_bootstrap_session();
 
-if (!inventra_is_authenticated()) {
+ $adminSession = new AdminSession();
+ $account = $adminSession->resolveAuthenticatedAccount();
+
+if ($account === null) {
     http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    exit;
+}
+
+if (($account['role'] ?? 'user') !== 'admin') {
+    http_response_code(403);
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
 }
