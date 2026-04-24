@@ -6,6 +6,10 @@ require_once __DIR__ . '/../helpers/session.php';
 class AdminSession
 {
     private AccountModel $accountModel;
+    private static bool $accountResolved = false;
+    private static ?array $resolvedAccount = null;
+    private static bool $adminResolved = false;
+    private static ?array $resolvedAdmin = null;
 
     public function __construct(?AccountModel $accountModel = null)
     {
@@ -40,7 +44,13 @@ class AdminSession
 
     public function resolveAuthenticatedAccount(): ?array
     {
+        if (self::$accountResolved) {
+            return self::$resolvedAccount;
+        }
+
         if (!inventra_is_authenticated()) {
+            self::$accountResolved = true;
+            self::$resolvedAccount = null;
             return null;
         }
 
@@ -51,6 +61,8 @@ class AdminSession
             $account = $this->accountModel->findByIdAndSource((int) $accountId, trim($source));
             if ($account !== null && !empty($account['is_active'])) {
                 $this->syncSession($account);
+                self::$accountResolved = true;
+                self::$resolvedAccount = $account;
                 return $account;
             }
         }
@@ -60,27 +72,41 @@ class AdminSession
             $account = $this->accountModel->findUniqueByEmail(trim($fallbackEmail), true);
             if ($account !== null) {
                 $this->syncSession($account);
+                self::$accountResolved = true;
+                self::$resolvedAccount = $account;
                 return $account;
             }
         }
 
         inventra_clear_authenticated_user();
+        self::$accountResolved = true;
+        self::$resolvedAccount = null;
         return null;
     }
 
     public function resolveAuthenticatedAdmin(): ?array
     {
+        if (self::$adminResolved) {
+            return self::$resolvedAdmin;
+        }
+
         $account = $this->resolveAuthenticatedAccount();
 
         if ($account === null || ($account['role'] ?? 'user') !== 'admin') {
+            self::$adminResolved = true;
+            self::$resolvedAdmin = null;
             return null;
         }
 
         $profile = $this->accountModel->findSettingsProfile($account);
-
-        return $profile !== null
+        $resolvedAdmin = $profile !== null
             ? array_merge($account, $profile)
             : $account;
+
+        self::$adminResolved = true;
+        self::$resolvedAdmin = $resolvedAdmin;
+
+        return $resolvedAdmin;
     }
 
     private function syncSession(array $account): void
@@ -93,7 +119,8 @@ class AdminSession
             'role' => (string) ($account['role'] ?? 'user'),
         ]);
 
-        $profile = $this->accountModel->findSettingsProfile($account);
-        $_SESSION['admin_avatar'] = (string) ($profile['avatar'] ?? '');
+        if (array_key_exists('avatar', $account)) {
+            $_SESSION['admin_avatar'] = (string) ($account['avatar'] ?? '');
+        }
     }
 }

@@ -48,29 +48,27 @@ $result = $conn->query("
 $movements = [];
 $lastRecordText = 'No movements recorded yet';
 
-if ($result instanceof mysqli_result) {
-    while ($row = $result->fetch_assoc()) {
-        $timestamp = strtotime((string) $row['created_at']);
-        $label = $timestamp ? date('M d, Y h:i A', $timestamp) : (string) $row['created_at'];
+foreach ($result->fetchAll() as $row) {
+    $timestamp = strtotime((string) $row['created_at']);
+    $label = $timestamp ? date('M d, Y h:i A', $timestamp) : (string) $row['created_at'];
 
-        if ($lastRecordText === 'No movements recorded yet' && $timestamp) {
-            $lastRecordText = 'Last record: ' . date('M d, Y h:i A', $timestamp);
-        }
-
-        $movements[] = [
-            'id' => (int) $row['id'],
-            'reference' => $row['reference'],
-            'movement_type' => $row['movement_type'],
-            'quantity' => (int) $row['quantity'],
-            'full_name' => $row['full_name'],
-            'payment_status' => $row['payment_status'],
-            'payment_method' => $row['payment_method'],
-            'incoming_status' => $row['incoming_status'],
-            'movement_status' => $row['movement_status'],
-            'created_at_label' => $label,
-            'product_name' => $row['product_name'],
-        ];
+    if ($lastRecordText === 'No movements recorded yet' && $timestamp) {
+        $lastRecordText = 'Last record: ' . date('M d, Y h:i A', $timestamp);
     }
+
+    $movements[] = [
+        'id' => (int) $row['id'],
+        'reference' => $row['reference'],
+        'movement_type' => $row['movement_type'],
+        'quantity' => (int) $row['quantity'],
+        'full_name' => $row['full_name'],
+        'payment_status' => $row['payment_status'],
+        'payment_method' => $row['payment_method'],
+        'incoming_status' => $row['incoming_status'],
+        'movement_status' => $row['movement_status'],
+        'created_at_label' => $label,
+        'product_name' => $row['product_name'],
+    ];
 }
 
 echo json_encode([

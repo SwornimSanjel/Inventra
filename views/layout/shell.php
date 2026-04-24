@@ -23,7 +23,6 @@ if (strpos($url, 'admin/') === 0) {
 
   if ($topbarAdmin !== null && (($topbarAdmin['source'] ?? 'admin') === 'admin')) {
     $topbarNotificationModel = new NotificationModel();
-    $topbarNotificationModel->ensureSchema();
     $topbarNotifications = $topbarNotificationModel->buildNotificationViewData(
       $topbarNotificationModel->getNotificationsForUser((int) $topbarAdmin['id'])
     );

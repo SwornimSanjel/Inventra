@@ -19,7 +19,6 @@ class UsersController
         $this->adminSession = new AdminSession();
         $this->accountModel = new AccountModel();
         $this->userManagementModel = new UserManagementModel();
-        $this->userManagementModel->ensureSchema();
     }
 
     public function show(): void

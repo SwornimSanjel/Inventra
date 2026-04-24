@@ -16,9 +16,6 @@ class AccountModel
         $this->db = Database::connect();
         $this->adminModel = new UserModel();
         $this->userManagementModel = new UserManagementModel();
-        $this->adminModel->ensureAdminSettingsSchema();
-        $this->adminModel->ensurePasswordHistorySchema();
-        $this->userManagementModel->ensureSchema();
     }
 
     public function findAccountsByIdentifier(string $identifier, bool $activeOnly = true): array
@@ -301,12 +298,12 @@ class AccountModel
 
         if ($this->usersTableHasColumn('notify_low_stock')) {
             $assignments[] = 'notify_low_stock = ?';
-            $params[] = $lowStockAlerts ? 1 : 0;
+            $params[] = $lowStockAlerts;
         }
 
         if ($this->usersTableHasColumn('notify_weekly_summary')) {
             $assignments[] = 'notify_weekly_summary = ?';
-            $params[] = $weeklySummaryReports ? 1 : 0;
+            $params[] = $weeklySummaryReports;
         }
 
         if ($assignments === []) {
@@ -528,8 +525,7 @@ class AccountModel
     private function usersTableExists(): bool
     {
         try {
-            $stmt = $this->db->query("SHOW TABLES LIKE 'users'");
-            return (bool) $stmt->fetchColumn();
+            return Database::tableExists('users');
         } catch (Throwable) {
             return false;
         }
@@ -543,8 +539,11 @@ class AccountModel
 
         if ($this->usersColumns === null) {
             $this->usersColumns = [];
-            foreach ($this->db->query('SHOW COLUMNS FROM users')->fetchAll() as $row) {
-                $this->usersColumns[] = (string) $row['Field'];
+            $candidateColumns = ['id', 'full_name', 'username', 'email', 'role', 'status', 'password', 'phone', 'avatar', 'notify_low_stock', 'notify_weekly_summary'];
+            foreach ($candidateColumns as $candidateColumn) {
+                if (Database::columnExists('users', $candidateColumn)) {
+                    $this->usersColumns[] = $candidateColumn;
+                }
             }
         }
 

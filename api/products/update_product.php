@@ -47,31 +47,27 @@ if ($categoryRaw === 'new') {
     }
 
     $existingCategoryStmt = $conn->prepare('SELECT id, name FROM categories WHERE LOWER(name) = LOWER(?) LIMIT 1');
-    $existingCategoryStmt->bind_param('s', $newCategory);
-    $existingCategoryStmt->execute();
-    $existingCategory = $existingCategoryStmt->get_result()->fetch_assoc();
+    $existingCategoryStmt->execute([$newCategory]);
+    $existingCategory = $existingCategoryStmt->fetch();
 
     if ($existingCategory) {
         $categoryId = (int) $existingCategory['id'];
         $categoryRow = ['name' => $existingCategory['name']];
     } else {
-        $insertCategoryStmt = $conn->prepare('INSERT INTO categories (name, description) VALUES (?, ?)');
-        $insertCategoryStmt->bind_param('ss', $newCategory, $newCategoryDescription);
+        $insertCategoryStmt = $conn->prepare('INSERT INTO categories (name, description) VALUES (?, ?) RETURNING id');
 
-        if (!$insertCategoryStmt->execute()) {
+        if (!$insertCategoryStmt->execute([$newCategory, $newCategoryDescription])) {
             echo json_encode(['success' => false, 'message' => 'Unable to create the new category right now.']);
             exit;
         }
 
-        $categoryId = (int) $insertCategoryStmt->insert_id;
+        $categoryId = (int) $insertCategoryStmt->fetchColumn();
         $categoryRow = ['name' => $newCategory];
     }
 } else {
     $categoryStmt = $conn->prepare('SELECT name FROM categories WHERE id = ? LIMIT 1');
-    $categoryStmt->bind_param('i', $categoryId);
-    $categoryStmt->execute();
-    $categoryResult = $categoryStmt->get_result();
-    $categoryRow = $categoryResult->fetch_assoc();
+    $categoryStmt->execute([$categoryId]);
+    $categoryRow = $categoryStmt->fetch();
 
     if (!$categoryRow) {
         echo json_encode(['success' => false, 'message' => 'Selected category was not found.']);
@@ -80,10 +76,8 @@ if ($categoryRaw === 'new') {
 }
 
 $existingStmt = $conn->prepare('SELECT image FROM products WHERE id = ? LIMIT 1');
-$existingStmt->bind_param('i', $id);
-$existingStmt->execute();
-$existingResult = $existingStmt->get_result();
-$existingProduct = $existingResult->fetch_assoc();
+$existingStmt->execute([$id]);
+$existingProduct = $existingStmt->fetch();
 
 if (!$existingProduct) {
     echo json_encode(['success' => false, 'message' => 'Product not found.']);
@@ -131,8 +125,7 @@ $stmt = $conn->prepare("
 ");
 
 $categoryName = $categoryRow['name'];
-$stmt->bind_param(
-    'issidiissi',
+if (!$stmt->execute([
     $categoryId,
     $name,
     $categoryName,
@@ -142,10 +135,8 @@ $stmt->bind_param(
     $upper,
     $image,
     $description,
-    $id
-);
-
-if (!$stmt->execute()) {
+    $id,
+])) {
     echo json_encode(['success' => false, 'message' => 'Unable to update product right now.']);
     exit;
 }

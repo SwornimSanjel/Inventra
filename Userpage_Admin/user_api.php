@@ -118,7 +118,7 @@ function createUser() {
     // Insert into database
     $stmt = $pdo->prepare(
         "INSERT INTO users (full_name, username, email, password, role, status, created_at) 
-         VALUES (?, ?, ?, ?, ?, 'active', NOW())"
+         VALUES (?, ?, ?, ?, ?, 'active', CURRENT_TIMESTAMP)"
     );
     
     try {

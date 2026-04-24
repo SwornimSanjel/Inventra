@@ -41,9 +41,8 @@ $allowedIncomingStatuses = ['order_dispatched', 'in_transit', 'received'];
 $allowedOutgoingStatuses = ['dispatched', 'hub', 'delivered'];
 
 $stmt = $conn->prepare('SELECT id, movement_type FROM stock_movements WHERE id = ? LIMIT 1');
-$stmt->bind_param('i', $movementId);
-$stmt->execute();
-$movement = $stmt->get_result()->fetch_assoc();
+$stmt->execute([$movementId]);
+$movement = $stmt->fetch();
 
 if (!$movement) {
     http_response_code(404);
@@ -61,8 +60,7 @@ if ($movementType === 'in') {
     }
 
     $updateStmt = $conn->prepare('UPDATE stock_movements SET incoming_status = ? WHERE id = ?');
-    $updateStmt->bind_param('si', $status, $movementId);
-    $updateStmt->execute();
+    $updateStmt->execute([$status, $movementId]);
 } else {
     if (!in_array($status, $allowedOutgoingStatuses, true)) {
         http_response_code(422);
@@ -71,8 +69,7 @@ if ($movementType === 'in') {
     }
 
     $updateStmt = $conn->prepare('UPDATE stock_movements SET movement_status = ? WHERE id = ?');
-    $updateStmt->bind_param('si', $status, $movementId);
-    $updateStmt->execute();
+    $updateStmt->execute([$status, $movementId]);
 }
 
 echo json_encode([

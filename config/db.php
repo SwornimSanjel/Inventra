@@ -1,16 +1,10 @@
 <?php
+require_once __DIR__ . '/database.php';
 
-$host = '127.0.0.1';
-$user = 'root';
-$pass = '';
-$db = 'inventra_merge_app';
-
-$conn = new mysqli($host, $user, $pass, $db);
-
-if ($conn->connect_error) {
-die('Connection failed: ' . $conn->connect_error);
+try {
+    $conn = Database::connect();
+} catch (Throwable $e) {
+    die('Database Connection Failed: ' . $e->getMessage());
 }
-
-$conn->set_charset('utf8mb4');
 
 ?>

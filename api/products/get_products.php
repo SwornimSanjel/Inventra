@@ -47,13 +47,11 @@ $sql = "
     WHERE 1=1
 ";
 
-$types = '';
 $params = [];
 
 if ($search !== '') {
     $sql .= ' AND (p.name LIKE ? OR COALESCE(p.description, "") LIKE ? OR COALESCE(c.name, p.category, "") LIKE ?)';
     $like = '%' . $search . '%';
-    $types .= 'sss';
     $params[] = $like;
     $params[] = $like;
     $params[] = $like;
@@ -61,23 +59,17 @@ if ($search !== '') {
 
 if ($categoryId > 0) {
     $sql .= ' AND p.category_id = ?';
-    $types .= 'i';
     $params[] = $categoryId;
 }
 
 $sql .= ' ORDER BY p.name ASC';
 
 $stmt = $conn->prepare($sql);
-
-if ($types !== '') {
-    $stmt->bind_param($types, ...$params);
-}
-
-$stmt->execute();
-$result = $stmt->get_result();
+$stmt->execute($params);
+$result = $stmt;
 $data = [];
 
-while ($row = $result->fetch_assoc()) {
+while ($row = $result->fetch()) {
     $computedStatus = strtolower(str_replace(' ', '_', getStockStatus(
         (int) $row['qty'],
         (int) $row['lower_limit'],

@@ -15,7 +15,6 @@ class NotificationController
         $this->accountModel = new AccountModel();
         $this->adminSession = new AdminSession($this->accountModel);
         $this->notificationModel = new NotificationModel();
-        $this->notificationModel->ensureSchema();
     }
 
     public function getData(): void

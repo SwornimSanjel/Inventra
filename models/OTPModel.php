@@ -26,11 +26,12 @@ class OTPModel
                 created_at,
                 updated_at
             )
-            VALUES (?, ?, ?, 0, 0, NULL, ?, NULL, NOW(), NOW())
+            VALUES (?, ?, ?, 0, FALSE, NULL, ?, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            RETURNING id
         ");
         $stmt->execute([$userId, $email, $otp, $expiresAt]);
 
-        return (int) $this->db->lastInsertId();
+        return (int) $stmt->fetchColumn();
     }
 
     public function findLatestByEmail(string $email): ?array
@@ -52,8 +53,8 @@ class OTPModel
             SELECT *
             FROM password_resets
             WHERE email = ?
-              AND is_verified = 0
-              AND expires_at > NOW()
+              AND is_verified = FALSE
+              AND expires_at > CURRENT_TIMESTAMP
             ORDER BY created_at DESC, id DESC
             LIMIT 1
         ");
@@ -67,7 +68,7 @@ class OTPModel
     {
         $stmt = $this->db->prepare("
             UPDATE password_resets
-            SET attempts = attempts + 1, updated_at = NOW()
+            SET attempts = attempts + 1, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
         ");
         $stmt->execute([$id]);
@@ -77,7 +78,7 @@ class OTPModel
     {
         $stmt = $this->db->prepare("
             UPDATE password_resets
-            SET is_verified = 1, reset_token = ?, verified_at = NOW(), updated_at = NOW()
+            SET is_verified = TRUE, reset_token = ?, verified_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
         ");
         $stmt->execute([$resetToken, $id]);
@@ -87,7 +88,7 @@ class OTPModel
     {
         $stmt = $this->db->prepare("
             SELECT * FROM password_resets
-            WHERE reset_token = ? AND is_verified = 1
+            WHERE reset_token = ? AND is_verified = TRUE
             ORDER BY id DESC
             LIMIT 1
         ");
@@ -96,6 +97,4 @@ class OTPModel
         return $row ?: null;
     }
 }
-
-
 

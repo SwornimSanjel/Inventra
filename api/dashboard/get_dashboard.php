@@ -29,10 +29,10 @@ $viewAll = isset($_GET['view_all']);
 $limit = 5;
 $offset = ($page - 1) * $limit;
 
-$totalProducts = (int) (($conn->query('SELECT COUNT(*) AS total FROM products')->fetch_assoc()['total'] ?? 0));
-$totalCategories = (int) (($conn->query('SELECT COUNT(*) AS total FROM categories')->fetch_assoc()['total'] ?? 0));
-$activeUsers = (int) (($conn->query("SELECT COUNT(*) AS total FROM users WHERE status = 'active'")->fetch_assoc()['total'] ?? 0));
-$lowStockCount = (int) (($conn->query('SELECT COUNT(*) AS total FROM products WHERE qty <= (lower_limit + 5)')->fetch_assoc()['total'] ?? 0));
+$totalProducts = (int) ($conn->query('SELECT COUNT(*) AS total FROM products')->fetch()['total'] ?? 0);
+$totalCategories = (int) ($conn->query('SELECT COUNT(*) AS total FROM categories')->fetch()['total'] ?? 0);
+$activeUsers = (int) ($conn->query("SELECT COUNT(*) AS total FROM users WHERE status = 'active'")->fetch()['total'] ?? 0);
+$lowStockCount = (int) ($conn->query('SELECT COUNT(*) AS total FROM products WHERE qty <= (lower_limit + 5)')->fetch()['total'] ?? 0);
 
 $productsResult = $conn->query("
     SELECT
@@ -49,21 +49,19 @@ $productsResult = $conn->query("
 ");
 
 $products = [];
-if ($productsResult instanceof mysqli_result) {
-    while ($row = $productsResult->fetch_assoc()) {
-        $products[] = [
-            'id' => (int) $row['id'],
-            'name' => $row['name'],
-            'category_name' => $row['category_name'],
-            'stock' => (int) $row['qty'],
-            'price' => (float) $row['unit_price'],
-            'status' => strtolower(str_replace(' ', '_', getStockStatus(
-                (int) $row['qty'],
-                (int) $row['lower_limit'],
-                (int) $row['upper_limit']
-            ))),
-        ];
-    }
+foreach ($productsResult->fetchAll() as $row) {
+    $products[] = [
+        'id' => (int) $row['id'],
+        'name' => $row['name'],
+        'category_name' => $row['category_name'],
+        'stock' => (int) $row['qty'],
+        'price' => (float) $row['unit_price'],
+        'status' => strtolower(str_replace(' ', '_', getStockStatus(
+            (int) $row['qty'],
+            (int) $row['lower_limit'],
+            (int) $row['upper_limit']
+        ))),
+    ];
 }
 
 $categoriesResult = $conn->query("
@@ -79,15 +77,13 @@ $categoriesResult = $conn->query("
 ");
 
 $categories = [];
-if ($categoriesResult instanceof mysqli_result) {
-    while ($row = $categoriesResult->fetch_assoc()) {
-        $categories[] = [
-            'id' => (int) $row['id'],
-            'name' => $row['name'],
-            'description' => $row['description'],
-            'product_count' => (int) $row['product_count'],
-        ];
-    }
+foreach ($categoriesResult->fetchAll() as $row) {
+    $categories[] = [
+        'id' => (int) $row['id'],
+        'name' => $row['name'],
+        'description' => $row['description'],
+        'product_count' => (int) $row['product_count'],
+    ];
 }
 
 $usersResult = $conn->query("
@@ -103,16 +99,14 @@ $usersResult = $conn->query("
 ");
 
 $users = [];
-if ($usersResult instanceof mysqli_result) {
-    while ($row = $usersResult->fetch_assoc()) {
-        $users[] = [
-            'id' => (int) $row['id'],
-            'full_name' => $row['full_name'],
-            'email' => $row['email'],
-            'role' => strtolower((string) ($row['role'] ?? '')) === 'admin' ? 'Admin' : 'User',
-            'status' => ucfirst((string) $row['status']),
-        ];
-    }
+foreach ($usersResult->fetchAll() as $row) {
+    $users[] = [
+        'id' => (int) $row['id'],
+        'full_name' => $row['full_name'],
+        'email' => $row['email'],
+        'role' => strtolower((string) ($row['role'] ?? '')) === 'admin' ? 'Admin' : 'User',
+        'status' => ucfirst((string) $row['status']),
+    ];
 }
 
 $lowStockSql = "
@@ -132,30 +126,29 @@ $lowStockSql = "
 if (!$viewAll) {
     $lowStockSql .= ' LIMIT ? OFFSET ?';
     $stmt = $conn->prepare($lowStockSql);
-    $stmt->bind_param('ii', $limit, $offset);
+    $stmt->bindValue(1, $limit, PDO::PARAM_INT);
+    $stmt->bindValue(2, $offset, PDO::PARAM_INT);
     $stmt->execute();
-    $result = $stmt->get_result();
+    $result = $stmt;
 } else {
     $result = $conn->query($lowStockSql);
 }
 
 $lowStock = [];
 
-if ($result instanceof mysqli_result) {
-    while ($row = $result->fetch_assoc()) {
-        $lowStock[] = [
-            'id' => (int) $row['id'],
-            'name' => $row['name'],
-            'category_name' => $row['category_name'],
-            'stock' => (int) $row['qty'],
-            'threshold' => 'L:' . (int) $row['lower_limit'] . ' / U:' . (int) $row['upper_limit'],
-            'status' => strtolower(str_replace(' ', '_', getStockStatus(
-                (int) $row['qty'],
-                (int) $row['lower_limit'],
-                (int) $row['upper_limit']
-            ))),
-        ];
-    }
+foreach ($result->fetchAll() as $row) {
+    $lowStock[] = [
+        'id' => (int) $row['id'],
+        'name' => $row['name'],
+        'category_name' => $row['category_name'],
+        'stock' => (int) $row['qty'],
+        'threshold' => 'L:' . (int) $row['lower_limit'] . ' / U:' . (int) $row['upper_limit'],
+        'status' => strtolower(str_replace(' ', '_', getStockStatus(
+            (int) $row['qty'],
+            (int) $row['lower_limit'],
+            (int) $row['upper_limit']
+        ))),
+    ];
 }
 
 $totalPages = $viewAll ? 1 : max(1, (int) ceil($lowStockCount / $limit));

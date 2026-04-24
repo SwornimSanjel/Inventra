@@ -46,13 +46,12 @@ if ($productId <= 0) {
     exit;
 }
 
-$conn->begin_transaction();
+$conn->beginTransaction();
 
 try {
     $productStmt = $conn->prepare('SELECT id, name, qty FROM products WHERE id = ? LIMIT 1 FOR UPDATE');
-    $productStmt->bind_param('i', $productId);
-    $productStmt->execute();
-    $product = $productStmt->get_result()->fetch_assoc();
+    $productStmt->execute([$productId]);
+    $product = $productStmt->fetch();
 
     if (!$product) {
         throw new RuntimeException('Product not found.');
@@ -67,8 +66,7 @@ try {
     $newQty = $movementType === 'in' ? $currentQty + $quantity : $currentQty - $quantity;
 
     $updateStmt = $conn->prepare('UPDATE products SET qty = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
-    $updateStmt->bind_param('ii', $newQty, $productId);
-    $updateStmt->execute();
+    $updateStmt->execute([$newQty, $productId]);
 
     $reference = inventra_generate_stock_reference();
 
@@ -90,8 +88,7 @@ try {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
 
-    $movementStmt->bind_param(
-        'sisisssddssss',
+    $movementStmt->execute([
         $reference,
         $productId,
         $movementType,
@@ -104,9 +101,8 @@ try {
         $paymentStatus,
         $paymentMethod,
         $incomingStatus,
-        $movementStatus
-    );
-    $movementStmt->execute();
+        $movementStatus,
+    ]);
 
     $conn->commit();
 
@@ -117,7 +113,9 @@ try {
         'new_stock' => $newQty,
     ]);
 } catch (Throwable $exception) {
-    $conn->rollback();
+    if ($conn->inTransaction()) {
+        $conn->rollBack();
+    }
     echo json_encode([
         'success' => false,
         'message' => $exception->getMessage(),

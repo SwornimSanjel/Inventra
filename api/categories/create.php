@@ -32,19 +32,17 @@ if ($name === '') {
 }
 
 $existingStmt = $conn->prepare('SELECT id FROM categories WHERE LOWER(name) = LOWER(?) LIMIT 1');
-$existingStmt->bind_param('s', $name);
-$existingStmt->execute();
-$existing = $existingStmt->get_result()->fetch_assoc();
+$existingStmt->execute([$name]);
+$existing = $existingStmt->fetch();
 
 if ($existing) {
     echo json_encode(['success' => false, 'message' => 'That category already exists.']);
     exit;
 }
 
-$stmt = $conn->prepare('INSERT INTO categories (name, description) VALUES (?, ?)');
-$stmt->bind_param('ss', $name, $description);
+$stmt = $conn->prepare('INSERT INTO categories (name, description) VALUES (?, ?) RETURNING id');
 
-if (!$stmt->execute()) {
+if (!$stmt->execute([$name, $description])) {
     echo json_encode(['success' => false, 'message' => 'Unable to create category right now.']);
     exit;
 }
@@ -52,5 +50,5 @@ if (!$stmt->execute()) {
 echo json_encode([
     'success' => true,
     'message' => 'Category added successfully.',
-    'category_id' => (int) $stmt->insert_id,
+    'category_id' => (int) $stmt->fetchColumn(),
 ]);
