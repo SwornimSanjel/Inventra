@@ -123,6 +123,36 @@ if (strpos($url, 'admin/settings') === 0) {
     }
 }
 
+if (strpos($url, 'user/settings') === 0) {
+    require_once __DIR__ . '/controllers/UserSettingsController.php';
+    $userSettingsController = new UserSettingsController();
+
+    if ($url === 'user/settings/data' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+        $userSettingsController->getProfileData();
+        exit;
+    }
+
+    if ($url === 'user/settings/profile' && in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'PATCH'], true)) {
+        $userSettingsController->updateProfile();
+        exit;
+    }
+
+    if ($url === 'user/settings/password' && in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'PATCH'], true)) {
+        $userSettingsController->updatePassword();
+        exit;
+    }
+
+    if ($url === 'user/settings/notifications' && in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'PATCH'], true)) {
+        $userSettingsController->updateNotifications();
+        exit;
+    }
+
+    if ($url === 'user/settings' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+        $userSettingsController->show();
+        exit;
+    }
+}
+
 if (strpos($url, 'admin/users') === 0) {
     require_once __DIR__ . '/controllers/UsersController.php';
     $usersController = new UsersController();
@@ -181,7 +211,11 @@ $allowed = [
     'admin/users',
     'admin/products',
     'admin/stock-update',
-    'admin/settings'
+    'admin/settings',
+    'user/dashboard',
+    'user/products',
+    'user/stock-update',
+    'user/settings'
 ];
 
 if ($url === '') {
@@ -212,6 +246,24 @@ if (strpos($url, 'admin/') === 0) {
     if (($account['role'] ?? 'user') !== 'admin') {
         $_SESSION['auth_error'] = 'You do not have permission to access that page.';
         header('Location: index.php?url=account');
+        exit;
+    }
+}
+
+if (strpos($url, 'user/') === 0) {
+    require_once __DIR__ . '/models/AdminSession.php';
+
+    $routeGuard = new AdminSession();
+    $account = $routeGuard->resolveAuthenticatedAccount();
+    if ($account === null) {
+        $_SESSION['auth_error'] = 'Please log in to continue.';
+        header('Location: index.php?url=login');
+        exit;
+    }
+
+    if (($account['role'] ?? 'user') !== 'user') {
+        $_SESSION['auth_error'] = 'You do not have permission to access that page.';
+        header('Location: index.php?url=admin/dashboard');
         exit;
     }
 }

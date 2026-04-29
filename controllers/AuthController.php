@@ -412,12 +412,8 @@ class AuthController
             exit;
         }
 
-        $error = $_SESSION['auth_error'] ?? '';
-        $success = $_SESSION['auth_success'] ?? '';
-        unset($_SESSION['auth_error'], $_SESSION['auth_success']);
-
-        $view = 'account_home';
-        require __DIR__ . '/../views/layout/auth-shell.php';
+        header('Location: index.php?url=user/settings');
+        exit;
     }
 
     public function changeOwnPassword(): void

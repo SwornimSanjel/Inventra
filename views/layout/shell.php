@@ -15,6 +15,7 @@ function asset_version(string $relativePath): string
 $topbarAdmin = null;
 $topbarNotifications = [];
 $topbarUnreadCount = 0;
+$userPanelAccount = null;
 
 if (strpos($url, 'admin/') === 0) {
   $topbarAccountModel = new AccountModel();
@@ -27,6 +28,15 @@ if (strpos($url, 'admin/') === 0) {
       $topbarNotificationModel->getNotificationsForUser((int) $topbarAdmin['id'])
     );
     $topbarUnreadCount = $topbarNotificationModel->countUnreadForUser((int) $topbarAdmin['id']);
+  }
+}
+
+if (strpos($url, 'user/') === 0) {
+  $userPanelSession = new AdminSession(new AccountModel());
+  $resolvedUserAccount = $userPanelSession->resolveAuthenticatedAccount();
+
+  if ($resolvedUserAccount !== null && ($resolvedUserAccount['source'] ?? '') === 'users') {
+    $userPanelAccount = (new AccountModel())->findSettingsProfile($resolvedUserAccount) ?? $resolvedUserAccount;
   }
 }
 ?>
@@ -47,14 +57,25 @@ if (strpos($url, 'admin/') === 0) {
   <link rel="stylesheet" href="<?= BASE_URL ?>public/css/stock-update.css<?= asset_version('public/css/stock-update.css') ?>">
   <link rel="stylesheet" href="<?= BASE_URL ?>public/css/users.css<?= asset_version('public/css/users.css') ?>">
   <link rel="stylesheet" href="<?= BASE_URL ?>public/css/settings.css<?= asset_version('public/css/settings.css') ?>">
+  <link rel="stylesheet" href="<?= BASE_URL ?>public/css/user-settings.css<?= asset_version('public/css/user-settings.css') ?>">
 </head>
 
 <body>
   <div class="app-layout">
-    <?php require __DIR__ . '/../partials/admin_sidebar.php'; ?>
+    <?php if (strpos($url, 'admin/') === 0): ?>
+      <?php require __DIR__ . '/../partials/admin_sidebar.php'; ?>
+    <?php endif; ?>
+    <?php if (strpos($url, 'user/') === 0): ?>
+      <?php require __DIR__ . '/../user/layout/user_sidebar.php'; ?>
+    <?php endif; ?>
 
     <div class="app-main">
-      <?php require __DIR__ . '/../partials/topbar.php'; ?>
+      <?php if (strpos($url, 'admin/') === 0): ?>
+        <?php require __DIR__ . '/../partials/topbar.php'; ?>
+      <?php endif; ?>
+      <?php if (strpos($url, 'user/') === 0): ?>
+        <?php require __DIR__ . '/../user/layout/user_header.php'; ?>
+      <?php endif; ?>
 
       <main class="app-content">
         <?php if ($url === 'admin/dashboard') require __DIR__ . '/../admin/dashboard.php'; ?>
@@ -62,6 +83,10 @@ if (strpos($url, 'admin/') === 0) {
         <?php if ($url === 'admin/products') require __DIR__ . '/../admin/products.php'; ?>
         <?php if ($url === 'admin/stock-update') require __DIR__ . '/../admin/stock_update.php'; ?>
         <?php if ($url === 'admin/settings') require __DIR__ . '/../admin/settings_page.php'; ?>
+        <?php if ($url === 'user/dashboard') require __DIR__ . '/../user/dashboard.php'; ?>
+        <?php if ($url === 'user/products') require __DIR__ . '/../user/products.php'; ?>
+        <?php if ($url === 'user/stock-update') require __DIR__ . '/../user/stock_update.php'; ?>
+        <?php if ($url === 'user/settings') require __DIR__ . '/../user/settings.php'; ?>
       </main>
     
     </div>
@@ -82,6 +107,9 @@ if (strpos($url, 'admin/') === 0) {
   <?php endif; ?>
   <?php if ($url === 'admin/settings'): ?>
     <script src="<?= BASE_URL ?>public/js/settings.js<?= asset_version('public/js/settings.js') ?>"></script>
+  <?php endif; ?>
+  <?php if ($url === 'user/settings'): ?>
+    <script src="<?= BASE_URL ?>public/js/user-settings.js<?= asset_version('public/js/user-settings.js') ?>"></script>
   <?php endif; ?>
 
 </body>
