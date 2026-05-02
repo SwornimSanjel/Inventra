@@ -1,4 +1,10 @@
 <?php
+/**
+ * Add Product API
+ * 
+ * Handles the creation of new products, including optional new category creation
+ * and image uploads.
+ */
 
 header('Content-Type: application/json');
 
@@ -9,16 +15,18 @@ require_once __DIR__ . '/../../config/db.php';
 
 inventra_bootstrap_session();
 
- $adminSession = new AdminSession();
- $account = $adminSession->resolveAuthenticatedAccount();
+  $adminSession = new AdminSession();
+  $account = $adminSession->resolveAuthenticatedAccount();
 
-if ($account === null) {
+ // Ensure the user is authenticated before proceeding
+ if ($account === null) {
     http_response_code(401);
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
 }
 
-if (($account['role'] ?? 'user') !== 'admin') {
+ // Verify permissions (Allow both admins and standard users)
+if (!in_array($account['role'] ?? 'user', ['admin', 'user'], true)) {
     http_response_code(403);
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
@@ -40,6 +48,7 @@ if ($name === '' || ($categoryId <= 0 && $categoryRaw !== 'new')) {
     exit;
 }
 
+// Handle category selection or creation
 if ($categoryRaw === 'new') {
     if ($newCategory === '') {
         echo json_encode(['success' => false, 'message' => 'Please enter a name for the new category.']);
@@ -77,6 +86,7 @@ if ($categoryRaw === 'new') {
 
 $image = '';
 
+// Process product image upload if provided
 if (!empty($_FILES['image']['name']) && is_uploaded_file($_FILES['image']['tmp_name'])) {
     $uploadDir = dirname(__DIR__, 2) . '/public/uploads/images/products';
     if (!is_dir($uploadDir)) {
@@ -114,6 +124,7 @@ $stmt = $conn->prepare("
     RETURNING id
 ");
 
+// Execute the insertion
 $categoryName = $categoryRow['name'];
 if (!$stmt->execute([
     $categoryId,
@@ -132,6 +143,7 @@ if (!$stmt->execute([
 
 $productId = (int) $stmt->fetchColumn();
 
+// Trigger low stock notification check for the new product
 try {
     (new NotificationService())->notifyLowStockForProduct($productId);
 } catch (Throwable $e) {

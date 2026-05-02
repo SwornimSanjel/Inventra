@@ -1,4 +1,10 @@
 <?php
+/**
+ * User Products Page
+ * 
+ * This page allows standard users to view the current inventory, filter products by status,
+ * and add new products to the system.
+ */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../helpers/product_inventory.php';
 
@@ -19,6 +25,7 @@ $pagination = $inventory['pagination'];
 $page = (int) $pagination['page'];
 $totalPages = (int) $pagination['total_pages'];
 $offset = (int) $pagination['offset'];
+// Resolve the human-readable label for the current status filter
 $selectedStatusLabel =
     $statusFilter === 'low' ? 'Low Stock' :
     ($statusFilter === 'medium' ? 'Medium' :
@@ -30,6 +37,7 @@ $selectedStatusLabel =
 <div class="products-page products-page--inventory" data-add-product-endpoint="api/products/add_product.php">
     <div class="page-header products-page__header">
         <h1 class="page-title">Products</h1>
+        <!-- Trigger button for the Add Product modal -->
         <button class="btn-primary" type="button" id="openProductModal">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="12" y1="5" x2="12" y2="19"/>
@@ -130,6 +138,7 @@ $selectedStatusLabel =
             </table>
         </div>
 
+        <!-- Pagination Controls -->
         <?php if ($totalPages > 1): ?>
             <div class="products-pagination">
                 <?php for ($i = 1; $i <= $totalPages; $i++): ?>
@@ -160,6 +169,7 @@ $selectedStatusLabel =
             </button>
         </div>
 
+        <!-- Product Form Modal -->
         <form id="productForm" class="modal-form" enctype="multipart/form-data">
             <input type="hidden" name="id" id="productId">
 

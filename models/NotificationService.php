@@ -3,6 +3,12 @@
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/NotificationModel.php';
 
+/**
+ * NotificationService
+ * 
+ * Centralizes the logic for generating system notifications for security alerts,
+ * user management events, and inventory thresholds (low stock).
+ */
 class NotificationService
 {
     private PDO $db;
@@ -14,6 +20,10 @@ class NotificationService
         $this->notificationModel = $notificationModel ?? new NotificationModel();
     }
 
+    /**
+     * Announces that the notification center is ready for use.
+     * Triggered for existing users who haven't seen the notification UI yet.
+     */
     public function announceNotificationCenter(array $account): void
     {
         [$userId, $source] = $this->extractAccountRecipient($account);
@@ -31,6 +41,9 @@ class NotificationService
         );
     }
 
+    /**
+     * Creates a security notification when a user logs in.
+     */
     public function notifyLogin(array $account): void
     {
         [$userId, $source] = $this->extractAccountRecipient($account);
@@ -113,6 +126,9 @@ class NotificationService
         );
     }
 
+    /**
+     * Checks if a product has fallen below its lower limit and notifies relevant users.
+     */
     public function notifyLowStockForProduct(int $productId): void
     {
         $product = $this->findProductById($productId);

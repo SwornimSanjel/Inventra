@@ -218,6 +218,8 @@ $allowed = [
     'user/settings'
 ];
 
+// Redirect unhandled or empty routes to the appropriate default page
+// This prevents a white page if index.php is accessed directly without a URL parameter.
 if ($url === '' || !in_array($url, $allowed, true)) {
     $redirectUrl = inventra_is_authenticated() ? inventra_default_authenticated_url() : 'login';
     header('Location: index.php?url=' . $redirectUrl);

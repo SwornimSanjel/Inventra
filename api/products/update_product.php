@@ -1,4 +1,10 @@
 <?php
+/**
+ * Update Product API
+ * 
+ * Handles updating existing product information, including image replacement
+ * and category reassignment.
+ */
 
 header('Content-Type: application/json');
 
@@ -18,7 +24,8 @@ if ($account === null) {
     exit;
 }
 
-if (($account['role'] ?? 'user') !== 'admin') {
+ // Verify permissions (Allow both admins and standard users)
+if (!in_array($account['role'] ?? 'user', ['admin', 'user'], true)) {
     http_response_code(403);
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
@@ -125,6 +132,7 @@ $stmt = $conn->prepare("
     WHERE id = ?
 ");
 
+// Execute the update
 $categoryName = $categoryRow['name'];
 if (!$stmt->execute([
     $categoryId,
@@ -145,6 +153,7 @@ if (!$stmt->execute([
 try {
     (new NotificationService())->notifyLowStockForProduct($id);
 } catch (Throwable $e) {
+    // Log failures without failing the primary request
     error_log('Failed to create low-stock notification after product update: ' . $e->getMessage());
 }
 
