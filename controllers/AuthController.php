@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../models/AccountModel.php';
 require_once __DIR__ . '/../models/OTPModel.php';
 require_once __DIR__ . '/../models/AdminSession.php';
+require_once __DIR__ . '/../models/NotificationService.php';
 require_once __DIR__ . '/../helpers/session.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
@@ -15,12 +16,14 @@ class AuthController
     private AccountModel $accountModel;
     private OTPModel $otpModel;
     private AdminSession $adminSession;
+    private NotificationService $notificationService;
 
     public function __construct()
     {
         $this->accountModel = new AccountModel();
         $this->otpModel = new OTPModel();
         $this->adminSession = new AdminSession($this->accountModel);
+        $this->notificationService = new NotificationService();
     }
 
     public function showForgotPassword(): void
@@ -113,6 +116,13 @@ class AuthController
 
         session_regenerate_id(true);
         inventra_set_authenticated_user($user);
+
+        try {
+            $this->notificationService->announceNotificationCenter($user);
+            $this->notificationService->notifyLogin($user);
+        } catch (Throwable $e) {
+            error_log('Failed to create login notifications: ' . $e->getMessage());
+        }
 
         inventra_auth_debug_log('login:success', [
             'account_id' => (int) $user['id'],
@@ -369,6 +379,12 @@ class AuthController
                     $accountEmail = trim((string) ($account['email'] ?? $verifiedEmail));
                     $accountName = trim((string) ($account['full_name'] ?? ''));
 
+                    try {
+                        $this->notificationService->notifyPasswordChanged($account);
+                    } catch (Throwable $e) {
+                        error_log('Failed to create password-reset notification: ' . $e->getMessage());
+                    }
+
                     $this->logPasswordReset($verifiedEmail);
                     $this->sendPasswordChangedEmail($accountEmail, $accountName);
 
@@ -447,6 +463,12 @@ class AuthController
                 $hash = password_hash($password, PASSWORD_BCRYPT);
 
                 if ($this->accountModel->updatePassword($account, $hash)) {
+                    try {
+                        $this->notificationService->notifyPasswordChanged($account);
+                    } catch (Throwable $e) {
+                        error_log('Failed to create account password-change notification: ' . $e->getMessage());
+                    }
+
                     $this->sendPasswordChangedEmail((string) $account['email'], (string) ($account['full_name'] ?? ''));
                     $_SESSION['auth_success'] = 'Password updated successfully.';
                     header('Location: index.php?url=account/password');

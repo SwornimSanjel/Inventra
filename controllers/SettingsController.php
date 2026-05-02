@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../models/AccountModel.php';
 require_once __DIR__ . '/../models/AdminSession.php';
+require_once __DIR__ . '/../models/NotificationService.php';
 require_once __DIR__ . '/../helpers/session.php';
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -14,11 +15,13 @@ class SettingsController
 
     private AccountModel $accountModel;
     private AdminSession $adminSession;
+    private NotificationService $notificationService;
 
     public function __construct()
     {
         $this->accountModel = new AccountModel();
         $this->adminSession = new AdminSession($this->accountModel);
+        $this->notificationService = new NotificationService();
     }
 
     public function show(): void
@@ -173,6 +176,13 @@ class SettingsController
 
         $hash = password_hash($newPassword, PASSWORD_BCRYPT);
         $this->accountModel->updatePassword($admin, $hash);
+
+        try {
+            $this->notificationService->notifyPasswordChanged($admin);
+        } catch (Throwable $e) {
+            error_log('Failed to create admin password notification: ' . $e->getMessage());
+        }
+
         $this->sendPasswordChangedEmail((string) $admin['email'], (string) ($admin['full_name'] ?? ''));
 
         $_SESSION['settings_flash']['security'] = [

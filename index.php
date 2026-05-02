@@ -218,12 +218,10 @@ $allowed = [
     'user/settings'
 ];
 
-if ($url === '') {
-    $url = inventra_is_authenticated() ? inventra_default_authenticated_url() : 'login';
-}
-
-if (!in_array($url, $allowed, true)) {
-    $url = inventra_is_authenticated() ? inventra_default_authenticated_url() : 'login';
+if ($url === '' || !in_array($url, $allowed, true)) {
+    $redirectUrl = inventra_is_authenticated() ? inventra_default_authenticated_url() : 'login';
+    header('Location: index.php?url=' . $redirectUrl);
+    exit;
 }
 
 if (strpos($url, 'admin/') === 0) {

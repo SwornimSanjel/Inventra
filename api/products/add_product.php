@@ -4,6 +4,7 @@ header('Content-Type: application/json');
 
 require_once __DIR__ . '/../../helpers/session.php';
 require_once __DIR__ . '/../../models/AdminSession.php';
+require_once __DIR__ . '/../../models/NotificationService.php';
 require_once __DIR__ . '/../../config/db.php';
 
 inventra_bootstrap_session();
@@ -110,6 +111,7 @@ $stmt = $conn->prepare("
         image,
         description
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    RETURNING id
 ");
 
 $categoryName = $categoryRow['name'];
@@ -126,6 +128,14 @@ if (!$stmt->execute([
 ])) {
     echo json_encode(['success' => false, 'message' => 'Unable to save product right now.']);
     exit;
+}
+
+$productId = (int) $stmt->fetchColumn();
+
+try {
+    (new NotificationService())->notifyLowStockForProduct($productId);
+} catch (Throwable $e) {
+    error_log('Failed to create low-stock notification after product create: ' . $e->getMessage());
 }
 
 echo json_encode(['success' => true, 'message' => 'Product added successfully.']);

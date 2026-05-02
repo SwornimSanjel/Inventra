@@ -14,7 +14,79 @@ if (notifBtn && notifDrop) {
     notifBtn.setAttribute('aria-expanded', 'true');
   }
 
-  notifBtn.addEventListener('click', function(e) {
+  function unreadItems() {
+    return Array.prototype.slice.call(notifDrop.querySelectorAll('.notif-popover__item.is-unread'));
+  }
+
+  function syncNotificationState() {
+    var unreadCount = unreadItems().length;
+
+    notifBtn.setAttribute(
+      'aria-label',
+      unreadCount > 0 ? unreadCount + ' unread notifications' : 'Notifications'
+    );
+
+    if (notifDot) {
+      notifDot.classList.toggle('is-hidden', unreadCount === 0);
+    }
+
+    if (notifMarkAll) {
+      notifMarkAll.disabled = unreadCount === 0;
+    }
+  }
+
+  function markItemRead(item) {
+    if (!item) {
+      return;
+    }
+
+    item.classList.remove('is-unread', 'is-clickable');
+    item.classList.add('is-read');
+    item.removeAttribute('role');
+    item.removeAttribute('tabindex');
+    item.removeAttribute('aria-label');
+    item.removeAttribute('data-loading');
+  }
+
+  function postNotification(url, payload) {
+    return fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: new URLSearchParams(payload).toString()
+    }).then(function (response) {
+      return response.json();
+    });
+  }
+
+  function markSingleNotification(item) {
+    var url = notifDrop.getAttribute('data-mark-one-url');
+    var notificationId = item ? item.getAttribute('data-notification-id') : '';
+
+    if (!item || !url || !notificationId || item.classList.contains('is-read') || item.getAttribute('data-loading') === 'true') {
+      return;
+    }
+
+    item.setAttribute('data-loading', 'true');
+
+    postNotification(url, { notification_id: notificationId })
+      .then(function (data) {
+        if (!data || !data.success) {
+          item.removeAttribute('data-loading');
+          return;
+        }
+
+        markItemRead(item);
+        syncNotificationState();
+      })
+      .catch(function () {
+        item.removeAttribute('data-loading');
+      });
+  }
+
+  notifBtn.addEventListener('click', function (e) {
     e.stopPropagation();
 
     if (notifDrop.classList.contains('open')) {
@@ -25,17 +97,35 @@ if (notifBtn && notifDrop) {
     openNotifications();
   });
 
-  document.addEventListener('click', function(event) {
+  document.addEventListener('click', function (event) {
     if (!notifDrop.contains(event.target) && !notifBtn.contains(event.target)) {
       closeNotifications();
     }
   });
 
-  notifDrop.addEventListener('click', function(e) {
+  notifDrop.addEventListener('click', function (e) {
     e.stopPropagation();
+
+    var item = e.target.closest('.notif-popover__item.is-unread');
+    if (item) {
+      markSingleNotification(item);
+    }
   });
 
-  document.addEventListener('keydown', function(event) {
+  notifDrop.addEventListener('keydown', function (event) {
+    var item = event.target.closest('.notif-popover__item.is-unread');
+
+    if (!item) {
+      return;
+    }
+
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      markSingleNotification(item);
+    }
+  });
+
+  document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {
       closeNotifications();
     }
@@ -51,47 +141,35 @@ if (notifBtn && notifDrop) {
 
       notifMarkAll.disabled = true;
 
-      fetch(url, {
-        method: 'POST',
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest'
-        }
-      })
-        .then(function (response) {
-          return response.json();
-        })
+      postNotification(url, {})
         .then(function (data) {
           if (!data || !data.success) {
-            notifMarkAll.disabled = false;
+            syncNotificationState();
             return;
           }
 
           document.querySelectorAll('.notif-popover__item').forEach(function (item) {
-            item.classList.remove('is-unread');
-            item.classList.add('is-read');
+            markItemRead(item);
           });
 
-          if (notifDot) {
-            notifDot.classList.add('is-hidden');
-          }
+          syncNotificationState();
         })
         .catch(function () {
-          notifMarkAll.disabled = false;
+          syncNotificationState();
         });
     });
   }
-}
 
+  syncNotificationState();
+}
 
 var gSearch = document.getElementById('globalSearch');
 
 if (gSearch) {
-  gSearch.addEventListener('input', function() {
+  gSearch.addEventListener('input', function () {
     var q = this.value.toLowerCase();
-    document.querySelectorAll('.data-table tbody tr').forEach(function(row) {
+    document.querySelectorAll('.data-table tbody tr').forEach(function (row) {
       row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
     });
   });
-
 }
-

@@ -4,6 +4,7 @@ header('Content-Type: application/json');
 
 require_once __DIR__ . '/../../helpers/session.php';
 require_once __DIR__ . '/../../models/AdminSession.php';
+require_once __DIR__ . '/../../models/NotificationService.php';
 require_once __DIR__ . '/../../config/db.php';
 
 inventra_bootstrap_session();
@@ -139,6 +140,12 @@ if (!$stmt->execute([
 ])) {
     echo json_encode(['success' => false, 'message' => 'Unable to update product right now.']);
     exit;
+}
+
+try {
+    (new NotificationService())->notifyLowStockForProduct($id);
+} catch (Throwable $e) {
+    error_log('Failed to create low-stock notification after product update: ' . $e->getMessage());
 }
 
 echo json_encode(['success' => true, 'message' => 'Product updated successfully.']);

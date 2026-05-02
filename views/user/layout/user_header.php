@@ -47,11 +47,13 @@ if ($topbarAvatar !== '') {
                 <circle cx="11" cy="11" r="8"/>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
-            <input type="text" placeholder="Search anything..." autocomplete="off">
+            <input type="text" id="globalSearch" placeholder="Search anything..." autocomplete="off">
         </div>
     </div>
 
     <div class="topbar-right">
+        <?php require dirname(__DIR__, 2) . '/partials/notification_popover.php'; ?>
+
         <a class="topbar-user" href="index.php?url=user/settings" aria-label="Open user settings">
             <div>
                 <span class="user-name"><?= htmlspecialchars($topbarName) ?></span>
