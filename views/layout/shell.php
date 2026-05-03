@@ -58,6 +58,9 @@ if (strpos($url, 'user/') === 0) {
   <link rel="stylesheet" href="<?= BASE_URL ?>public/css/users.css<?= asset_version('public/css/users.css') ?>">
   <link rel="stylesheet" href="<?= BASE_URL ?>public/css/settings.css<?= asset_version('public/css/settings.css') ?>">
   <link rel="stylesheet" href="<?= BASE_URL ?>public/css/user-settings.css<?= asset_version('public/css/user-settings.css') ?>">
+  <?php if ($url === 'admin/ai-forecasting'): ?>
+    <link rel="stylesheet" href="<?= BASE_URL ?>public/css/ai-forecasting.css<?= asset_version('public/css/ai-forecasting.css') ?>">
+  <?php endif; ?>
 </head>
 
 <body>
@@ -82,6 +85,7 @@ if (strpos($url, 'user/') === 0) {
         <?php if ($url === 'admin/users') require __DIR__ . '/../admin/users.php'; ?>
         <?php if ($url === 'admin/products') require __DIR__ . '/../admin/products.php'; ?>
         <?php if ($url === 'admin/stock-update') require __DIR__ . '/../admin/stock_update.php'; ?>
+        <?php if ($url === 'admin/ai-forecasting') require __DIR__ . '/../admin/ai_forecasting.php'; ?>
         <?php if ($url === 'admin/settings') require __DIR__ . '/../admin/settings_page.php'; ?>
         <?php if ($url === 'user/dashboard') require __DIR__ . '/../user/dashboard.php'; ?>
         <?php if ($url === 'user/products') require __DIR__ . '/../user/products.php'; ?>
@@ -107,6 +111,9 @@ if (strpos($url, 'user/') === 0) {
   <?php endif; ?>
   <?php if ($url === 'admin/settings'): ?>
     <script src="<?= BASE_URL ?>public/js/settings.js<?= asset_version('public/js/settings.js') ?>"></script>
+  <?php endif; ?>
+  <?php if ($url === 'admin/ai-forecasting'): ?>
+    <script src="<?= BASE_URL ?>public/js/ai-forecasting.js<?= asset_version('public/js/ai-forecasting.js') ?>"></script>
   <?php endif; ?>
   <?php if ($url === 'user/settings'): ?>
     <script src="<?= BASE_URL ?>public/js/user-settings.js<?= asset_version('public/js/user-settings.js') ?>"></script>
