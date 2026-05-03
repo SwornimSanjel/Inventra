@@ -119,30 +119,42 @@ class UserModel
     public function updateNotificationPreferences(int $id, bool $lowStockAlerts, bool $weeklySummaryReports): bool
     {
         $assignments = [];
-        $params = [];
+        $bindings = [];
 
         if ($this->hasAdminColumn('notify_low_stock')) {
             $assignments[] = 'notify_low_stock = ?';
-            $params[] = $lowStockAlerts;
+            $bindings[] = [
+                'value' => $lowStockAlerts,
+                'type' => PDO::PARAM_BOOL,
+            ];
         }
 
         if ($this->hasAdminColumn('notify_weekly_summary')) {
             $assignments[] = 'notify_weekly_summary = ?';
-            $params[] = $weeklySummaryReports;
+            $bindings[] = [
+                'value' => $weeklySummaryReports,
+                'type' => PDO::PARAM_BOOL,
+            ];
         }
 
         if ($assignments === []) {
             return true;
         }
 
-        $params[] = $id;
-
         $stmt = $this->db->prepare(sprintf(
             'UPDATE admin SET %s WHERE id = ?',
             implode(', ', $assignments)
         ));
 
-        return $stmt->execute($params);
+        $position = 1;
+
+        foreach ($bindings as $binding) {
+            $stmt->bindValue($position++, $binding['value'], $binding['type']);
+        }
+
+        $stmt->bindValue($position, $id, PDO::PARAM_INT);
+
+        return $stmt->execute();
     }
 
     public function verifyPasswordById(int $id, string $plainPassword): bool

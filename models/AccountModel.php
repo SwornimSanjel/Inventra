@@ -295,30 +295,42 @@ class AccountModel
         }
 
         $assignments = [];
-        $params = [];
+        $bindings = [];
 
         if ($this->usersTableHasColumn('notify_low_stock')) {
             $assignments[] = 'notify_low_stock = ?';
-            $params[] = $lowStockAlerts;
+            $bindings[] = [
+                'value' => $lowStockAlerts,
+                'type' => PDO::PARAM_BOOL,
+            ];
         }
 
         if ($this->usersTableHasColumn('notify_weekly_summary')) {
             $assignments[] = 'notify_weekly_summary = ?';
-            $params[] = $weeklySummaryReports;
+            $bindings[] = [
+                'value' => $weeklySummaryReports,
+                'type' => PDO::PARAM_BOOL,
+            ];
         }
 
         if ($assignments === []) {
             return true;
         }
 
-        $params[] = $id;
-
         $stmt = $this->db->prepare(sprintf(
             'UPDATE users SET %s WHERE id = ?',
             implode(', ', $assignments)
         ));
 
-        return $stmt->execute($params);
+        $position = 1;
+
+        foreach ($bindings as $binding) {
+            $stmt->bindValue($position++, $binding['value'], $binding['type']);
+        }
+
+        $stmt->bindValue($position, $id, PDO::PARAM_INT);
+
+        return $stmt->execute();
     }
 
     public function emailExistsForOtherAccount(string $email, string $source, int $excludeId): bool
