@@ -252,6 +252,12 @@ if (!in_array($url, $allowed, true)) {
     $url = inventra_is_authenticated() ? inventra_default_authenticated_url() : 'login';
 }
 
+if ($url === 'login') {
+    require_once __DIR__ . '/controllers/AuthController.php';
+    (new AuthController())->showLogin();
+    exit;
+}
+
 if (strpos($url, 'admin/') === 0) {
     require_once __DIR__ . '/models/AdminSession.php';
 

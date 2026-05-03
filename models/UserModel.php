@@ -249,17 +249,29 @@ class UserModel
 
     public function hasAdminColumn(string $column): bool
     {
-        if ($this->adminColumns === null) {
-            $this->adminColumns = [];
-            $candidateColumns = ['id', 'full_name', 'email', 'role', 'password_hash', 'username', 'phone', 'avatar', 'notify_low_stock', 'notify_weekly_summary'];
-            foreach ($candidateColumns as $candidateColumn) {
-                if (Database::columnExists('admin', $candidateColumn)) {
-                    $this->adminColumns[] = $candidateColumn;
-                }
-            }
-        }
+        $this->loadAdminColumns();
 
         return in_array($column, $this->adminColumns, true);
+    }
+
+    private function loadAdminColumns(): void
+    {
+        if ($this->adminColumns !== null) {
+            return;
+        }
+
+        $stmt = $this->db->prepare('
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = ?
+              AND table_name = ?
+        ');
+        $stmt->execute(['public', 'admin']);
+
+        $this->adminColumns = array_map(
+            static fn(array $row): string => (string) $row['column_name'],
+            $stmt->fetchAll() ?: []
+        );
     }
 
     private function buildSettingsSelectList(): string
