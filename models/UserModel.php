@@ -119,30 +119,42 @@ class UserModel
     public function updateNotificationPreferences(int $id, bool $lowStockAlerts, bool $weeklySummaryReports): bool
     {
         $assignments = [];
-        $params = [];
+        $bindings = [];
 
         if ($this->hasAdminColumn('notify_low_stock')) {
             $assignments[] = 'notify_low_stock = ?';
-            $params[] = $lowStockAlerts;
+            $bindings[] = [
+                'value' => $lowStockAlerts,
+                'type' => PDO::PARAM_BOOL,
+            ];
         }
 
         if ($this->hasAdminColumn('notify_weekly_summary')) {
             $assignments[] = 'notify_weekly_summary = ?';
-            $params[] = $weeklySummaryReports;
+            $bindings[] = [
+                'value' => $weeklySummaryReports,
+                'type' => PDO::PARAM_BOOL,
+            ];
         }
 
         if ($assignments === []) {
             return true;
         }
 
-        $params[] = $id;
-
         $stmt = $this->db->prepare(sprintf(
             'UPDATE admin SET %s WHERE id = ?',
             implode(', ', $assignments)
         ));
 
-        return $stmt->execute($params);
+        $position = 1;
+
+        foreach ($bindings as $binding) {
+            $stmt->bindValue($position++, $binding['value'], $binding['type']);
+        }
+
+        $stmt->bindValue($position, $id, PDO::PARAM_INT);
+
+        return $stmt->execute();
     }
 
     public function verifyPasswordById(int $id, string $plainPassword): bool
@@ -249,17 +261,29 @@ class UserModel
 
     public function hasAdminColumn(string $column): bool
     {
-        if ($this->adminColumns === null) {
-            $this->adminColumns = [];
-            $candidateColumns = ['id', 'full_name', 'email', 'role', 'password_hash', 'username', 'phone', 'avatar', 'notify_low_stock', 'notify_weekly_summary'];
-            foreach ($candidateColumns as $candidateColumn) {
-                if (Database::columnExists('admin', $candidateColumn)) {
-                    $this->adminColumns[] = $candidateColumn;
-                }
-            }
-        }
+        $this->loadAdminColumns();
 
         return in_array($column, $this->adminColumns, true);
+    }
+
+    private function loadAdminColumns(): void
+    {
+        if ($this->adminColumns !== null) {
+            return;
+        }
+
+        $stmt = $this->db->prepare('
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = ?
+              AND table_name = ?
+        ');
+        $stmt->execute(['public', 'admin']);
+
+        $this->adminColumns = array_map(
+            static fn(array $row): string => (string) $row['column_name'],
+            $stmt->fetchAll() ?: []
+        );
     }
 
     private function buildSettingsSelectList(): string

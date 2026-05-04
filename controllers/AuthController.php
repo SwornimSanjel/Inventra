@@ -12,15 +12,39 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 class AuthController
 {
-    private AccountModel $accountModel;
-    private OTPModel $otpModel;
-    private AdminSession $adminSession;
+    private ?AccountModel $accountModel = null;
+    private ?OTPModel $otpModel = null;
+    private ?AdminSession $adminSession = null;
 
     public function __construct()
     {
-        $this->accountModel = new AccountModel();
-        $this->otpModel = new OTPModel();
-        $this->adminSession = new AdminSession($this->accountModel);
+    }
+
+    private function getAccountModel(): AccountModel
+    {
+        if ($this->accountModel === null) {
+            $this->accountModel = new AccountModel();
+        }
+
+        return $this->accountModel;
+    }
+
+    private function getOtpModel(): OTPModel
+    {
+        if ($this->otpModel === null) {
+            $this->otpModel = new OTPModel();
+        }
+
+        return $this->otpModel;
+    }
+
+    private function getAdminSession(): AdminSession
+    {
+        if ($this->adminSession === null) {
+            $this->adminSession = new AdminSession($this->getAccountModel());
+        }
+
+        return $this->adminSession;
     }
 
     public function showForgotPassword(): void
@@ -40,7 +64,7 @@ class AuthController
         ]);
 
         if (inventra_is_authenticated()) {
-            $this->adminSession->resolveAuthenticatedAccount();
+            $this->getAdminSession()->resolveAuthenticatedAccount();
             inventra_auth_debug_log('show_login:redirect_dashboard');
             header('Location: index.php?url=' . inventra_default_authenticated_url());
             exit;
@@ -87,7 +111,7 @@ class AuthController
             exit;
         }
 
-        $matchingAccounts = $this->accountModel->findAccountsByIdentifier($identifier, true);
+        $matchingAccounts = $this->getAccountModel()->findAccountsByIdentifier($identifier, true);
 
         if (count($matchingAccounts) > 1) {
             $_SESSION['auth_error'] = 'Multiple accounts match that login. Please contact an administrator.';
@@ -139,7 +163,7 @@ class AuthController
             exit;
         }
 
-        $matchingAccounts = $this->accountModel->findAccountsByEmail($email, true);
+        $matchingAccounts = $this->getAccountModel()->findAccountsByEmail($email, true);
 
         if (count($matchingAccounts) > 1) {
             $_SESSION['auth_error'] = 'Multiple accounts use this email. Please contact an administrator.';
@@ -167,7 +191,7 @@ class AuthController
         $otp = (string) random_int(100000, 999999);
         $expiresAt = date('Y-m-d H:i:s', strtotime('+10 minutes'));
 
-        $this->otpModel->createOTP((int) $user['id'], $accountEmail, $otp, $expiresAt);
+        $this->getOtpModel()->createOTP((int) $user['id'], $accountEmail, $otp, $expiresAt);
         try {
             $this->sendOtpEmail($accountEmail, $accountName, $otp);
         } catch (Throwable $e) {
@@ -193,7 +217,7 @@ class AuthController
         $success = $_SESSION['auth_success'] ?? '';
 
         if ($email !== '') {
-            $record = $this->otpModel->findLatestActiveOTPByEmail($email) ?? $this->otpModel->findLatestByEmail($email);
+            $record = $this->getOtpModel()->findLatestActiveOTPByEmail($email) ?? $this->getOtpModel()->findLatestByEmail($email);
             if ($record && !empty($record['expires_at'])) {
                 $otpExpiresAt = $record['expires_at'];
                 $_SESSION['otp_expires_at'] = $otpExpiresAt;
@@ -230,7 +254,7 @@ class AuthController
             exit;
         }
 
-        $record = $this->otpModel->findLatestActiveOTPByEmail($email);
+        $record = $this->getOtpModel()->findLatestActiveOTPByEmail($email);
 
         if (!$record) {
             $_SESSION['auth_error'] = 'No valid OTP found. Please request a new OTP.';
@@ -245,14 +269,14 @@ class AuthController
         }
 
         if ($record['otp_code'] !== $otp) {
-            $this->otpModel->incrementAttempts((int) $record['id']);
+            $this->getOtpModel()->incrementAttempts((int) $record['id']);
             $_SESSION['auth_error'] = 'Invalid OTP. Please try again.';
             header('Location: index.php?url=auth/verify-otp');
             exit;
         }
 
         $resetToken = bin2hex(random_bytes(32));
-        $this->otpModel->markVerified((int) $record['id'], $resetToken);
+        $this->getOtpModel()->markVerified((int) $record['id'], $resetToken);
 
         unset($_SESSION['otp_expires_at']);
 
@@ -272,7 +296,7 @@ class AuthController
             exit;
         }
 
-        $matchingAccounts = $this->accountModel->findAccountsByEmail($email, true);
+        $matchingAccounts = $this->getAccountModel()->findAccountsByEmail($email, true);
 
         if (count($matchingAccounts) > 1) {
             $_SESSION['auth_error'] = 'Multiple accounts use this email. Please contact an administrator.';
@@ -300,7 +324,7 @@ class AuthController
         $otp = (string) random_int(100000, 999999);
         $expiresAt = date('Y-m-d H:i:s', strtotime('+10 minutes'));
 
-        $this->otpModel->createOTP((int) $user['id'], $accountEmail, $otp, $expiresAt);
+        $this->getOtpModel()->createOTP((int) $user['id'], $accountEmail, $otp, $expiresAt);
         try {
             $this->sendOtpEmail($accountEmail, $accountName, $otp);
         } catch (Throwable $e) {
@@ -331,7 +355,7 @@ class AuthController
         $resetRecord = null;
 
         if ($resetToken !== '') {
-            $resetRecord = $this->otpModel->findVerifiedByToken($resetToken);
+            $resetRecord = $this->getOtpModel()->findVerifiedByToken($resetToken);
         }
 
         if (!$resetRecord) {
@@ -360,11 +384,11 @@ class AuthController
             } else {
                 $hash = password_hash($password, PASSWORD_BCRYPT);
 
-                $matchingAccounts = $this->accountModel->findAccountsByEmail($verifiedEmail, true);
+                $matchingAccounts = $this->getAccountModel()->findAccountsByEmail($verifiedEmail, true);
 
                 if (count($matchingAccounts) > 1) {
                     $error = 'Multiple accounts use this email. Please contact an administrator.';
-                } elseif (!empty($matchingAccounts[0]) && $this->accountModel->updatePassword($matchingAccounts[0], $hash)) {
+                } elseif (!empty($matchingAccounts[0]) && $this->getAccountModel()->updatePassword($matchingAccounts[0], $hash)) {
                     $account = $matchingAccounts[0];
                     $accountEmail = trim((string) ($account['email'] ?? $verifiedEmail));
                     $accountName = trim((string) ($account['full_name'] ?? ''));
@@ -405,7 +429,7 @@ class AuthController
 
     public function showAccountHome(): void
     {
-        $account = $this->adminSession->requireAuthenticatedAccount();
+        $account = $this->getAdminSession()->requireAuthenticatedAccount();
 
         if (($account['role'] ?? 'user') === 'admin') {
             header('Location: index.php?url=admin/dashboard');
@@ -418,7 +442,7 @@ class AuthController
 
     public function changeOwnPassword(): void
     {
-        $account = $this->adminSession->requireAuthenticatedAccount();
+        $account = $this->getAdminSession()->requireAuthenticatedAccount();
 
         if (($account['role'] ?? 'user') === 'admin') {
             header('Location: index.php?url=admin/settings');
@@ -435,7 +459,7 @@ class AuthController
 
             if ($currentPassword === '') {
                 $error = 'Current password is required.';
-            } elseif (!$this->accountModel->verifyPassword($account, $currentPassword)) {
+            } elseif (!$this->getAccountModel()->verifyPassword($account, $currentPassword)) {
                 $error = 'Current password is incorrect.';
             } elseif ($password === '') {
                 $error = 'Password is required.';
@@ -446,7 +470,7 @@ class AuthController
             } else {
                 $hash = password_hash($password, PASSWORD_BCRYPT);
 
-                if ($this->accountModel->updatePassword($account, $hash)) {
+                if ($this->getAccountModel()->updatePassword($account, $hash)) {
                     $this->sendPasswordChangedEmail((string) $account['email'], (string) ($account['full_name'] ?? ''));
                     $_SESSION['auth_success'] = 'Password updated successfully.';
                     header('Location: index.php?url=account/password');

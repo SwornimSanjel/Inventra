@@ -10,6 +10,7 @@ class AccountModel
     private UserModel $adminModel;
     private UserManagementModel $userManagementModel;
     private ?array $usersColumns = null;
+    private ?bool $usersTableAvailable = null;
 
     public function __construct()
     {
@@ -294,30 +295,42 @@ class AccountModel
         }
 
         $assignments = [];
-        $params = [];
+        $bindings = [];
 
         if ($this->usersTableHasColumn('notify_low_stock')) {
             $assignments[] = 'notify_low_stock = ?';
-            $params[] = $lowStockAlerts;
+            $bindings[] = [
+                'value' => $lowStockAlerts,
+                'type' => PDO::PARAM_BOOL,
+            ];
         }
 
         if ($this->usersTableHasColumn('notify_weekly_summary')) {
             $assignments[] = 'notify_weekly_summary = ?';
-            $params[] = $weeklySummaryReports;
+            $bindings[] = [
+                'value' => $weeklySummaryReports,
+                'type' => PDO::PARAM_BOOL,
+            ];
         }
 
         if ($assignments === []) {
             return true;
         }
 
-        $params[] = $id;
-
         $stmt = $this->db->prepare(sprintf(
             'UPDATE users SET %s WHERE id = ?',
             implode(', ', $assignments)
         ));
 
-        return $stmt->execute($params);
+        $position = 1;
+
+        foreach ($bindings as $binding) {
+            $stmt->bindValue($position++, $binding['value'], $binding['type']);
+        }
+
+        $stmt->bindValue($position, $id, PDO::PARAM_INT);
+
+        return $stmt->execute();
     }
 
     public function emailExistsForOtherAccount(string $email, string $source, int $excludeId): bool
@@ -524,30 +537,39 @@ class AccountModel
 
     private function usersTableExists(): bool
     {
-        try {
-            return Database::tableExists('users');
-        } catch (Throwable) {
-            return false;
-        }
+        $this->loadUsersMetadata();
+        return $this->usersTableAvailable === true;
     }
 
     private function usersTableHasColumn(string $column): bool
     {
-        if (!$this->usersTableExists()) {
+        $this->loadUsersMetadata();
+        if ($this->usersTableAvailable !== true) {
             return false;
         }
 
-        if ($this->usersColumns === null) {
-            $this->usersColumns = [];
-            $candidateColumns = ['id', 'full_name', 'username', 'email', 'role', 'status', 'password', 'phone', 'avatar', 'notify_low_stock', 'notify_weekly_summary'];
-            foreach ($candidateColumns as $candidateColumn) {
-                if (Database::columnExists('users', $candidateColumn)) {
-                    $this->usersColumns[] = $candidateColumn;
-                }
-            }
+        return in_array($column, $this->usersColumns, true);
+    }
+
+    private function loadUsersMetadata(): void
+    {
+        if ($this->usersColumns !== null) {
+            return;
         }
 
-        return in_array($column, $this->usersColumns, true);
+        $stmt = $this->db->prepare('
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = ?
+              AND table_name = ?
+        ');
+        $stmt->execute(['public', 'users']);
+
+        $this->usersColumns = array_map(
+            static fn(array $row): string => (string) $row['column_name'],
+            $stmt->fetchAll() ?: []
+        );
+        $this->usersTableAvailable = $this->usersColumns !== [];
     }
 
     private function splitName(string $fullName): array

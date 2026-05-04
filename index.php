@@ -188,6 +188,31 @@ if (strpos($url, 'admin/users') === 0) {
     }
 }
 
+if (strpos($url, 'admin/ai-forecasting') === 0) {
+    require_once __DIR__ . '/controllers/AIForecastingController.php';
+    $aiForecastingController = new AIForecastingController();
+
+    if ($url === 'admin/ai-forecasting/data' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+        $aiForecastingController->getForecastData();
+        exit;
+    }
+
+    if ($url === 'admin/ai-forecasting/product-detail' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+        $aiForecastingController->getProductDetail();
+        exit;
+    }
+
+    if ($url === 'admin/ai-forecasting/mark-reorder' && in_array($_SERVER['REQUEST_METHOD'], ['GET', 'POST'], true)) {
+        $aiForecastingController->markReorder();
+        exit;
+    }
+
+    if ($url === 'admin/ai-forecasting' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+        $aiForecastingController->show();
+        exit;
+    }
+}
+
 if (strpos($url, 'admin/notifications') === 0) {
     require_once __DIR__ . '/controllers/NotificationController.php';
     $notificationController = new NotificationController();
@@ -211,6 +236,7 @@ $allowed = [
     'admin/users',
     'admin/products',
     'admin/stock-update',
+    'admin/ai-forecasting',
     'admin/settings',
     'user/dashboard',
     'user/products',
@@ -224,6 +250,12 @@ if ($url === '') {
 
 if (!in_array($url, $allowed, true)) {
     $url = inventra_is_authenticated() ? inventra_default_authenticated_url() : 'login';
+}
+
+if ($url === 'login') {
+    require_once __DIR__ . '/controllers/AuthController.php';
+    (new AuthController())->showLogin();
+    exit;
 }
 
 if (strpos($url, 'admin/') === 0) {
