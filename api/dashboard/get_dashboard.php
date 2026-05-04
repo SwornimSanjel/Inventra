@@ -9,8 +9,8 @@ require_once __DIR__ . '/../../config/db.php';
 
 inventra_bootstrap_session();
 
- $adminSession = new AdminSession();
- $account = $adminSession->resolveAuthenticatedAccount();
+$adminSession = new AdminSession();
+$account = $adminSession->resolveAuthenticatedAccount();
 
 if ($account === null) {
     http_response_code(401);
@@ -18,11 +18,7 @@ if ($account === null) {
     exit;
 }
 
-if (($account['role'] ?? 'user') !== 'admin') {
-    http_response_code(403);
-    echo json_encode(['error' => 'Unauthorized']);
-    exit;
-}
+$isAdmin = ($account['role'] ?? 'user') === 'admin';
 
 $page = max(1, (int) ($_GET['page'] ?? 1));
 $viewAll = isset($_GET['view_all']);
@@ -86,27 +82,30 @@ foreach ($categoriesResult->fetchAll() as $row) {
     ];
 }
 
-$usersResult = $conn->query("
-    SELECT
-        id,
-        full_name,
-        email,
-        role,
-        status
-    FROM users
-    WHERE status = 'active'
-    ORDER BY full_name ASC
-");
-
 $users = [];
-foreach ($usersResult->fetchAll() as $row) {
-    $users[] = [
-        'id' => (int) $row['id'],
-        'full_name' => $row['full_name'],
-        'email' => $row['email'],
-        'role' => strtolower((string) ($row['role'] ?? '')) === 'admin' ? 'Admin' : 'User',
-        'status' => ucfirst((string) $row['status']),
-    ];
+
+if ($isAdmin) {
+    $usersResult = $conn->query("
+        SELECT
+            id,
+            full_name,
+            email,
+            role,
+            status
+        FROM users
+        WHERE status = 'active'
+        ORDER BY full_name ASC
+    ");
+
+    foreach ($usersResult->fetchAll() as $row) {
+        $users[] = [
+            'id' => (int) $row['id'],
+            'full_name' => $row['full_name'],
+            'email' => $row['email'],
+            'role' => strtolower((string) ($row['role'] ?? '')) === 'admin' ? 'Admin' : 'User',
+            'status' => ucfirst((string) $row['status']),
+        ];
+    }
 }
 
 $lowStockSql = "

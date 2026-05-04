@@ -9,17 +9,11 @@ require_once __DIR__ . '/../../config/db.php';
 
 inventra_bootstrap_session();
 
- $adminSession = new AdminSession();
- $account = $adminSession->resolveAuthenticatedAccount();
+$adminSession = new AdminSession();
+$account = $adminSession->resolveAuthenticatedAccount();
 
 if ($account === null) {
     http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit;
-}
-
-if (($account['role'] ?? 'user') !== 'admin') {
-    http_response_code(403);
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
 }
@@ -28,23 +22,101 @@ inventra_ensure_stock_movements_table($conn);
 
 $payload = json_decode(file_get_contents('php://input'), true);
 
+if (!is_array($payload)) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => 'Invalid request payload.']);
+    exit;
+}
+
+$userId = (int) ($account['id'] ?? $account['user_id'] ?? $account['admin_id'] ?? 0);
 $productId = (int) ($payload['product_id'] ?? 0);
-$movementType = ($payload['movement_type'] ?? 'in') === 'out' ? 'out' : 'in';
-$quantity = max(1, (int) ($payload['quantity'] ?? 1));
+$movementTypeInput = trim((string) ($payload['movement_type'] ?? ''));
+$quantity = (int) ($payload['quantity'] ?? 0);
 $notes = trim((string) ($payload['notes'] ?? ''));
 $fullName = trim((string) ($payload['full_name'] ?? ''));
 $contact = trim((string) ($payload['contact'] ?? ''));
-$amountPerPiece = max(0, (float) ($payload['amount_per_piece'] ?? 0));
-$paymentStatus = ($payload['payment_status'] ?? 'paid') === 'unpaid' ? 'unpaid' : 'paid';
-$paymentMethod = ($payload['payment_method'] ?? 'cash') === 'card' ? 'card' : 'cash';
+$amountPerPiece = (float) ($payload['amount_per_piece'] ?? -1);
+$paymentStatus = strtolower(trim((string) ($payload['payment_status'] ?? '')));
+$paymentMethod = strtolower(trim((string) ($payload['payment_method'] ?? '')));
 $incomingStatus = trim((string) ($payload['incoming_status'] ?? ''));
 $movementStatus = trim((string) ($payload['movement_status'] ?? ''));
-$totalAmount = $quantity * $amountPerPiece;
+
+if (in_array($movementTypeInput, ['in', 'stock_in', 'Stock In'], true)) {
+    $movementType = 'in';
+} elseif (in_array($movementTypeInput, ['out', 'stock_out', 'Stock Out'], true)) {
+    $movementType = 'out';
+} else {
+    echo json_encode(['success' => false, 'message' => 'Please select Stock In or Stock Out.']);
+    exit;
+}
+
+$incomingStatusMap = [
+    'order_dispatched' => 'Order Dispatched',
+    'in_transit' => 'In Transit',
+    'received' => 'Received at Warehouse',
+];
+
+if (isset($incomingStatusMap[$incomingStatus])) {
+    $incomingStatus = $incomingStatusMap[$incomingStatus];
+}
+
+$allowedIncomingStatuses = [
+    'Order Dispatched',
+    'In Transit',
+    'Received at Warehouse',
+];
 
 if ($productId <= 0) {
     echo json_encode(['success' => false, 'message' => 'Please select a product.']);
     exit;
 }
+
+if ($userId <= 0) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Authenticated user could not be identified.']);
+    exit;
+}
+
+if ($quantity <= 0) {
+    echo json_encode(['success' => false, 'message' => 'Quantity must be greater than 0.']);
+    exit;
+}
+
+if ($fullName === '') {
+    echo json_encode(['success' => false, 'message' => 'Full name is required.']);
+    exit;
+}
+
+if ($contact === '' || !preg_match('/^[0-9+\-\s()]{7,20}$/', $contact)) {
+    echo json_encode(['success' => false, 'message' => 'Valid contact number is required.']);
+    exit;
+}
+
+if ($amountPerPiece < 0) {
+    echo json_encode(['success' => false, 'message' => 'Amount per piece must be valid.']);
+    exit;
+}
+
+if (!in_array($paymentStatus, ['paid', 'unpaid'], true)) {
+    echo json_encode(['success' => false, 'message' => 'Invalid payment status.']);
+    exit;
+}
+
+if (!in_array($paymentMethod, ['cash', 'card'], true)) {
+    echo json_encode(['success' => false, 'message' => 'Invalid payment method.']);
+    exit;
+}
+
+if ($movementType === 'in' && !in_array($incomingStatus, $allowedIncomingStatuses, true)) {
+    echo json_encode(['success' => false, 'message' => 'Please select a valid incoming stock status.']);
+    exit;
+}
+
+if ($movementType === 'out') {
+    $incomingStatus = null;
+}
+
+$totalAmount = round($quantity * $amountPerPiece, 2);
 
 $conn->beginTransaction();
 
@@ -74,6 +146,7 @@ try {
         INSERT INTO stock_movements (
             reference,
             product_id,
+            user_id,
             movement_type,
             quantity,
             notes,
@@ -85,12 +158,13 @@ try {
             payment_method,
             incoming_status,
             movement_status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
 
     $movementStmt->execute([
         $reference,
         $productId,
+        $userId,
         $movementType,
         $quantity,
         $notes,

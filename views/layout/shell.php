@@ -102,6 +102,9 @@ if (strpos($url, 'user/') === 0) {
   <?php if ($url === 'admin/stock-update'): ?>
     <script src="<?= BASE_URL ?>public/js/stock-update.js<?= asset_version('public/js/stock-update.js') ?>"></script>
   <?php endif; ?>
+  <?php if ($url === 'user/stock-update'): ?>
+    <script src="<?= BASE_URL ?>public/js/user-stock-movement.js<?= asset_version('public/js/user-stock-movement.js') ?>"></script>
+  <?php endif; ?>
   <?php if ($url === 'admin/users'): ?>
     <script src="<?= BASE_URL ?>public/js/users.js<?= asset_version('public/js/users.js') ?>"></script>
   <?php endif; ?>
@@ -110,6 +113,9 @@ if (strpos($url, 'user/') === 0) {
   <?php endif; ?>
   <?php if ($url === 'user/settings'): ?>
     <script src="<?= BASE_URL ?>public/js/user-settings.js<?= asset_version('public/js/user-settings.js') ?>"></script>
+  <?php endif; ?>
+  <?php if ($url === 'user/dashboard'): ?>
+    <script src="<?= BASE_URL ?>public/js/user-dashboard.js<?= asset_version('public/js/user-dashboard.js') ?>"></script>
   <?php endif; ?>
 
 </body>

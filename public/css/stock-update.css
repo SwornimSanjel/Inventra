@@ -774,3 +774,621 @@
     padding-left:0;
   }
 }
+.stock-movement-page{
+  max-width:1180px;
+}
+
+.stock-movement-shell{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 300px;
+  gap:22px;
+  align-items:start;
+}
+
+.stock-movement-form-panel,
+.stock-movement-summary{
+  background:#fff;
+  border:1px solid #dbe2ea;
+  border-radius:10px;
+  box-shadow:0 1px 2px rgba(15,23,42,.04);
+}
+
+.stock-movement-form-panel{
+  padding:26px;
+}
+
+.stock-movement-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:16px;
+  margin-bottom:22px;
+}
+
+.stock-movement-header p,
+.stock-movement-summary p{
+  color:#6b7280;
+  margin-top:6px;
+}
+
+.movement-type-toggle{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin-bottom:22px;
+}
+
+.movement-type-option,
+.payment-method{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:44px;
+  border:1px solid #d5dde7;
+  border-radius:8px;
+  background:#f8fafc;
+  color:#4b5563;
+  font-weight:700;
+  cursor:pointer;
+  transition:background .15s,border-color .15s,color .15s,box-shadow .15s;
+}
+
+.movement-type-option input,
+.payment-method input{
+  position:absolute;
+  opacity:0;
+  pointer-events:none;
+}
+
+.movement-type-option.is-selected,
+.payment-method.is-selected{
+  background:#111827;
+  border-color:#111827;
+  color:#fff;
+  box-shadow:0 8px 18px rgba(17,24,39,.14);
+}
+
+.form-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:18px;
+}
+
+.form-field{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.form-field--full{
+  grid-column:1/-1;
+}
+
+.form-field span,
+.payment-method-field legend{
+  color:#374151;
+  font-size:.78rem;
+  font-weight:800;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+}
+
+.form-field input,
+.form-field textarea,
+.form-field select{
+  width:100%;
+  border:1.5px solid #d4dae2;
+  border-radius:10px;
+  background:#fbfcfe;
+  color:#111827;
+  font:inherit;
+  outline:none;
+  transition:border-color .15s,box-shadow .15s,background .15s;
+}
+
+.form-field input,
+.form-field select{
+  height:44px;
+}
+
+.form-field input,
+.form-field textarea{
+  padding:0 14px;
+}
+
+.form-field textarea{
+  min-height:118px;
+  padding-top:12px;
+  resize:vertical;
+}
+
+.form-field input:focus,
+.form-field textarea:focus,
+.form-field select:focus{
+  border-color:#2f3640;
+  background:#fff;
+  box-shadow:0 0 0 4px rgba(47,54,64,.08);
+}
+
+.quantity-stepper{
+  display:grid;
+  grid-template-columns:44px minmax(0,1fr) 44px;
+  border:1.5px solid #d4dae2;
+  border-radius:10px;
+  overflow:hidden;
+  background:#fbfcfe;
+}
+
+.quantity-stepper button{
+  border:none;
+  background:#f1f5f9;
+  color:#111827;
+  font-size:1.25rem;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.quantity-stepper input{
+  border:none;
+  border-radius:0;
+  text-align:center;
+  background:#fff;
+  box-shadow:none;
+}
+
+.payment-method-field{
+  border:none;
+  padding:0;
+  margin:0;
+}
+
+.payment-methods{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+.selected-status{
+  display:inline-flex;
+  align-items:center;
+  align-self:flex-start;
+  min-height:30px;
+  padding:0 12px;
+  border-radius:999px;
+  background:#eef2ff;
+  color:#3730a3;
+  font-size:.78rem;
+  font-weight:800;
+}
+
+.stock-movement-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:12px;
+  margin-top:24px;
+}
+
+.stock-movement-message{
+  min-height:22px;
+  margin-top:12px;
+  color:#15803d;
+  font-size:.86rem;
+  font-weight:700;
+  text-align:right;
+}
+
+.stock-movement-summary{
+  padding:22px;
+  position:sticky;
+  top:calc(var(--topbar-h) + 24px);
+}
+
+.summary-label{
+  color:#6b7280;
+  font-size:.7rem;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.stock-movement-summary strong{
+  display:block;
+  margin-top:10px;
+  color:#111827;
+  font-size:1.2rem;
+}
+
+@media(max-width:980px){
+  .stock-movement-shell{
+    grid-template-columns:1fr;
+  }
+
+  .stock-movement-summary{
+    position:static;
+  }
+}
+
+@media(max-width:640px){
+  .stock-movement-form-panel{
+    padding:18px;
+  }
+
+  .form-grid,
+  .movement-type-toggle,
+  .payment-methods{
+    grid-template-columns:1fr;
+  }
+
+  .stock-movement-actions{
+    flex-direction:column-reverse;
+  }
+
+  .stock-movement-actions .btn-primary,
+  .stock-movement-actions .btn-outline{
+    width:100%;
+  }
+}
+
+.stock-movement-page{
+  max-width:1120px;
+  margin:0 auto;
+}
+
+.stock-movement-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:18px;
+  margin-bottom:22px;
+}
+
+.stock-movement-header .page-title{
+  font-size:1.72rem;
+}
+
+.stock-movement-header p{
+  margin-top:4px;
+  color:#6b7280;
+  font-size:.88rem;
+}
+
+.stock-movement-recency{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  height:32px;
+  padding:0 12px;
+  border:1px solid #dbe2ea;
+  border-radius:999px;
+  color:#6b7280;
+  background:#fff;
+  font-size:.76rem;
+  white-space:nowrap;
+}
+
+.stock-movement-form{
+  display:block;
+}
+
+.stock-movement-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr);
+  gap:24px;
+  align-items:start;
+}
+
+.stock-movement-left,
+.stock-movement-right{
+  display:grid;
+  gap:20px;
+}
+
+.movement-card{
+  background:#fff;
+  border:1px solid #e1e7ef;
+  border-radius:10px;
+  padding:22px;
+  box-shadow:0 1px 2px rgba(15,23,42,.04);
+}
+
+.movement-card h2{
+  margin:0 0 18px;
+  color:#111827;
+  font-size:1rem;
+  line-height:1.25;
+}
+
+.movement-card__header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+  margin-bottom:18px;
+}
+
+.movement-card__header h2{
+  margin:0;
+}
+
+.movement-type-toggle{
+  display:inline-grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:0;
+  min-width:158px;
+  padding:3px;
+  margin:0;
+  border-radius:7px;
+  background:#f1f3f6;
+}
+
+.movement-type-option{
+  min-height:30px;
+  padding:0 12px;
+  border:0;
+  border-radius:5px;
+  background:transparent;
+  color:#4b5563;
+  font-size:.66rem;
+  box-shadow:none;
+  text-transform:uppercase;
+}
+
+.movement-type-option.is-selected{
+  background:#fff;
+  color:#111827;
+  box-shadow:0 1px 3px rgba(15,23,42,.12);
+}
+
+.form-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+}
+
+.form-field span,
+.payment-method-field legend{
+  color:#4b5563;
+  font-size:.66rem;
+  font-weight:800;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+}
+
+.form-field input,
+.form-field textarea,
+.form-field select{
+  border-color:#e2e8f0;
+  border-radius:7px;
+  background:#f6f7f9;
+  font-size:.84rem;
+}
+
+.form-field input,
+.form-field select{
+  height:42px;
+}
+
+.form-field textarea{
+  min-height:96px;
+}
+
+.quantity-stepper{
+  grid-template-columns:44px minmax(0,1fr) 44px;
+  border-color:#e2e8f0;
+  border-radius:7px;
+  background:#f6f7f9;
+}
+
+.quantity-stepper button{
+  color:#111827;
+  background:#f6f7f9;
+  font-size:1rem;
+}
+
+.quantity-stepper input{
+  background:#f6f7f9;
+  font-weight:800;
+}
+
+.stock-out-only{
+  display:none;
+}
+
+.stock-movement-page.is-stock-out .stock-out-only{
+  display:flex;
+}
+
+.stock-movement-page.is-stock-out #quantityField{
+  grid-column:auto;
+}
+
+.payment-method-field{
+  margin-top:16px;
+}
+
+.payment-methods{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  padding:8px;
+  border-radius:8px;
+  background:#f3f4f6;
+}
+
+.payment-method{
+  min-height:36px;
+  border:0;
+  border-radius:6px;
+  background:transparent;
+  box-shadow:none;
+  font-size:.8rem;
+}
+
+.payment-method span{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+}
+
+.payment-method.is-selected{
+  color:#047857;
+  background:#c7f7df;
+  box-shadow:none;
+}
+
+.incoming-status-dropdown{
+  margin-bottom:12px;
+}
+
+.stock-movement-page.is-stock-out .incoming-status-dropdown{
+  display:none;
+}
+
+.movement-status-options{
+  display:grid;
+  gap:10px;
+}
+
+.movement-status-option{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  min-height:52px;
+  padding:10px 12px;
+  border:1px solid #e5eaf1;
+  border-radius:8px;
+  background:#f8fafc;
+  cursor:pointer;
+  transition:background .15s,border-color .15s,box-shadow .15s;
+}
+
+.movement-status-option.is-selected{
+  border-color:#86efac;
+  background:#dcfce7;
+  box-shadow:0 0 0 3px rgba(34,197,94,.08);
+}
+
+.stock-movement-page.is-stock-out .movement-status-option.is-selected{
+  border-color:#93c5fd;
+  background:#eff6ff;
+  box-shadow:0 0 0 3px rgba(59,130,246,.08);
+}
+
+.movement-status-option__main{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.movement-status-option__icon{
+  width:28px;
+  height:28px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:7px;
+  background:#fff;
+  color:#64748b;
+  border:1px solid #e2e8f0;
+  flex-shrink:0;
+}
+
+.movement-status-option.is-selected .movement-status-option__icon{
+  color:#16a34a;
+}
+
+.stock-movement-page.is-stock-out .movement-status-option.is-selected .movement-status-option__icon{
+  color:#2563eb;
+}
+
+.movement-status-option strong{
+  display:block;
+  color:#111827;
+  font-size:.82rem;
+}
+
+.movement-status-option small{
+  display:block;
+  margin-top:2px;
+  color:#6b7280;
+  font-size:.7rem;
+}
+
+.movement-status-option__radio{
+  width:18px;
+  height:18px;
+  border:2px solid #cbd5e1;
+  border-radius:50%;
+  position:relative;
+  flex-shrink:0;
+}
+
+.movement-status-option.is-selected .movement-status-option__radio{
+  border-color:#22c55e;
+}
+
+.stock-movement-page.is-stock-out .movement-status-option.is-selected .movement-status-option__radio{
+  border-color:#3b82f6;
+}
+
+.movement-status-option.is-selected .movement-status-option__radio::after{
+  content:"";
+  position:absolute;
+  inset:3px;
+  border-radius:50%;
+  background:currentColor;
+}
+
+.selected-status{
+  margin-top:12px;
+}
+
+.stock-movement-footer{
+  display:flex;
+  justify-content:flex-end;
+  gap:12px;
+  margin-top:34px;
+  padding-top:26px;
+  border-top:1px solid #e5eaf1;
+}
+
+.stock-movement-footer .btn-primary svg{
+  flex-shrink:0;
+}
+
+.stock-movement-message{
+  text-align:right;
+}
+
+@media(max-width:980px){
+  .stock-movement-grid{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:700px){
+  .stock-movement-header,
+  .movement-card__header{
+    flex-direction:column;
+  }
+
+  .stock-movement-recency,
+  .movement-type-toggle{
+    width:100%;
+  }
+
+  .form-grid{
+    grid-template-columns:1fr;
+  }
+
+  .stock-movement-footer{
+    flex-direction:column-reverse;
+  }
+
+  .stock-movement-footer .btn-primary,
+  .stock-movement-footer .btn-outline{
+    width:100%;
+  }
+}
