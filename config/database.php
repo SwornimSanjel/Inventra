@@ -70,6 +70,11 @@ class Database
         return $value === '' ? $default : $value;
     }
 
+    public static function getEnv(string $key, ?string $default = null): ?string
+    {
+        return self::env($key, $default);
+    }
+
     public static function connect(): PDO
     {
         if (self::$pdo === null) {

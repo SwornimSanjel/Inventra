@@ -244,6 +244,118 @@
   color: #4b5563;
 }
 
+.ai-product-detail {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #edf1f5;
+}
+
+.ai-product-detail__empty {
+  border-radius: 12px;
+  border: 1px dashed #cbd5e1;
+  background: #f8fafc;
+  padding: 14px 16px;
+  color: #64748b;
+  font-size: .82rem;
+}
+
+.ai-product-detail__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ai-product-detail__header h3,
+.ai-gemini-insight-card__header h3 {
+  font-size: .92rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.ai-product-detail__header p,
+.ai-gemini-insight-card__header p {
+  font-size: .8rem;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.ai-product-detail__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.ai-product-detail__metric {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  padding: 12px 14px;
+}
+
+.ai-product-detail__metric-label {
+  display: block;
+  color: #6b7280;
+  font-size: .73rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  font-weight: 700;
+}
+
+.ai-product-detail__metric-value {
+  margin-top: 8px;
+  color: #111827;
+  font-size: .84rem;
+  line-height: 1.55;
+}
+
+.ai-gemini-insight-card {
+  margin-top: 18px;
+  border-radius: 14px;
+  border: 1px solid #dbe7f3;
+  background: linear-gradient(180deg, #f8fbff 0%, #f3f7fb 100%);
+  padding: 16px;
+}
+
+.ai-gemini-insight-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.ai-gemini-insight-card__loading {
+  margin-top: 12px;
+  font-size: .82rem;
+  color: #334155;
+}
+
+.ai-gemini-insight-card__box {
+  margin-top: 14px;
+  border-radius: 12px;
+  border: 1px solid #d6e2ef;
+  background: #fff;
+  padding: 14px 16px;
+}
+
+.ai-gemini-insight-card__box p {
+  color: #1f2937;
+  font-size: .84rem;
+  line-height: 1.6;
+}
+
+.ai-gemini-insight-card__source {
+  display: inline-block;
+  margin-top: 10px;
+  color: #64748b;
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  font-weight: 700;
+}
+
 .ai-insights-list {
   display: grid;
   gap: 14px;
@@ -413,6 +525,14 @@
   padding-bottom: 16px;
 }
 
+.ai-recommendations-table__row {
+  cursor: pointer;
+}
+
+.ai-recommendations-table__row.is-selected {
+  background: #f8fbff;
+}
+
 .ai-recommendations-table .product-copy__title {
   font-size: .88rem;
   font-weight: 700;
@@ -547,6 +667,15 @@
 
   .ai-demand-chart__days {
     text-align: right;
+  }
+
+  .ai-product-detail__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-product-detail__header,
+  .ai-gemini-insight-card__header {
+    flex-direction: column;
   }
 
   .ai-recommendations-pagination {

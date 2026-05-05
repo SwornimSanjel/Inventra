@@ -1,8 +1,16 @@
 <?php
 $forecastApiUrl = $forecastingPageState['forecast_api_url'] ?? 'index.php?url=admin/ai-forecasting/data';
+$productDetailApiUrl = $forecastingPageState['product_detail_api_url'] ?? 'index.php?url=admin/ai-forecasting/product-detail';
+$generateInsightApiUrl = $forecastingPageState['generate_insight_api_url'] ?? 'index.php?url=admin/ai-forecasting/generate-insight';
 ?>
 
-<div class="ai-forecasting-page" data-ai-forecasting-page data-api-url="<?= htmlspecialchars($forecastApiUrl) ?>">
+<div
+    class="ai-forecasting-page"
+    data-ai-forecasting-page
+    data-api-url="<?= htmlspecialchars($forecastApiUrl) ?>"
+    data-product-detail-url="<?= htmlspecialchars($productDetailApiUrl) ?>"
+    data-generate-insight-url="<?= htmlspecialchars($generateInsightApiUrl) ?>"
+>
     <div class="page-header ai-forecasting-page__header">
         <div class="ai-forecasting-page__heading">
             <p class="page-subtitle dashboard-page__intro ai-forecasting-page__subtitle">Monitor stock risks, reorder needs, demand forecasts, and inventory recommendations.</p>
@@ -56,6 +64,35 @@ $forecastApiUrl = $forecastingPageState['forecast_api_url'] ?? 'index.php?url=ad
                 <div class="ai-insights-list" data-insights-list></div>
                 <div class="ai-analysis-panel" data-analysis-panel hidden>
                     <div class="ai-analysis-panel__body" data-analysis-body></div>
+                    <div class="ai-product-detail" data-product-detail>
+                        <div class="ai-product-detail__empty" data-product-detail-empty>Select a product from the recommendations table to view full analysis.</div>
+                        <div class="ai-product-detail__content" data-product-detail-content hidden>
+                            <div class="ai-product-detail__header">
+                                <div>
+                                    <h3 data-detail-product-name>Product Analysis</h3>
+                                    <p data-detail-product-meta>Review predictive forecast data before generating an explanation.</p>
+                                </div>
+                                <span class="ai-status-badge" data-detail-status>Pending</span>
+                            </div>
+
+                            <div class="ai-product-detail__grid" data-detail-grid></div>
+
+                            <div class="ai-gemini-insight-card">
+                                <div class="ai-gemini-insight-card__header">
+                                    <div>
+                                        <h3>Gemini AI Explanation</h3>
+                                        <p>Generate a short admin-friendly explanation from the selected predictive forecast result.</p>
+                                    </div>
+                                    <button type="button" class="btn-outline" data-generate-insight disabled>Generate AI Explanation</button>
+                                </div>
+                                <p class="ai-gemini-insight-card__loading" data-insight-loading hidden>Generating AI explanation...</p>
+                                <div class="ai-gemini-insight-card__box" data-insight-box hidden>
+                                    <p data-insight-text></p>
+                                    <span class="ai-gemini-insight-card__source" data-insight-source></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </article>
 

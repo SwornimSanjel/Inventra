@@ -14,10 +14,14 @@
     summaryCards: [],
     insights: [],
     chartItems: [],
-    analysisOpen: false
+    analysisOpen: false,
+    selectedProductId: null,
+    selectedProductDetail: null
   };
 
   var apiUrl = page.getAttribute('data-api-url') || 'index.php?url=admin/ai-forecasting/data';
+  var productDetailUrl = page.getAttribute('data-product-detail-url') || 'index.php?url=admin/ai-forecasting/product-detail';
+  var generateInsightUrl = page.getAttribute('data-generate-insight-url') || 'index.php?url=admin/ai-forecasting/generate-insight';
   var content = page.querySelector('[data-forecast-content]');
   var emptyState = page.querySelector('[data-forecast-empty]');
   var emptyMessage = page.querySelector('[data-empty-message]');
@@ -42,6 +46,17 @@
   var exportButton = page.querySelector('[data-export-csv]');
   var rangeButtons = Array.prototype.slice.call(page.querySelectorAll('[data-range-btn]'));
   var customSelects = Array.prototype.slice.call(page.querySelectorAll('[data-ai-select]'));
+  var productDetailEmpty = page.querySelector('[data-product-detail-empty]');
+  var productDetailContent = page.querySelector('[data-product-detail-content]');
+  var detailProductName = page.querySelector('[data-detail-product-name]');
+  var detailProductMeta = page.querySelector('[data-detail-product-meta]');
+  var detailStatus = page.querySelector('[data-detail-status]');
+  var detailGrid = page.querySelector('[data-detail-grid]');
+  var generateInsightButton = page.querySelector('[data-generate-insight]');
+  var insightLoading = page.querySelector('[data-insight-loading]');
+  var insightBox = page.querySelector('[data-insight-box]');
+  var insightText = page.querySelector('[data-insight-text]');
+  var insightSource = page.querySelector('[data-insight-source]');
 
   function escapeHtml(value) {
     return String(value == null ? '' : value)
@@ -87,6 +102,40 @@
     }
   }
 
+  function setInsightLoading(isLoading) {
+    if (generateInsightButton) {
+      generateInsightButton.disabled = !!isLoading || !state.selectedProductDetail;
+    }
+
+    if (insightLoading) {
+      insightLoading.hidden = !isLoading;
+    }
+  }
+
+  function resetInsight() {
+    if (insightBox) {
+      insightBox.hidden = true;
+    }
+
+    if (insightText) {
+      insightText.textContent = '';
+    }
+
+    if (insightSource) {
+      insightSource.textContent = '';
+    }
+  }
+
+  function showInsight(source, text) {
+    if (!insightBox || !insightText || !insightSource) {
+      return;
+    }
+
+    insightText.textContent = text || '';
+    insightSource.textContent = source === 'gemini' ? 'Source: Gemini' : 'Source: Fallback';
+    insightBox.hidden = false;
+  }
+
   function updateRangeButtons() {
     rangeButtons.forEach(function (button) {
       button.classList.toggle('is-active', Number(button.getAttribute('data-range')) === state.range);
@@ -95,7 +144,7 @@
 
   function populateCategories(categories) {
     var current = categoryFilter.value;
-    var options = ['<button type="button" class="products-custom-select__option' + (current === '' ? ' is-active' : '') + '" data-ai-select-option data-value="">All Categories</button>'];
+    var options = ['<button type="button" class="products-custom-select__option' + (current === '' ? ' is-active' : '') + '" data-ai-select-option data-value=\"\">All Categories</button>'];
     categories.forEach(function (category) {
       options.push(
         '<button type="button" class="products-custom-select__option' + (current === category ? ' is-active' : '') + '" data-ai-select-option data-value="' + escapeHtml(category) + '">' + escapeHtml(category) + '</button>'
@@ -343,6 +392,85 @@
     }).join('');
   }
 
+  function renderProductDetail() {
+    var detail = state.selectedProductDetail;
+
+    if (!detail) {
+      if (productDetailEmpty) {
+        productDetailEmpty.hidden = false;
+      }
+
+      if (productDetailContent) {
+        productDetailContent.hidden = true;
+      }
+
+      if (generateInsightButton) {
+        generateInsightButton.disabled = true;
+      }
+
+      resetInsight();
+      return;
+    }
+
+    if (productDetailEmpty) {
+      productDetailEmpty.hidden = true;
+    }
+
+    if (productDetailContent) {
+      productDetailContent.hidden = false;
+    }
+
+    if (detailProductName) {
+      detailProductName.textContent = detail.product.product_name || 'Product Analysis';
+    }
+
+    if (detailProductMeta) {
+      detailProductMeta.textContent = 'Threshold ' + (detail.product.threshold || '0/0') + ' • Demand trend ' + (detail.stock_signals.demand_trend || 'Stable');
+    }
+
+    if (detailStatus) {
+      var riskLevel = detail.ai_analysis.risk_level || 'stable';
+      detailStatus.className = 'ai-status-badge ai-status-badge--' + riskLevel;
+      detailStatus.textContent = riskLevel.replace(/_/g, ' ');
+    }
+
+    if (detailGrid) {
+      detailGrid.innerHTML = [
+        detailMetricMarkup('Product name', detail.product.product_name || 'N/A'),
+        detailMetricMarkup('Category', detail.product.category || 'Uncategorized'),
+        detailMetricMarkup('Current stock', detail.product.current_stock + ' units'),
+        detailMetricMarkup('Average daily usage', Number(detail.stock_signals.daily_average_usage || 0).toFixed(2) + ' units/day'),
+        detailMetricMarkup('Predicted runout', detail.stock_signals.runout_time_days == null ? 'N/A' : Number(detail.stock_signals.runout_time_days).toFixed(2) + ' days'),
+        detailMetricMarkup('Status', humanizeText(detail.ai_analysis.risk_level || 'no_data')),
+        detailMetricMarkup('AI recommendation', detail.ai_analysis.recommendation || 'No recommendation available'),
+        detailMetricMarkup('Threshold', detail.product.threshold || '0/0'),
+        detailMetricMarkup('Suggested reorder', detail.reorder_data.suggested_reorder_quantity + ' units'),
+        detailMetricMarkup('Predictive analysis', detail.ai_analysis.analysis || 'No analysis available')
+      ].join('');
+    }
+
+    if (generateInsightButton) {
+      generateInsightButton.disabled = false;
+    }
+  }
+
+  function detailMetricMarkup(label, value) {
+    return [
+      '<article class="ai-product-detail__metric">',
+      '  <span class="ai-product-detail__metric-label">' + escapeHtml(label) + '</span>',
+      '  <p class="ai-product-detail__metric-value">' + escapeHtml(value) + '</p>',
+      '</article>'
+    ].join('');
+  }
+
+  function humanizeText(value) {
+    return String(value || '')
+      .replace(/_/g, ' ')
+      .replace(/\b[a-z]/g, function (match) {
+        return match.toUpperCase();
+      });
+  }
+
   function applyFilters() {
     var search = (searchInput.value || '').toLowerCase().trim();
     var status = statusFilter.value;
@@ -390,8 +518,9 @@
       recommendationBody.innerHTML = '<tr><td colspan="7" class="empty-state">No recommendations matched the current filters.</td></tr>';
     } else {
       recommendationBody.innerHTML = rows.map(function (row) {
+        var isSelected = Number(row.product_id) === Number(state.selectedProductId);
         return [
-          '<tr>',
+          '<tr class="ai-recommendations-table__row' + (isSelected ? ' is-selected' : '') + '" data-product-row data-product-id="' + escapeHtml(row.product_id) + '">',
           '  <td>',
           '    <div class="product-copy">',
           '      <div class="product-copy__title">' + escapeHtml(row.product_name) + '</div>',
@@ -485,6 +614,131 @@
     content.hidden = false;
   }
 
+  function parseJsonResponse(response, contextLabel) {
+    return response.text().then(function (text) {
+      var payload = text ? text.trim() : '';
+      var data = null;
+
+      if (payload !== '') {
+        try {
+          data = JSON.parse(payload);
+        } catch (error) {
+          console.error(contextLabel + ': invalid JSON response', {
+            status: response.status,
+            body: payload
+          });
+          throw new Error('Invalid JSON response');
+        }
+      }
+
+      if (!response.ok) {
+        var message = data && data.message ? data.message : ('HTTP ' + response.status);
+        console.error(contextLabel + ': request failed', {
+          status: response.status,
+          body: payload
+        });
+        throw new Error(message);
+      }
+
+      return data;
+    });
+  }
+
+  function fetchProductDetail(productId) {
+    if (!productId) {
+      return;
+    }
+
+    state.selectedProductId = Number(productId);
+    state.selectedProductDetail = null;
+    renderRecommendationTable();
+    renderProductDetail();
+    resetInsight();
+    state.analysisOpen = true;
+    syncAnalysisVisibility();
+
+    fetch(productDetailUrl + '&id=' + encodeURIComponent(productId), {
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+      .then(function (response) {
+        return parseJsonResponse(response, 'AI Forecasting product detail');
+      })
+      .then(function (data) {
+        if (!data || data.status !== 'success') {
+          var message = data && data.message ? data.message : 'Unable to load product detail';
+          console.error('AI Forecasting product detail: API returned error payload', data);
+          throw new Error(message);
+        }
+
+        if (Number(productId) !== Number(state.selectedProductId)) {
+          return;
+        }
+
+        state.selectedProductDetail = data;
+        renderProductDetail();
+      })
+      .catch(function (error) {
+        console.error('AI Forecasting product detail load failed', {
+          productId: productId,
+          error: error
+        });
+
+        if (Number(productId) !== Number(state.selectedProductId)) {
+          return;
+        }
+
+        state.selectedProductDetail = null;
+        renderProductDetail();
+        if (productDetailEmpty) {
+          productDetailEmpty.textContent = 'Unable to load the selected product analysis right now.';
+        }
+      });
+  }
+
+  function generateInsight() {
+    if (!state.selectedProductId) {
+      return;
+    }
+
+    resetInsight();
+    setInsightLoading(true);
+
+    fetch(generateInsightUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: JSON.stringify({
+        product_id: state.selectedProductId
+      })
+    })
+      .then(function (response) {
+        return parseJsonResponse(response, 'Gemini insight');
+      })
+      .then(function (data) {
+        if (!data || data.success !== true) {
+          var message = data && data.message ? data.message : 'Insight request failed';
+          console.error('Gemini insight: API returned error payload', data);
+          throw new Error(message);
+        }
+
+        showInsight(data.source, data.insight || 'No explanation returned.');
+      })
+      .catch(function (error) {
+        console.error('Gemini insight request failed', {
+          productId: state.selectedProductId,
+          error: error
+        });
+        showInsight('fallback', 'The explanation could not be generated right now. Please review the predictive recommendation shown above.');
+      })
+      .finally(function () {
+        setInsightLoading(false);
+      });
+  }
+
   function handleResponse(data) {
     if (!data || data.status === 'empty') {
       showEmptyState(data && data.message ? data.message : 'No forecasting data yet');
@@ -499,6 +753,18 @@
     state.insights = Array.isArray(data.insights) ? data.insights : [];
     state.chartItems = data.chart && Array.isArray(data.chart.items) ? data.chart.items : [];
     state.page = 1;
+
+    if (state.selectedProductId) {
+      var stillExists = state.allRecommendations.some(function (row) {
+        return Number(row.product_id) === Number(state.selectedProductId);
+      });
+
+      if (!stillExists) {
+        state.selectedProductId = null;
+        state.selectedProductDetail = null;
+        renderProductDetail();
+      }
+    }
 
     updateRangeButtons();
     populateCategories(state.categories);
@@ -597,7 +863,23 @@
     });
   }
 
+  if (recommendationBody) {
+    recommendationBody.addEventListener('click', function (event) {
+      var row = event.target.closest('[data-product-row]');
+      if (!row) {
+        return;
+      }
+
+      fetchProductDetail(row.getAttribute('data-product-id'));
+    });
+  }
+
+  if (generateInsightButton) {
+    generateInsightButton.addEventListener('click', generateInsight);
+  }
+
   setupCustomSelects();
   syncAnalysisVisibility();
+  renderProductDetail();
   fetchDashboard();
 })();

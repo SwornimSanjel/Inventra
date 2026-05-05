@@ -202,6 +202,11 @@ if (strpos($url, 'admin/ai-forecasting') === 0) {
         exit;
     }
 
+    if ($url === 'admin/ai-forecasting/generate-insight' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $aiForecastingController->generateInsight();
+        exit;
+    }
+
     if ($url === 'admin/ai-forecasting/mark-reorder' && in_array($_SERVER['REQUEST_METHOD'], ['GET', 'POST'], true)) {
         $aiForecastingController->markReorder();
         exit;

@@ -84,6 +84,7 @@ class AIForecastModel
         );
 
         $riskLevel = $this->determineRiskLevel($runoutTimeDays, $dailyAverageUsage);
+        $demandTrend = $this->determineDemandTrend($productId);
         $analysis = $this->buildAnalysisMessage($riskLevel, $product['product_name'], $runoutTimeDays, $dailyAverageUsage);
         $recommendation = $this->buildRecommendationMessage($riskLevel, (int) $forecast['suggested_reorder_quantity'], $leadTimeDays);
         $estimatedReorderCost = $this->buildEstimatedReorderCost(
@@ -101,6 +102,9 @@ class AIForecastModel
                 'category' => (string) $product['category'],
                 'stock_status' => $product['stock_status'],
                 'current_stock' => $currentStock,
+                'lower_limit' => (int) $product['lower_limit'],
+                'upper_limit' => (int) $product['upper_limit'],
+                'threshold' => (int) $product['lower_limit'] . '/' . (int) $product['upper_limit'],
             ],
             'stock_signals' => [
                 'daily_average_usage' => $dailyAverageUsage,
@@ -108,6 +112,7 @@ class AIForecastModel
                 'lead_time_days' => $leadTimeDays,
                 'runout_time_days' => $runoutTimeDays,
                 'confidence_percentage' => $confidencePercentage,
+                'demand_trend' => $demandTrend,
             ],
             'ai_analysis' => [
                 'risk_level' => $riskLevel,
@@ -128,6 +133,28 @@ class AIForecastModel
                 'update_stock_url' => 'index.php?url=admin/stock-update',
                 'mark_for_reorder_url' => 'index.php?url=admin/ai-forecasting/mark-reorder&id=' . (int) $product['product_id'],
             ],
+        ];
+    }
+
+    public function getInsightPayloadForProduct(int $productId): array
+    {
+        $detail = $this->getProductDetailResponse($productId);
+        if (($detail['status'] ?? 'error') !== 'success') {
+            throw new RuntimeException('Forecast detail is unavailable for this product.');
+        }
+
+        $runoutDaysValue = $detail['stock_signals']['runout_time_days'] ?? null;
+
+        return [
+            'product_id' => (int) ($detail['product']['product_id'] ?? $productId),
+            'product_name' => (string) ($detail['product']['product_name'] ?? ''),
+            'current_stock' => (string) (int) ($detail['product']['current_stock'] ?? 0),
+            'daily_usage' => number_format((float) ($detail['stock_signals']['daily_average_usage'] ?? 0), 2, '.', ''),
+            'runout_days' => $runoutDaysValue === null ? 'N/A' : number_format((float) $runoutDaysValue, 2, '.', ''),
+            'trend' => (string) ($detail['stock_signals']['demand_trend'] ?? 'Stable'),
+            'suggested_reorder' => (string) (int) ($detail['reorder_data']['suggested_reorder_quantity'] ?? 0),
+            'status' => ucfirst(str_replace('_', ' ', (string) ($detail['ai_analysis']['risk_level'] ?? 'no_data'))),
+            'threshold' => (string) ($detail['product']['threshold'] ?? '0/0'),
         ];
     }
 
@@ -335,7 +362,7 @@ class AIForecastModel
     {
         return [
             'product_id' => (int) $row['product_id'],
-            'product_name' => (string) $row['product_name'],
+            'product_name' => (string) ($row['product_name'] ?? ''),
             'current_stock' => (int) $row['current_stock'],
             'predicted_demand' => (int) $row['predicted_demand'],
             'suggested_reorder_quantity' => (int) $row['suggested_reorder_quantity'],
@@ -428,6 +455,53 @@ class AIForecastModel
             'suggested_reorder_quantity' => $suggestedReorderQuantity,
             'forecast_date' => $forecastDate,
         ];
+    }
+
+    private function determineDemandTrend(int $productId): string
+    {
+        if (!Database::tableExists('stock_movements')) {
+            return 'No recent demand';
+        }
+
+        $stmt = $this->db->prepare(
+            "SELECT
+                COALESCE(SUM(CASE
+                    WHEN movement_type = 'out' AND created_at >= CURRENT_DATE - INTERVAL '6 days' THEN quantity
+                    ELSE 0
+                END), 0) AS recent_out,
+                COALESCE(SUM(CASE
+                    WHEN movement_type = 'out'
+                     AND created_at >= CURRENT_DATE - INTERVAL '13 days'
+                     AND created_at < CURRENT_DATE - INTERVAL '6 days' THEN quantity
+                    ELSE 0
+                END), 0) AS previous_out
+            FROM stock_movements
+            WHERE product_id = ?"
+        );
+        $stmt->execute([$productId]);
+        $row = $stmt->fetch() ?: [];
+
+        $recentOut = max(0, (int) ($row['recent_out'] ?? 0));
+        $previousOut = max(0, (int) ($row['previous_out'] ?? 0));
+
+        if ($recentOut === 0 && $previousOut === 0) {
+            return 'No recent demand';
+        }
+
+        if ($previousOut === 0 && $recentOut > 0) {
+            return 'Increasing';
+        }
+
+        $deltaRatio = $previousOut > 0 ? (($recentOut - $previousOut) / $previousOut) : 0.0;
+        if ($deltaRatio >= 0.2) {
+            return 'Increasing';
+        }
+
+        if ($deltaRatio <= -0.2) {
+            return 'Declining';
+        }
+
+        return 'Stable';
     }
 
     private function calculateConfidencePercentage(int $usageDays, int $movementDays): int
