@@ -1,159 +1,214 @@
-<style>
-#movementProduct,
-#paymentStatus {
-    appearance: auto;
-    -webkit-appearance: menulist;
-    cursor: pointer;
-}
-</style>
-
-<div class="stock-movement-page">
-    <div class="stock-movement-header">
-        <div>
-            <h1 class="page-title">Record Stock Movement</h1>
-            <p>Log precise inventory flow and transaction details for ledger accuracy.</p>
+<div class="stock-page">
+    <div class="page-header stock-page__header">
+        <div class="stock-page__heading">
+            <p class="page-subtitle stock-page__intro">Log precise inventory flow and transaction details for ledger accuracy.</p>
         </div>
-        <span class="stock-movement-recency" aria-label="Last recorded stock movement">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-            </svg>
-            Last record: 2 hours ago
-        </span>
     </div>
 
-    <form class="stock-movement-form" id="stockMovementForm">
-        <div class="stock-movement-grid">
-            <div class="stock-movement-left">
-                <section class="movement-card">
-                    <div class="movement-card__header">
-                        <h2>Stock Details</h2>
-                        <div class="movement-type-toggle" role="group" aria-label="Stock movement type">
-                            <label class="movement-type-option is-selected">
-                                <input type="radio" name="movement_type" value="in" checked>
-                                <span>Stock In</span>
-                            </label>
-                            <label class="movement-type-option">
-                                <input type="radio" name="movement_type" value="out">
-                                <span>Stock Out</span>
-                            </label>
+    <div class="stock-layout">
+        <section class="section-card stock-form-card">
+            <form id="stockMovementForm" class="stock-form">
+                <div class="stock-block">
+                    <div class="stock-card-head">
+                        <div>
+                            <h2 class="stock-card-title">Stock Details</h2>
+                        </div>
+                        <div class="stock-toggle" role="tablist" aria-label="Stock movement type">
+                            <button type="button" class="stock-toggle__btn is-active" id="stockInBtn" data-type="in">Stock In</button>
+                            <button type="button" class="stock-toggle__btn" id="stockOutBtn" data-type="out">Stock Out</button>
                         </div>
                     </div>
 
-                    <div class="form-grid">
-                        <label class="form-field form-field--full">
+                    <div class="form-grid form-grid--stock">
+                        <label class="field field--full">
                             <span>Product Name</span>
-                            <select name="product_id" id="movementProduct" required>
-                                <option value="">Select product</option>
-                                <option value="1">Product One</option>
-                                <option value="2">Product Two</option>
-                                <option value="3">Product Three</option>
-                            </select>
-                        </label>
-
-                        <label class="form-field" id="quantityField">
-                            <span>Quantity</span>
-                            <div class="quantity-stepper">
-                                <button type="button" id="decreaseQty" aria-label="Decrease quantity">-</button>
-                                <input type="number" name="quantity" id="movementQuantity" min="1" value="120" required>
-                                <button type="button" id="increaseQty" aria-label="Increase quantity">+</button>
+                            <div class="stock-custom-select" data-stock-select-root>
+                                <select id="stockProduct" name="product_id" required class="stock-native-select" data-stock-select-native>
+                                    <option value="">Select product</option>
+                                </select>
+                                <button type="button" class="stock-custom-select__trigger" data-stock-select-trigger aria-expanded="false">
+                                    <span data-stock-select-label>Select product</span>
+                                    <svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1l5 5 5-5"></path></svg>
+                                </button>
+                                <div class="stock-custom-select__menu" data-stock-select-menu hidden></div>
                             </div>
                         </label>
 
-                        <label class="form-field stock-out-only" id="referenceSkuField">
-                            <span>Reference SKU</span>
-                            <input type="text" name="reference_sku" id="referenceSku" value="TSG-A6-2024-XP9">
+                        <label class="field field--quantity">
+                            <span>Quantity</span>
+                            <div class="qty-control">
+                                <button type="button" class="qty-control__btn" id="quantityMinus" aria-label="Decrease quantity">-</button>
+                                <input type="number" id="stockQuantity" name="quantity" min="1" value="1" required>
+                                <button type="button" class="qty-control__btn" id="quantityPlus" aria-label="Increase quantity">+</button>
+                            </div>
                         </label>
 
-                        <label class="form-field form-field--full">
+                        <label class="field field--full">
                             <span>Movement Notes</span>
-                            <textarea name="notes" id="movementNotes" rows="4"
-                                placeholder="Add specific details about the batch condition or carrier..."></textarea>
+                            <textarea id="stockNotes" name="notes" rows="4" placeholder="Add specific details about the batch condition or carrier..."></textarea>
                         </label>
                     </div>
-                </section>
+                </div>
 
-                <section class="movement-card">
-                    <h2>Buyer / Seller Details</h2>
-
+                <div class="stock-block stock-block--subsection">
+                    <h2 class="stock-card-title">Buyer / Seller Details</h2>
                     <div class="form-grid">
-                        <label class="form-field">
+                        <label class="field">
                             <span>Full Name</span>
-                            <input type="text" name="person_name" id="personName" value="Swornim Sanjel Pvt. Ltd." required>
+                            <input type="text" id="partyName" name="full_name" placeholder="Supplier or customer name">
                         </label>
 
-                        <label class="form-field">
+                        <label class="field">
                             <span>Contact Number</span>
-                            <input type="tel" name="contact_number" id="contactNumber" value="+977-9800000000" required>
+                            <input type="text" id="partyContact" name="contact" placeholder="Phone number">
                         </label>
 
-                        <label class="form-field">
-                            <span>Amount Per Piece (NPR)</span>
-                            <input type="number" name="amount_per_piece" id="amountPerPiece" min="0" step="0.01" value="2450" required>
+                        <label class="field">
+                            <span>Amount Per Piece</span>
+                            <input type="number" id="stockPrice" name="amount_per_piece" min="0" step="0.01" value="0">
                         </label>
 
-                        <label class="form-field">
-                            <span>Total Amount (NPR)</span>
-                            <input type="text" id="totalAmount" value="52,94,000.00" readonly>
+                        <label class="field">
+                            <span>Total Amount</span>
+                            <input type="text" id="stockTotal" value="0.00" readonly>
                         </label>
                     </div>
-                </section>
-            </div>
+                </div>
 
-            <div class="stock-movement-right">
-                <section class="movement-card">
-                    <h2>Payment Status</h2>
+                <div class="stock-form__footer">
+                    <p class="form-message" id="stockFormMessage" aria-live="polite"></p>
+                </div>
+            </form>
+        </section>
 
-                    <label class="form-field form-field--full">
-                        <span>Status</span>
-                        <select name="payment_status" id="paymentStatus" required>
+        <aside class="stock-sidebar">
+            <section class="section-card stock-side-card">
+                <div class="stock-card-head stock-card-head--side">
+                    <h2 class="stock-card-title">Payment Status</h2>
+                </div>
+
+                <label class="field">
+                    <span>Status</span>
+                    <div class="stock-custom-select" data-stock-select-root>
+                        <select id="paymentStatus" name="payment_status" form="stockMovementForm" class="stock-native-select" data-stock-select-native>
                             <option value="paid">Paid</option>
                             <option value="unpaid">Unpaid</option>
                         </select>
+                        <button type="button" class="stock-custom-select__trigger" data-stock-select-trigger aria-expanded="false">
+                            <span data-stock-select-label>Paid</span>
+                            <svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1l5 5 5-5"></path></svg>
+                        </button>
+                        <div class="stock-custom-select__menu" data-stock-select-menu hidden></div>
+                    </div>
+                </label>
+
+                <div class="payment-toggle-wrap">
+                    <div class="payment-toggle" id="paymentMethodToggle">
+                        <button type="button" class="payment-toggle__btn is-active" data-method="cash">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v10H4z"></path><path d="M8 11h8"></path><path d="M8 9h3"></path></svg>
+                            <span>Cash</span>
+                        </button>
+                        <button type="button" class="payment-toggle__btn" data-method="card">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"></rect><path d="M3 10h18"></path></svg>
+                            <span>Card</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section-card stock-side-card" id="stockInStatusCard">
+                <div class="stock-card-head stock-card-head--side">
+                    <h2 class="stock-card-title">Incoming Stock Status</h2>
+                </div>
+                <div class="status-list">
+                    <label class="status-option">
+                        <input type="radio" name="incoming_status" value="order_dispatched" checked form="stockMovementForm">
+                        <span class="status-option__body">
+                            <span class="status-option__title">Order Dispatched</span>
+                            <span class="status-option__meta">Shipment has left the supplier location</span>
+                        </span>
                     </label>
-
-                    <label class="form-field form-field--full">
-                        <span>Payment Method</span>
-                        <select name="payment_method" id="paymentMethod" required>
-                            <option value="cash">Cash</option>
-                            <option value="card">Card</option>
-                        </select>
+                    <label class="status-option">
+                        <input type="radio" name="incoming_status" value="in_transit" form="stockMovementForm">
+                        <span class="status-option__body">
+                            <span class="status-option__title">In Transit</span>
+                            <span class="status-option__meta">Goods are currently moving to the warehouse</span>
+                        </span>
                     </label>
-                </section>
-
-                <section class="movement-card">
-                    <h2 id="movementStatusTitle">Incoming Stock Status</h2>
-
-                    <label class="form-field form-field--full incoming-status-dropdown">
-                        <span>Status Dropdown</span>
-                        <select name="incoming_status" id="incomingStatus">
-                            <option value="">Select incoming status</option>
-                            <option value="Order Dispatched">Order Dispatched</option>
-                            <option value="In Transit">In Transit</option>
-                            <option value="Received at Warehouse">Received at Warehouse</option>
-                        </select>
+                    <label class="status-option">
+                        <input type="radio" name="incoming_status" value="received" form="stockMovementForm">
+                        <span class="status-option__body">
+                            <span class="status-option__title">Received at Warehouse</span>
+                            <span class="status-option__meta">Inventory has arrived and is ready for intake</span>
+                        </span>
                     </label>
+                </div>
+            </section>
 
-                    <div class="movement-status-options" id="movementStatusOptions" aria-label="Selected stock status"></div>
-                    <strong class="selected-status" id="selectedIncomingStatus">No status selected</strong>
-                </section>
+            <section class="section-card stock-side-card is-hidden" id="stockOutStatusCard">
+                <div class="stock-card-head stock-card-head--side">
+                    <h2 class="stock-card-title">Movement Status</h2>
+                </div>
+                <div class="status-list">
+                    <label class="status-option">
+                        <input type="radio" name="movement_status" value="dispatched" checked form="stockMovementForm">
+                        <span class="status-option__body">
+                            <span class="status-option__title">Dispatched from Warehouse</span>
+                            <span class="status-option__meta">Vehicle is in transit to destination</span>
+                        </span>
+                    </label>
+                    <label class="status-option">
+                        <input type="radio" name="movement_status" value="hub" form="stockMovementForm">
+                        <span class="status-option__body">
+                            <span class="status-option__title">Stock Received at Hub</span>
+                            <span class="status-option__meta">Logging local storage check</span>
+                        </span>
+                    </label>
+                    <label class="status-option">
+                        <input type="radio" name="movement_status" value="delivered" form="stockMovementForm">
+                        <span class="status-option__body">
+                            <span class="status-option__title">Delivery Confirmed</span>
+                            <span class="status-option__meta">Final handover to client</span>
+                        </span>
+                    </label>
+                </div>
+            </section>
+
+            <div class="stock-actions stock-actions--sidebar">
+                <button type="reset" class="btn-outline" form="stockMovementForm">Reset</button>
+                <button type="submit" class="btn-primary" id="recordMovementBtn" form="stockMovementForm">Record Movement</button>
+            </div>
+        </aside>
+    </div>
+
+    <section class="section-card stock-history-card">
+        <div class="dashboard-panel__header">
+            <div>
+                <p class="eyebrow">Recent activity</p>
+                <h2>Latest stock movements</h2>
+                <p class="page-subtitle">A running ledger of the most recent stock in and stock out transactions.</p>
             </div>
         </div>
 
-        <div class="stock-movement-footer">
-            <button class="btn-outline" type="reset" id="cancelMovement">Cancel</button>
-            <button class="btn-primary" type="submit">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                    <polyline points="17 21 17 13 7 13 7 21" />
-                    <polyline points="7 3 7 8 15 8" />
-                </svg>
-                Record Movement
-            </button>
-        </div>
-
-        <p class="stock-movement-message" id="stockMovementMessage" role="status" aria-live="polite"></p>
-    </form>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Reference</th>
+                    <th>Product</th>
+                    <th>Type</th>
+                    <th style="text-align:center">Quantity</th>
+                    <th>Status</th>
+                    <th>Party</th>
+                    <th>Payment</th>
+                    <th>Update</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody id="stockHistoryTable">
+                <tr>
+                    <td colspan="9" class="empty-state">Loading recent movements...</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
 </div>

@@ -29,6 +29,7 @@ $stmt = $conn->query("
     SELECT
         id,
         name,
+        COALESCE(qty, 0) AS qty,
         COALESCE(unit_price, 0) AS unit_price
     FROM products
     ORDER BY name ASC

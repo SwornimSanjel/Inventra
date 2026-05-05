@@ -9,10 +9,6 @@ require_once __DIR__ . '/../../config/db.php';
 
 inventra_bootstrap_session();
 
-if (!defined('BASE_URL')) {
-    define('BASE_URL', './');
-}
-
 $userSession = new AdminSession();
 $account = $userSession->resolveAuthenticatedAccount();
 
@@ -24,73 +20,123 @@ if ($account === null) {
 
 $role = strtolower((string) ($account['role'] ?? ''));
 
-// This dashboard returns read-only overview data and is shared by authenticated users and admins.
 if (!in_array($role, ['admin', 'user'], true)) {
     http_response_code(403);
     echo json_encode(['error' => 'Unauthorized']);
     exit;
 }
 
-$page = max(1, (int) ($_GET['page'] ?? 1));
-$limit = 4;
-$offset = ($page - 1) * $limit;
-
 $totalProducts = (int) ($conn->query('SELECT COUNT(*) AS total FROM products')->fetch()['total'] ?? 0);
 $totalCategories = (int) ($conn->query('SELECT COUNT(*) AS total FROM categories')->fetch()['total'] ?? 0);
 $activeUsers = (int) ($conn->query("SELECT COUNT(*) AS total FROM users WHERE status = 'active'")->fetch()['total'] ?? 0);
-$lowStockCount = (int) ($conn->query('SELECT COUNT(*) AS total FROM products WHERE qty < lower_limit')->fetch()['total'] ?? 0);
+$lowStockCount = (int) ($conn->query('SELECT COUNT(*) AS total FROM products WHERE qty <= (lower_limit + 5)')->fetch()['total'] ?? 0);
 
-$lowStockSql = "
+$productsResult = $conn->query("
     SELECT
         p.id,
         p.name,
+        COALESCE(c.name, p.category, 'Uncategorized') AS category_name,
         COALESCE(p.qty, 0) AS qty,
+        COALESCE(p.unit_price, 0) AS unit_price,
         COALESCE(p.lower_limit, 0) AS lower_limit,
-        COALESCE(p.upper_limit, 0) AS upper_limit,
-        COALESCE(p.image, '') AS image
+        COALESCE(p.upper_limit, 0) AS upper_limit
     FROM products p
-    WHERE p.qty < p.lower_limit
-    ORDER BY p.qty ASC, p.name ASC
-    LIMIT ? OFFSET ?
-";
+    LEFT JOIN categories c ON c.id = p.category_id
+    ORDER BY p.name ASC
+");
 
-$stmt = $conn->prepare($lowStockSql);
-$stmt->bindValue(1, $limit, PDO::PARAM_INT);
-$stmt->bindValue(2, $offset, PDO::PARAM_INT);
-$stmt->execute();
-
-$lowStock = [];
-$rowNumber = $offset + 1;
-
-foreach ($stmt->fetchAll() as $row) {
-    $status = strtolower(str_replace(' ', '_', getStockStatus(
-        (int) $row['qty'],
-        (int) $row['lower_limit'],
-        (int) $row['upper_limit']
-    )));
-
-    $image = trim((string) $row['image']);
-    if ($image !== '' && !preg_match('#^https?://#i', $image) && strpos($image, BASE_URL) !== 0) {
-        $image = BASE_URL . ltrim($image, '/');
-    }
-
-    $lowStock[] = [
+$products = [];
+foreach ($productsResult->fetchAll() as $row) {
+    $products[] = [
         'id' => (int) $row['id'],
-        'sku' => $rowNumber,
         'name' => $row['name'],
+        'category_name' => $row['category_name'],
         'stock' => (int) $row['qty'],
-        'lower_limit' => (int) $row['lower_limit'],
-        'upper_limit' => (int) $row['upper_limit'],
-        'threshold' => (int) $row['lower_limit'] . '/' . (int) $row['upper_limit'],
-        'status' => $status,
-        'image' => $image,
+        'price' => (float) $row['unit_price'],
+        'status' => strtolower(str_replace(' ', '_', getStockStatus(
+            (int) $row['qty'],
+            (int) $row['lower_limit'],
+            (int) $row['upper_limit']
+        ))),
     ];
-
-    $rowNumber++;
 }
 
-$totalPages = max(1, (int) ceil($lowStockCount / $limit));
-$showing = min($limit, max(0, $lowStockCount - $offset));
+$categoriesResult = $conn->query("
+    SELECT
+        c.id,
+        c.name,
+        COALESCE(c.description, '') AS description,
+        COUNT(p.id) AS product_count
+    FROM categories c
+    LEFT JOIN products p ON p.category_id = c.id
+    GROUP BY c.id, c.name, c.description
+    ORDER BY c.name ASC
+");
+
+$categories = [];
+foreach ($categoriesResult->fetchAll() as $row) {
+    $categories[] = [
+        'id' => (int) $row['id'],
+        'name' => $row['name'],
+        'description' => $row['description'],
+        'product_count' => (int) $row['product_count'],
+    ];
+}
+
+$usersResult = $conn->query("
+    SELECT
+        id,
+        full_name,
+        email,
+        role,
+        status
+    FROM users
+    WHERE status = 'active'
+    ORDER BY full_name ASC
+");
+
+$users = [];
+foreach ($usersResult->fetchAll() as $row) {
+    $users[] = [
+        'id' => (int) $row['id'],
+        'full_name' => $row['full_name'],
+        'email' => $row['email'],
+        'role' => strtolower((string) ($row['role'] ?? '')) === 'admin' ? 'Admin' : 'User',
+        'status' => ucfirst((string) $row['status']),
+    ];
+}
+
+$lowStockStmt = $conn->prepare("
+    SELECT
+        p.id,
+        p.name,
+        COALESCE(c.name, p.category, 'Uncategorized') AS category_name,
+        COALESCE(p.qty, 0) AS qty,
+        COALESCE(p.lower_limit, 0) AS lower_limit,
+        COALESCE(p.upper_limit, 0) AS upper_limit
+    FROM products p
+    LEFT JOIN categories c ON c.id = p.category_id
+    WHERE p.qty <= (p.lower_limit + 5)
+    ORDER BY p.qty ASC, p.name ASC
+    LIMIT 5
+");
+$lowStockStmt->execute();
+
+$lowStock = [];
+foreach ($lowStockStmt->fetchAll() as $row) {
+    $lowStock[] = [
+        'id' => (int) $row['id'],
+        'name' => $row['name'],
+        'category_name' => $row['category_name'],
+        'stock' => (int) $row['qty'],
+        'threshold' => 'L:' . (int) $row['lower_limit'] . ' / U:' . (int) $row['upper_limit'],
+        'status' => strtolower(str_replace(' ', '_', getStockStatus(
+            (int) $row['qty'],
+            (int) $row['lower_limit'],
+            (int) $row['upper_limit']
+        ))),
+    ];
+}
 
 echo json_encode([
     'summary' => [
@@ -100,10 +146,7 @@ echo json_encode([
         'low_stock_items' => $lowStockCount,
     ],
     'low_stock' => $lowStock,
-    'pagination' => [
-        'page' => $page,
-        'total_pages' => $totalPages,
-        'showing' => $showing,
-        'total_items' => $lowStockCount,
-    ],
+    'products' => $products,
+    'categories' => $categories,
+    'users' => $users,
 ]);

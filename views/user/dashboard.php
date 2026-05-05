@@ -1,58 +1,47 @@
-<div class="dashboard-page user-dashboard-page" style="width:100%;max-width:none;">
+<div class="dashboard-page">
     <div class="page-header dashboard-page__header">
         <div>
-            <p style="color:#8a94a6;font-size:13px;line-height:1.5;font-weight:400;margin:0;">
-                Track inventory health, activity, and low stock risks across the current system.
-            </p>
+            <p class="page-subtitle dashboard-page__intro">Track inventory health, activity, and low stock risk across the current system.</p>
         </div>
-        <a class="btn-outline" href="index.php?url=user/products">View products</a>
+        <a href="index.php?url=user/products" class="btn-outline">View products</a>
     </div>
 
-    <section class="dashboard-stats user-dashboard-stats" aria-label="Inventory overview">
-        <article class="stat-card user-stat-card">
+    <section class="dashboard-stats" id="dashboardStats">
+        <article class="stat-card dashboard-card" data-dashboard-view="products" tabindex="0" role="button" aria-pressed="false">
             <span class="stat-card__label">Total Products</span>
-            <strong class="stat-card__value" id="userTotalProducts">0</strong>
-            <span class="stat-card__hint">Items currently tracked</span>
+            <strong class="stat-card__value" id="totalProducts">0</strong>
+            <span class="stat-card__meta">Items currently tracked</span>
         </article>
-
-        <article class="stat-card user-stat-card">
+        <article class="stat-card dashboard-card" data-dashboard-view="categories" tabindex="0" role="button" aria-pressed="false">
             <span class="stat-card__label">Categories</span>
-            <strong class="stat-card__value" id="userTotalCategories">0</strong>
-            <span class="stat-card__hint">Catalog groups in use</span>
+            <strong class="stat-card__value" id="totalCategories">0</strong>
+            <span class="stat-card__meta">Catalog groups in use</span>
         </article>
-
-        <article class="stat-card user-stat-card">
+        <article class="stat-card dashboard-card" data-dashboard-view="users" tabindex="0" role="button" aria-pressed="false">
             <span class="stat-card__label">Active Users</span>
-            <strong class="stat-card__value" id="userActiveUsers">0</strong>
-            <span class="stat-card__hint">Team members with active access</span>
+            <strong class="stat-card__value" id="activeUsers">0</strong>
+            <span class="stat-card__meta">Team members with active access</span>
         </article>
-
-        <article class="stat-card user-stat-card user-stat-card--alert" style="background:#fff;border-color:#ff3b3b;">
+        <article class="stat-card stat-card--alert dashboard-card is-active" data-dashboard-view="low_stock" tabindex="0" role="button" aria-pressed="true">
             <span class="stat-card__label">Low Stock Items</span>
-            <strong class="stat-card__value" id="userLowStockItems">0</strong>
-            <span class="stat-card__hint">Require attention soon</span>
+            <strong class="stat-card__value" id="lowStockItems">0</strong>
+            <span class="stat-card__meta">Require attention soon</span>
         </article>
     </section>
 
-    <section class="section-card user-alerts-panel">
-        <div class="user-alerts-panel__header">
-            <div class="user-alerts-panel__title">
-                <div>
-                    <span class="section-eyebrow">PRIORITY LIST</span>
-                    <h2>System-wide low stock alerts</h2>
-                    <p>Products that are below their threshold or close to running out.</p>
-                </div>
+    <section class="section-card dashboard-panel">
+        <div class="dashboard-panel__header">
+            <div>
+                <p class="eyebrow" id="dashboardPanelEyebrow">Priority list</p>
+                <h2 id="dashboardPanelTitle">System-wide low stock alerts</h2>
+                <p class="page-subtitle" id="dashboardPanelDescription">Products that are below their threshold or close to running out.</p>
             </div>
-            <a class="user-alerts-panel__view-all"
-                href="index.php?url=user/products"
-                style="display:inline-flex;align-items:center;justify-content:center;min-width:72px;height:32px;padding:0 16px;border-radius:6px;background:#2f3744;color:#fff;font-weight:700;text-decoration:none;">
-                View all
-            </a>
+            <a id="viewAllBtn" href="index.php?url=user/products" class="btn-primary">View all</a>
         </div>
 
-        <div class="dashboard-table-wrap user-alerts-table-wrap">
-            <table class="data-table user-alerts-table">
-                <thead>
+        <div class="dashboard-table-wrap">
+            <table class="data-table">
+                <thead id="dashboardTableHead">
                     <tr>
                         <th>ID</th>
                         <th>Product</th>
@@ -62,30 +51,12 @@
                         <th>Status</th>
                     </tr>
                 </thead>
-                <tbody id="userLowStockTableBody">
+                <tbody id="dashboardTableBody">
                     <tr>
-                        <td colspan="6" class="empty-state">Loading low stock alerts...</td>
+                        <td colspan="6" class="empty-state">Loading dashboard data...</td>
                     </tr>
                 </tbody>
             </table>
-        </div>
-
-        <div class="user-alerts-pagination" aria-label="Low stock pagination">
-            <span id="userLowStockShowing">Showing 0 of 0</span>
-            <div class="user-alerts-pagination__buttons">
-                <button class="user-page-btn" type="button" id="userLowStockPrev" aria-label="Previous page">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="15 18 9 12 15 6" />
-                    </svg>
-                </button>
-                <button class="user-page-btn" type="button" id="userLowStockNext" aria-label="Next page">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="9 18 15 12 9 6" />
-                    </svg>
-                </button>
-            </div>
         </div>
     </section>
 </div>
