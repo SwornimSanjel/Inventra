@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../models/AdminSession.php';
 require_once __DIR__ . '/../models/AccountModel.php';
+require_once __DIR__ . '/../models/NotificationService.php';
 require_once __DIR__ . '/../models/UserManagementModel.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
@@ -12,12 +13,14 @@ class UsersController
 {
     private AdminSession $adminSession;
     private AccountModel $accountModel;
+    private NotificationService $notificationService;
     private UserManagementModel $userManagementModel;
 
     public function __construct()
     {
         $this->adminSession = new AdminSession();
         $this->accountModel = new AccountModel();
+        $this->notificationService = new NotificationService();
         $this->userManagementModel = new UserManagementModel();
     }
 
@@ -79,7 +82,13 @@ class UsersController
             $this->jsonError('Username or email already exists.');
         }
 
-        $this->userManagementModel->createUser($fullName, $email, $username, $password, $role);
+        $newUserId = $this->userManagementModel->createUser($fullName, $email, $username, $password, $role);
+
+        try {
+            $this->notificationService->notifyUserCreated($newUserId, $fullName);
+        } catch (Throwable $e) {
+            error_log('Failed to create new-user notifications: ' . $e->getMessage());
+        }
 
         $emailSent = false;
         $message = 'User created successfully.';
@@ -150,6 +159,14 @@ class UsersController
         $newStatus = $this->userManagementModel->toggleStatus($userId);
         if ($newStatus === null) {
             $this->jsonError('User not found.');
+        }
+
+        if ($newStatus === 'active') {
+            try {
+                $this->notificationService->notifyRequestApprovedForUser($userId);
+            } catch (Throwable $e) {
+                error_log('Failed to create request-approved notification: ' . $e->getMessage());
+            }
         }
 
         $this->jsonSuccess([

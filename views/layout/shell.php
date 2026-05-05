@@ -15,19 +15,31 @@ function asset_version(string $relativePath): string
 $topbarAdmin = null;
 $topbarNotifications = [];
 $topbarUnreadCount = 0;
+$topbarNotificationBaseUrl = '';
 $userPanelAccount = null;
+// Add a page-specific body class so the copied Inventra1 user-products styles
+// can stay scoped to the matching page only.
+$pageSlug = trim((string) preg_replace('/[^a-z0-9]+/i', '-', strtolower($url !== '' ? $url : 'home')), '-');
+$bodyClass = 'page-' . $pageSlug;
 
 if (strpos($url, 'admin/') === 0) {
   $topbarAccountModel = new AccountModel();
   $topbarAdminSession = new AdminSession($topbarAccountModel);
   $topbarAdmin = $topbarAdminSession->resolveAuthenticatedAdmin();
 
-  if ($topbarAdmin !== null && (($topbarAdmin['source'] ?? 'admin') === 'admin')) {
+  if ($topbarAdmin !== null) {
     $topbarNotificationModel = new NotificationModel();
     $topbarNotifications = $topbarNotificationModel->buildNotificationViewData(
-      $topbarNotificationModel->getNotificationsForUser((int) $topbarAdmin['id'])
+      $topbarNotificationModel->getNotificationsForUser(
+        (int) $topbarAdmin['id'],
+        (string) ($topbarAdmin['source'] ?? 'admin')
+      )
     );
-    $topbarUnreadCount = $topbarNotificationModel->countUnreadForUser((int) $topbarAdmin['id']);
+    $topbarUnreadCount = $topbarNotificationModel->countUnreadForUser(
+      (int) $topbarAdmin['id'],
+      (string) ($topbarAdmin['source'] ?? 'admin')
+    );
+    $topbarNotificationBaseUrl = 'index.php?url=admin/notifications';
   }
 }
 
@@ -37,6 +49,18 @@ if (strpos($url, 'user/') === 0) {
 
   if ($resolvedUserAccount !== null && ($resolvedUserAccount['source'] ?? '') === 'users') {
     $userPanelAccount = (new AccountModel())->findSettingsProfile($resolvedUserAccount) ?? $resolvedUserAccount;
+    $topbarNotificationModel = new NotificationModel();
+    $topbarNotifications = $topbarNotificationModel->buildNotificationViewData(
+      $topbarNotificationModel->getNotificationsForUser(
+        (int) $resolvedUserAccount['id'],
+        (string) ($resolvedUserAccount['source'] ?? 'users')
+      )
+    );
+    $topbarUnreadCount = $topbarNotificationModel->countUnreadForUser(
+      (int) $resolvedUserAccount['id'],
+      (string) ($resolvedUserAccount['source'] ?? 'users')
+    );
+    $topbarNotificationBaseUrl = 'index.php?url=user/notifications';
   }
 }
 ?>
@@ -63,7 +87,7 @@ if (strpos($url, 'user/') === 0) {
   <?php endif; ?>
 </head>
 
-<body>
+<body class="<?= htmlspecialchars($bodyClass) ?>">
   <div class="app-layout">
     <?php if (strpos($url, 'admin/') === 0): ?>
       <?php require __DIR__ . '/../partials/admin_sidebar.php'; ?>
@@ -117,6 +141,9 @@ if (strpos($url, 'user/') === 0) {
   <?php endif; ?>
   <?php if ($url === 'admin/ai-forecasting'): ?>
     <script src="<?= BASE_URL ?>public/js/ai-forecasting.js<?= asset_version('public/js/ai-forecasting.js') ?>"></script>
+  <?php endif; ?>
+  <?php if ($url === 'user/products'): ?>
+    <script src="<?= BASE_URL ?>public/js/user-products.js<?= asset_version('public/js/user-products.js') ?>"></script>
   <?php endif; ?>
   <?php if ($url === 'user/settings'): ?>
     <script src="<?= BASE_URL ?>public/js/user-settings.js<?= asset_version('public/js/user-settings.js') ?>"></script>
