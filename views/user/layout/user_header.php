@@ -52,7 +52,6 @@ if ($topbarAvatar !== '') {
     </div>
 
     <div class="topbar-right">
-        <?php // Reuse the shared popover so the user panel matches Inventra1 exactly. ?>
         <?php require dirname(__DIR__, 2) . '/partials/notification_popover.php'; ?>
         <a class="topbar-user" href="index.php?url=user/settings" aria-label="Open user settings">
             <div>

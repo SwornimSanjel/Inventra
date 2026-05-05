@@ -9,6 +9,12 @@ class AIForecastModel
     private const REQUIRED_DAYS = 7;
     private const DETAIL_LOOKBACK_DAYS = 30;
     private const DEFAULT_LEAD_TIME_DAYS = 7;
+    private const DEMO_MOVEMENT_REFERENCE_PREFIXES = ['STK-TEST-%'];
+    private const DEMO_MOVEMENT_FULL_NAMES = ['sample customer', 'sample supplier'];
+    private const DEMO_MOVEMENT_NOTE_PATTERNS = [
+        '%initial sample%',
+        '%sample stock-%',
+    ];
 
     public function __construct(?PDO $db = null)
     {
@@ -17,9 +23,9 @@ class AIForecastModel
         $this->ensureReorderMarksTable();
     }
 
-    public function getForecastResponse(int $rangeDays = 14): array
+    public function getForecastResponse(int $rangeDays = 7): array
     {
-        $rangeDays = in_array($rangeDays, [7, 14, 30], true) ? $rangeDays : 14;
+        $rangeDays = in_array($rangeDays, [7, 14, 30], true) ? $rangeDays : 7;
         $availableDays = $this->getAvailableMovementDays();
 
         if ($availableDays < self::REQUIRED_DAYS) {
@@ -33,19 +39,6 @@ class AIForecastModel
         }
 
         $forecastDate = date('Y-m-d');
-        $existingForecasts = $this->getStoredForecastsForDate($forecastDate);
-
-        if ($existingForecasts !== []) {
-            return array_merge([
-                'status' => 'success',
-                'forecast_date' => $forecastDate,
-                'required_days' => self::REQUIRED_DAYS,
-                'available_days' => $availableDays,
-                'forecasts' => $existingForecasts,
-                'selected_range' => $rangeDays,
-            ], $this->buildDashboardData($rangeDays, $existingForecasts));
-        }
-
         $generatedForecasts = $this->generateForecasts($forecastDate);
 
         return array_merge([
@@ -241,7 +234,14 @@ class AIForecastModel
             return 0;
         }
 
-        $stmt = $this->db->query('SELECT COUNT(DISTINCT DATE(created_at)) FROM stock_movements');
+        $stmt = $this->db->query(
+            "SELECT COUNT(DISTINCT DATE(created_at))
+             FROM stock_movements
+             WHERE movement_type = 'out'
+               AND quantity > 0
+               AND created_at >= CURRENT_DATE - INTERVAL '29 days'
+               AND " . $this->buildRealMovementCondition()
+        );
         return (int) $stmt->fetchColumn();
     }
 
@@ -294,7 +294,10 @@ class AIForecastModel
                 COALESCE(SUM(CASE WHEN sm.movement_type = 'out' THEN sm.quantity ELSE 0 END), 0) AS total_stock_out,
                 COUNT(DISTINCT CASE WHEN sm.movement_type = 'out' THEN DATE(sm.created_at) END) AS stock_out_days
             FROM products p
-            INNER JOIN stock_movements sm ON sm.product_id = p.id
+            INNER JOIN stock_movements sm
+                ON sm.product_id = p.id
+               AND sm.created_at >= CURRENT_DATE - INTERVAL '29 days'
+               AND " . $this->buildRealMovementCondition('sm') . "
             GROUP BY p.id, p.name, p.qty
             ORDER BY p.name ASC"
         );
@@ -312,7 +315,11 @@ class AIForecastModel
                 suggested_reorder_quantity,
                 forecast_date
             ) VALUES (?, ?, ?, ?, ?)
-            ON CONFLICT (product_id, forecast_date) DO NOTHING'
+            ON CONFLICT (product_id, forecast_date) DO UPDATE
+            SET current_stock = EXCLUDED.current_stock,
+                predicted_demand = EXCLUDED.predicted_demand,
+                suggested_reorder_quantity = EXCLUDED.suggested_reorder_quantity,
+                created_at = CURRENT_TIMESTAMP'
         );
 
         $forecasts = [];
@@ -421,7 +428,8 @@ class AIForecastModel
                 COUNT(DISTINCT DATE(created_at)) AS movement_days
             FROM stock_movements
             WHERE product_id = ?
-              AND created_at >= CURRENT_DATE - INTERVAL '29 days'"
+              AND created_at >= CURRENT_DATE - INTERVAL '29 days'
+              AND " . $this->buildRealMovementCondition()
         );
         $stmt->execute([$productId]);
         $row = $stmt->fetch() ?: [];
@@ -472,11 +480,12 @@ class AIForecastModel
                 COALESCE(SUM(CASE
                     WHEN movement_type = 'out'
                      AND created_at >= CURRENT_DATE - INTERVAL '13 days'
-                     AND created_at < CURRENT_DATE - INTERVAL '6 days' THEN quantity
+                    AND created_at < CURRENT_DATE - INTERVAL '6 days' THEN quantity
                     ELSE 0
                 END), 0) AS previous_out
             FROM stock_movements
-            WHERE product_id = ?"
+            WHERE product_id = ?
+              AND " . $this->buildRealMovementCondition()
         );
         $stmt->execute([$productId]);
         $row = $stmt->fetch() ?: [];
@@ -584,7 +593,11 @@ class AIForecastModel
     private function buildTrendData(int $productId, int $currentStock): array
     {
         if (!Database::tableExists('stock_movements')) {
-            return $this->buildEmptyTrendData($currentStock);
+            return [
+                'has_history' => false,
+                'available_days' => 0,
+                'series' => [],
+            ];
         }
 
         $stmt = $this->db->prepare(
@@ -595,6 +608,7 @@ class AIForecastModel
             FROM stock_movements
             WHERE product_id = ?
               AND created_at >= CURRENT_DATE - INTERVAL '29 days'
+              AND " . $this->buildRealMovementCondition() . "
             GROUP BY DATE(created_at)
             ORDER BY movement_date ASC"
         );
@@ -608,10 +622,28 @@ class AIForecastModel
             ];
         }
 
+        if ($movementMap === []) {
+            return [
+                'has_history' => false,
+                'available_days' => 0,
+                'series' => [],
+            ];
+        }
+
         $dates = [];
-        $start = new DateTimeImmutable('-29 days');
-        for ($offset = 0; $offset < self::DETAIL_LOOKBACK_DAYS; $offset++) {
-            $dates[] = $start->modify('+' . $offset . ' days')->format('Y-m-d');
+        $movementDates = array_keys($movementMap);
+        sort($movementDates);
+        $startDate = new DateTimeImmutable($movementDates[0]);
+        $today = new DateTimeImmutable('today');
+        $daysToRender = max(1, min(self::DETAIL_LOOKBACK_DAYS, (int) $startDate->diff($today)->days + 1));
+
+        for ($offset = 0; $offset < $daysToRender; $offset++) {
+            if ($offset === 0) {
+                $dates[] = $startDate->format('Y-m-d');
+                continue;
+            }
+
+            $dates[] = $startDate->modify('+' . $offset . ' days')->format('Y-m-d');
         }
 
         $descending = array_reverse($dates);
@@ -632,7 +664,11 @@ class AIForecastModel
             $closingStock = $closingStock - $stockIn + $stockOut;
         }
 
-        return array_reverse($trendDescending);
+        return [
+            'has_history' => true,
+            'available_days' => count($movementMap),
+            'series' => array_reverse($trendDescending),
+        ];
     }
 
     private function getRecentMovements(int $productId): array
@@ -650,6 +686,7 @@ class AIForecastModel
                 created_at
             FROM stock_movements
             WHERE product_id = ?
+              AND " . $this->buildRealMovementCondition() . "
             ORDER BY created_at DESC, id DESC
             LIMIT 10"
         );
@@ -674,15 +711,21 @@ class AIForecastModel
         $dates = [];
         $start = new DateTimeImmutable('-29 days');
         for ($offset = 0; $offset < self::DETAIL_LOOKBACK_DAYS; $offset++) {
-            $dates[] = [
-                'date' => $start->modify('+' . $offset . ' days')->format('Y-m-d'),
-                'stock_level' => $currentStock,
-                'stock_in' => 0,
-                'stock_out' => 0,
-            ];
+            $dates[] = $start->modify('+' . $offset . ' days')->format('Y-m-d');
         }
 
-        return $dates;
+        return [
+            'has_history' => false,
+            'available_days' => 0,
+            'series' => array_map(function (string $date) use ($currentStock): array {
+                return [
+                    'date' => $date,
+                    'stock_level' => $currentStock,
+                    'stock_in' => 0,
+                    'stock_out' => 0,
+                ];
+            }, $dates),
+        ];
     }
 
     private function buildDashboardData(int $rangeDays, array $forecasts): array
@@ -701,7 +744,7 @@ class AIForecastModel
             'summary_cards' => $summary,
             'insights' => $insights,
             'chart' => [
-                'title' => 'Demand Forecast - Next 14 Days',
+                'title' => 'Demand Forecast - Next ' . $rangeDays . ' Days',
                 'subtitle' => 'Days remaining',
                 'items' => $chartItems,
             ],
@@ -720,7 +763,7 @@ class AIForecastModel
 
         $sinceDate = (new DateTimeImmutable())
             ->setTime(0, 0, 0)
-            ->modify('-' . max(0, $rangeDays - 1) . ' days')
+            ->modify('-' . max(0, self::DETAIL_LOOKBACK_DAYS - 1) . ' days')
             ->format('Y-m-d H:i:s');
 
         $sql = "
@@ -740,6 +783,7 @@ class AIForecastModel
             LEFT JOIN stock_movements sm
                 ON sm.product_id = p.id
                AND sm.created_at >= ?
+               AND " . $this->buildRealMovementCondition('sm') . "
             GROUP BY
                 p.id,
                 p.name,
@@ -764,16 +808,19 @@ class AIForecastModel
             $lowerLimit = max(0, (int) $row['lower_limit']);
             $upperLimit = max(0, (int) $row['upper_limit']);
             $totalStockOut = max(0, (int) $row['total_stock_out']);
-            $dailyUse = round($totalStockOut / $rangeDays, 1);
+            $dailyUse = round($totalStockOut / self::DETAIL_LOOKBACK_DAYS, 1);
             $runoutDays = $dailyUse > 0 ? round($currentStock / $dailyUse, 1) : null;
             $baseStatus = strtolower(str_replace(' ', '_', getStockStatus($currentStock, $lowerLimit, $upperLimit)));
-            $forecast = $forecastMap[$productId] ?? $this->buildForecastForProduct($row, date('Y-m-d'), [
+            $rangeForecast = $this->buildForecastForProduct($row, date('Y-m-d'), [
                 'daily_average_usage' => $dailyUse,
             ]);
+            $rangeForecast['predicted_demand'] = (int) round($dailyUse * $rangeDays);
+            $rangeForecast['suggested_reorder_quantity'] = max(0, $rangeForecast['predicted_demand'] - $currentStock);
+            $forecast = $forecastMap[$productId] ?? $rangeForecast;
             $status = $this->resolveDashboardStatus($baseStatus, $runoutDays);
-            $recommendation = $this->buildDashboardRecommendation($status, (int) $forecast['suggested_reorder_quantity']);
+            $recommendation = $this->buildDashboardRecommendation($status, (int) $rangeForecast['suggested_reorder_quantity']);
             $threshold = $lowerLimit . '/' . $upperLimit;
-            $projectedFourteenDayDemand = (int) round($dailyUse * 14);
+            $projectedRangeDemand = (int) round($dailyUse * $rangeDays);
 
             $products[] = [
                 'product_id' => $productId,
@@ -789,13 +836,13 @@ class AIForecastModel
                 'threshold' => $threshold,
                 'lower_limit' => $lowerLimit,
                 'upper_limit' => $upperLimit,
-                'predicted_demand' => (int) ($forecast['predicted_demand'] ?? 0),
-                'suggested_reorder_quantity' => (int) ($forecast['suggested_reorder_quantity'] ?? 0),
+                'predicted_demand' => $projectedRangeDemand,
+                'suggested_reorder_quantity' => (int) $rangeForecast['suggested_reorder_quantity'],
                 'estimated_reorder_cost' => $this->buildEstimatedReorderCost(
-                    (int) ($forecast['suggested_reorder_quantity'] ?? 0),
+                    (int) $rangeForecast['suggested_reorder_quantity'],
                     (float) ($row['unit_price'] ?? 0)
                 )['value'],
-                'projected_14_day_demand' => $projectedFourteenDayDemand,
+                'projected_range_demand' => $projectedRangeDemand,
                 'usage_days' => (int) ($row['usage_days'] ?? 0),
                 'stock_in' => (int) ($row['total_stock_in'] ?? 0),
                 'reorder_marked' => isset($reorderMarks[$productId]),
@@ -995,7 +1042,7 @@ class AIForecastModel
             $insights[] = [
                 'tone' => 'neutral',
                 'title' => 'Fast mover trend',
-                'message' => $topMover['product_name'] . ' is averaging ' . number_format((float) $topMover['daily_use'], 1) . ' units/day over the last ' . $rangeDays . ' days.',
+                'message' => $topMover['product_name'] . ' is averaging ' . number_format((float) $topMover['daily_use'], 1) . ' units/day over the last ' . self::DETAIL_LOOKBACK_DAYS . ' days.',
             ];
         }
 
@@ -1049,7 +1096,7 @@ class AIForecastModel
 
     private function buildChartItems(array $products): array
     {
-        $chartCandidates = array_values(array_filter($products, static fn(array $product): bool => $product['projected_14_day_demand'] > 0 || $product['runout_days'] !== null));
+        $chartCandidates = array_values(array_filter($products, static fn(array $product): bool => $product['projected_range_demand'] > 0 || $product['runout_days'] !== null));
 
         usort($chartCandidates, function (array $left, array $right): int {
             $leftRunout = $left['runout_days'] ?? 999999;
@@ -1059,20 +1106,48 @@ class AIForecastModel
                 return $leftRunout <=> $rightRunout;
             }
 
-            return $right['projected_14_day_demand'] <=> $left['projected_14_day_demand'];
+            return $right['projected_range_demand'] <=> $left['projected_range_demand'];
         });
 
         $chartItems = array_slice($chartCandidates, 0, 5);
         $maxDemand = 1;
         foreach ($chartItems as $item) {
-            $maxDemand = max($maxDemand, (int) $item['projected_14_day_demand']);
+            $maxDemand = max($maxDemand, (int) $item['projected_range_demand']);
         }
 
         foreach ($chartItems as &$item) {
-            $item['bar_percent'] = max(10, (int) round(((int) $item['projected_14_day_demand'] / $maxDemand) * 100));
+            $item['bar_percent'] = max(10, (int) round(((int) $item['projected_range_demand'] / $maxDemand) * 100));
         }
         unset($item);
 
         return $chartItems;
+    }
+
+    private function buildRealMovementCondition(string $alias = ''): string
+    {
+        $prefix = $alias !== '' ? $alias . '.' : '';
+        $referenceColumn = $prefix . 'reference';
+        $notesColumn = 'LOWER(COALESCE(' . $prefix . 'notes, \'\'))';
+        $fullNameColumn = 'LOWER(COALESCE(' . $prefix . 'full_name, \'\'))';
+
+        $conditions = [];
+
+        foreach (self::DEMO_MOVEMENT_REFERENCE_PREFIXES as $pattern) {
+            $conditions[] = $referenceColumn . " NOT LIKE '" . $pattern . "'";
+        }
+
+        foreach (self::DEMO_MOVEMENT_NOTE_PATTERNS as $pattern) {
+            $conditions[] = $notesColumn . " NOT LIKE '" . strtolower($pattern) . "'";
+        }
+
+        if (self::DEMO_MOVEMENT_FULL_NAMES !== []) {
+            $quotedNames = array_map(
+                static fn (string $name): string => "'" . str_replace("'", "''", $name) . "'",
+                self::DEMO_MOVEMENT_FULL_NAMES
+            );
+            $conditions[] = $fullNameColumn . ' NOT IN (' . implode(', ', $quotedNames) . ')';
+        }
+
+        return implode(' AND ', $conditions);
     }
 }

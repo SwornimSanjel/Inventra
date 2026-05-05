@@ -5,7 +5,7 @@
   }
 
   var state = {
-    range: 14,
+    range: 7,
     allRecommendations: [],
     filteredRecommendations: [],
     categories: [],
@@ -15,6 +15,7 @@
     insights: [],
     chartItems: [],
     analysisOpen: false,
+    drawerOpen: false,
     selectedProductId: null,
     selectedProductDetail: null
   };
@@ -46,12 +47,21 @@
   var exportButton = page.querySelector('[data-export-csv]');
   var rangeButtons = Array.prototype.slice.call(page.querySelectorAll('[data-range-btn]'));
   var customSelects = Array.prototype.slice.call(page.querySelectorAll('[data-ai-select]'));
-  var productDetailEmpty = page.querySelector('[data-product-detail-empty]');
-  var productDetailContent = page.querySelector('[data-product-detail-content]');
+  var detailOverlay = page.querySelector('[data-detail-overlay]');
+  var detailDrawer = page.querySelector('[data-detail-drawer]');
+  var detailCloseButton = page.querySelector('[data-detail-close]');
   var detailProductName = page.querySelector('[data-detail-product-name]');
   var detailProductMeta = page.querySelector('[data-detail-product-meta]');
   var detailStatus = page.querySelector('[data-detail-status]');
-  var detailGrid = page.querySelector('[data-detail-grid]');
+  var detailPrimaryMetrics = page.querySelector('[data-detail-primary-metrics]');
+  var detailThresholdMarker = page.querySelector('[data-detail-threshold-marker]');
+  var detailTrendChart = page.querySelector('[data-detail-trend-chart]');
+  var detailMovements = page.querySelector('[data-detail-movements]');
+  var detailConfidence = page.querySelector('[data-detail-confidence]');
+  var detailStrategyText = page.querySelector('[data-detail-strategy-text]');
+  var detailViewProduct = page.querySelector('[data-detail-view-product]');
+  var detailUpdateStock = page.querySelector('[data-detail-update-stock]');
+  var detailMarkReorder = page.querySelector('[data-detail-mark-reorder]');
   var generateInsightButton = page.querySelector('[data-generate-insight]');
   var insightLoading = page.querySelector('[data-insight-loading]');
   var insightBox = page.querySelector('[data-insight-box]');
@@ -144,12 +154,13 @@
 
   function populateCategories(categories) {
     var current = categoryFilter.value;
-    var options = ['<button type="button" class="products-custom-select__option' + (current === '' ? ' is-active' : '') + '" data-ai-select-option data-value=\"\">All Categories</button>'];
+    var options = ['<button type="button" class="products-custom-select__option' + (current === '' ? ' is-active' : '') + '" data-ai-select-option data-value="">All Categories</button>'];
     categories.forEach(function (category) {
       options.push(
         '<button type="button" class="products-custom-select__option' + (current === category ? ' is-active' : '') + '" data-ai-select-option data-value="' + escapeHtml(category) + '">' + escapeHtml(category) + '</button>'
       );
     });
+
     if (categorySelect) {
       var menu = categorySelect.querySelector('[data-ai-select-menu]');
       if (menu) {
@@ -264,12 +275,6 @@
         }
       });
     });
-
-    document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape') {
-        closeAllCustomSelects();
-      }
-    });
   }
 
   function renderSummaryCards(cards) {
@@ -299,6 +304,51 @@
     }).join('');
   }
 
+  function summarizeItems(items, formatter) {
+    if (!items.length) {
+      return 'No products currently match this condition.';
+    }
+
+    return items.map(formatter).join(', ') + '.';
+  }
+
+  function analysisMetricCardMarkup(title, value, note, tone) {
+    return [
+      '<article class="ai-analysis-metric ai-analysis-metric--' + escapeHtml(tone || 'neutral') + '">',
+      '  <span class="ai-analysis-metric__label">' + escapeHtml(title) + '</span>',
+      '  <strong class="ai-analysis-metric__value">' + escapeHtml(value) + '</strong>',
+      '  <p class="ai-analysis-metric__note">' + escapeHtml(note) + '</p>',
+      '</article>'
+    ].join('');
+  }
+
+  function analysisListMarkup(items) {
+    if (!items.length) {
+      return '<li class="ai-analysis-card__list-item ai-analysis-card__list-item--empty">No products to show in this group.</li>';
+    }
+
+    return items.map(function (item) {
+      return [
+        '<li class="ai-analysis-card__list-item">',
+        '  <span class="ai-analysis-card__list-product">' + escapeHtml(item.product_name) + '</span>',
+        '  <span class="ai-analysis-card__list-meta">' + escapeHtml(item.runout_label || item.status_label || 'N/A') + '</span>',
+        '</li>'
+      ].join('');
+    }).join('');
+  }
+
+  function analysisCardMarkup(title, description, content, modifier) {
+    return [
+      '<article class="ai-analysis-card' + (modifier ? ' ai-analysis-card--' + escapeHtml(modifier) : '') + '">',
+      '  <div class="ai-analysis-card__header">',
+      '    <h3>' + escapeHtml(title) + '</h3>',
+      '    <p>' + escapeHtml(description) + '</p>',
+      '  </div>',
+      content,
+      '</article>'
+    ].join('');
+  }
+
   function renderAnalysisPanel() {
     if (!analysisBody) {
       return;
@@ -306,57 +356,72 @@
 
     var criticalItems = state.allRecommendations.filter(function (item) {
       return item.status === 'critical';
-    }).slice(0, 3);
-
+    }).slice(0, 4);
     var warningItems = state.allRecommendations.filter(function (item) {
       return item.status === 'warning';
+    }).slice(0, 4);
+    var stableItems = state.allRecommendations.filter(function (item) {
+      return item.status === 'stable';
     }).slice(0, 3);
-
     var overstockItems = state.allRecommendations.filter(function (item) {
       return item.status === 'overstock';
-    }).slice(0, 2);
+    }).slice(0, 3);
 
-    var sections = [
-      '<section class="ai-analysis-panel__item">' +
-        '<h3>Forecast coverage</h3>' +
-        '<p>' + escapeHtml(state.allRecommendations.length) + ' products are included in the current ' + escapeHtml(state.range) + '-day forecasting window.</p>' +
-      '</section>'
+    var markup = [
+      '<div class="ai-analysis-grid">',
+      '  <div class="ai-analysis-grid__main">',
+      analysisCardMarkup(
+        'Forecast coverage',
+        'Range-wide coverage summary across the current forecasting window.',
+        [
+          '<div class="ai-analysis-metrics">',
+          analysisMetricCardMarkup('Products covered', state.allRecommendations.length, 'Included in the current ' + state.range + '-day forecast range.', 'neutral'),
+          analysisMetricCardMarkup('Critical attention', criticalItems.length, criticalItems.length ? 'Need immediate replenishment review.' : 'No products are currently in the critical bucket.', 'critical'),
+          analysisMetricCardMarkup('Demand watchlist', warningItems.length, warningItems.length ? 'Approaching runout and should stay monitored.' : 'No products are in the warning bucket right now.', 'warning'),
+          analysisMetricCardMarkup('Stable / overstock', stableItems.length + ' / ' + overstockItems.length, 'Healthy coverage versus slow-moving exposure.', 'success'),
+          '</div>'
+        ].join(''),
+        'hero'
+      ),
+      '  </div>',
+      '  <div class="ai-analysis-grid__side">',
+      analysisCardMarkup(
+        'Critical attention',
+        'Fastest runout risks requiring action first.',
+        '<ul class="ai-analysis-card__list">' + analysisListMarkup(criticalItems) + '</ul>',
+        'critical'
+      ),
+      '  </div>',
+      '  <div class="ai-analysis-grid__half">',
+      analysisCardMarkup(
+        'Demand watchlist',
+        'Products nearing their reorder window and worth closer monitoring.',
+        '<ul class="ai-analysis-card__list">' + analysisListMarkup(warningItems) + '</ul>',
+        'warning'
+      ),
+      '  </div>',
+      '  <div class="ai-analysis-grid__half">',
+      analysisCardMarkup(
+        'Planning notes',
+        'Soft analysis notes generated from the current product mix.',
+        [
+          '<div class="ai-analysis-card__copy">',
+          '<p>' + escapeHtml(summarizeItems(criticalItems, function (item) {
+            return item.product_name + ' (' + item.runout_label + ')';
+          })) + '</p>',
+          '<p>' + escapeHtml(overstockItems.length
+            ? 'Overstock review candidates: ' + overstockItems.map(function (item) { return item.product_name; }).join(', ') + '.'
+            : 'No products are currently over threshold enough to trigger overstock review.'
+          ) + '</p>',
+          '</div>'
+        ].join(''),
+        'neutral'
+      ),
+      '  </div>',
+      '</div>'
     ];
 
-    if (criticalItems.length) {
-      sections.push(
-        '<section class="ai-analysis-panel__item">' +
-          '<h3>Critical attention</h3>' +
-          '<p>' + escapeHtml(criticalItems.map(function (item) {
-            return item.product_name + ' (' + item.runout_label + ')';
-          }).join(', ')) + ' need the fastest replenishment review.</p>' +
-        '</section>'
-      );
-    }
-
-    if (warningItems.length) {
-      sections.push(
-        '<section class="ai-analysis-panel__item">' +
-          '<h3>Demand watchlist</h3>' +
-          '<p>' + escapeHtml(warningItems.map(function (item) {
-            return item.product_name;
-          }).join(', ')) + ' are approaching their runout window and should be monitored closely.</p>' +
-        '</section>'
-      );
-    }
-
-    if (overstockItems.length) {
-      sections.push(
-        '<section class="ai-analysis-panel__item">' +
-          '<h3>Overstock review</h3>' +
-          '<p>' + escapeHtml(overstockItems.map(function (item) {
-            return item.product_name;
-          }).join(', ')) + ' are above their threshold and may benefit from slower replenishment planning.</p>' +
-        '</section>'
-      );
-    }
-
-    analysisBody.innerHTML = sections.join('');
+    analysisBody.innerHTML = markup.join('');
   }
 
   function syncAnalysisVisibility() {
@@ -392,16 +457,101 @@
     }).join('');
   }
 
+  function humanizeText(value) {
+    return String(value || '')
+      .replace(/_/g, ' ')
+      .replace(/\b[a-z]/g, function (match) {
+        return match.toUpperCase();
+      });
+  }
+
+  function detailPrimaryMetricMarkup(label, value, note, tone) {
+    return [
+      '<article class="ai-detail-metric ai-detail-metric--' + escapeHtml(tone || 'default') + '">',
+      '  <span class="ai-detail-metric__label">' + escapeHtml(label) + '</span>',
+      '  <strong class="ai-detail-metric__value">' + escapeHtml(value) + '</strong>',
+      (note ? '  <span class="ai-detail-metric__note">' + escapeHtml(note) + '</span>' : ''),
+      '</article>'
+    ].join('');
+  }
+
+  function formatRunoutDays(value) {
+    if (value == null || value === '') {
+      return 'N/A';
+    }
+
+    var number = Number(value);
+    if (!isFinite(number)) {
+      return String(value);
+    }
+
+    if (number === 0) {
+      return '0 days';
+    }
+
+    var display = Math.abs(number - Math.round(number)) < 0.05 ? String(Math.round(number)) : number.toFixed(1);
+    return display + ' days';
+  }
+
+  function formatConfidence(value) {
+    var number = Number(value || 0);
+    if (!isFinite(number)) {
+      number = 0;
+    }
+
+    return Math.max(0, Math.min(100, Math.round(number)));
+  }
+
+  function formatMovementDate(value) {
+    if (!value) {
+      return 'Recent';
+    }
+
+    var date = new Date(value);
+    if (isNaN(date.getTime())) {
+      return String(value);
+    }
+
+    return date.toLocaleDateString(undefined, {
+      month: 'short',
+      day: '2-digit'
+    });
+  }
+
+  function trendBarMarkup(point, maxStock, threshold, isLatest) {
+    var stockLevel = Number(point.stock_level || 0);
+    var height = maxStock > 0 ? Math.max(10, Math.round((stockLevel / maxStock) * 118)) : 10;
+    var isBelow = stockLevel <= threshold;
+    var tooltip = formatMovementDate(point.date) + ' - ' + stockLevel + ' units';
+    return [
+      '<div class="ai-detail-trend-chart__bar-wrap" data-tooltip="' + escapeHtml(tooltip) + '" title="' + escapeHtml(tooltip) + '">',
+      '  <span class="ai-detail-trend-chart__bar' + (isBelow ? ' is-below' : '') + (isLatest ? ' is-latest' : '') + '" style="height:' + height + 'px"></span>',
+      '</div>'
+    ].join('');
+  }
+
   function renderProductDetail() {
     var detail = state.selectedProductDetail;
 
     if (!detail) {
-      if (productDetailEmpty) {
-        productDetailEmpty.hidden = false;
+      if (detailPrimaryMetrics) {
+        detailPrimaryMetrics.innerHTML = '';
       }
 
-      if (productDetailContent) {
-        productDetailContent.hidden = true;
+      if (detailTrendChart) {
+        detailTrendChart.innerHTML = '<p class="empty-state">Loading product detail...</p>';
+      }
+
+      if (detailMovements) {
+        detailMovements.innerHTML = '<div class="empty-state">Loading movement pattern...</div>';
+      }
+
+      if (detailStrategyText) {
+        detailStrategyText.textContent = 'No predictive insight loaded yet.';
+      }
+
+      if (detailConfidence) {
+        detailConfidence.textContent = 'Confidence: 0%';
       }
 
       if (generateInsightButton) {
@@ -412,41 +562,60 @@
       return;
     }
 
-    if (productDetailEmpty) {
-      productDetailEmpty.hidden = true;
-    }
-
-    if (productDetailContent) {
-      productDetailContent.hidden = false;
-    }
-
     if (detailProductName) {
       detailProductName.textContent = detail.product.product_name || 'Product Analysis';
     }
 
     if (detailProductMeta) {
-      detailProductMeta.textContent = 'Threshold ' + (detail.product.threshold || '0/0') + ' • Demand trend ' + (detail.stock_signals.demand_trend || 'Stable');
+      var skuValue = detail.product.sku ? detail.product.sku : 'SKU unavailable';
+      detailProductMeta.textContent = skuValue + ' · ' + (detail.product.category || 'Uncategorized');
     }
 
     if (detailStatus) {
       var riskLevel = detail.ai_analysis.risk_level || 'stable';
       detailStatus.className = 'ai-status-badge ai-status-badge--' + riskLevel;
-      detailStatus.textContent = riskLevel.replace(/_/g, ' ');
+      detailStatus.textContent = humanizeText(riskLevel);
     }
 
-    if (detailGrid) {
-      detailGrid.innerHTML = [
-        detailMetricMarkup('Product name', detail.product.product_name || 'N/A'),
-        detailMetricMarkup('Category', detail.product.category || 'Uncategorized'),
-        detailMetricMarkup('Current stock', detail.product.current_stock + ' units'),
-        detailMetricMarkup('Average daily usage', Number(detail.stock_signals.daily_average_usage || 0).toFixed(2) + ' units/day'),
-        detailMetricMarkup('Predicted runout', detail.stock_signals.runout_time_days == null ? 'N/A' : Number(detail.stock_signals.runout_time_days).toFixed(2) + ' days'),
-        detailMetricMarkup('Status', humanizeText(detail.ai_analysis.risk_level || 'no_data')),
-        detailMetricMarkup('AI recommendation', detail.ai_analysis.recommendation || 'No recommendation available'),
-        detailMetricMarkup('Threshold', detail.product.threshold || '0/0'),
-        detailMetricMarkup('Suggested reorder', detail.reorder_data.suggested_reorder_quantity + ' units'),
-        detailMetricMarkup('Predictive analysis', detail.ai_analysis.analysis || 'No analysis available')
+    if (detailPrimaryMetrics) {
+      detailPrimaryMetrics.innerHTML = [
+        detailPrimaryMetricMarkup('Current stock', String(detail.product.current_stock || 0), 'units', 'default'),
+        detailPrimaryMetricMarkup('Daily usage', Number(detail.stock_signals.daily_average_usage || 0).toFixed(1), '/day', 'default'),
+        detailPrimaryMetricMarkup('Runs out in', formatRunoutDays(detail.stock_signals.runout_time_days), '', 'alert'),
+        detailPrimaryMetricMarkup('Suggested reorder', String(detail.reorder_data.suggested_reorder_quantity || 0), 'units', 'dark')
       ].join('');
+    }
+
+    if (detailThresholdMarker) {
+      detailThresholdMarker.textContent = 'Min. Threshold: ' + (detail.product.lower_limit || 0) + ' units';
+    }
+
+    renderTrendChart(detail.trend_data || null, Number(detail.product.lower_limit || 0));
+    renderMovements(detail.recent_movements || []);
+
+    if (detailConfidence) {
+      detailConfidence.textContent = 'Confidence: ' + formatConfidence(detail.stock_signals.confidence_percentage) + '%';
+    }
+
+    if (detailStrategyText) {
+      detailStrategyText.textContent = detail.ai_analysis.analysis || detail.ai_analysis.recommendation || 'No analysis available.';
+    }
+
+    if (detailViewProduct) {
+      detailViewProduct.href = detail.action_references && detail.action_references.view_product_url
+        ? detail.action_references.view_product_url
+        : 'index.php?url=admin/products';
+    }
+
+    if (detailUpdateStock) {
+      detailUpdateStock.href = detail.action_references && detail.action_references.update_stock_url
+        ? detail.action_references.update_stock_url
+        : 'index.php?url=admin/stock-update';
+    }
+
+    if (detailMarkReorder) {
+      detailMarkReorder.disabled = false;
+      detailMarkReorder.textContent = 'Mark for Reorder';
     }
 
     if (generateInsightButton) {
@@ -454,21 +623,97 @@
     }
   }
 
-  function detailMetricMarkup(label, value) {
-    return [
-      '<article class="ai-product-detail__metric">',
-      '  <span class="ai-product-detail__metric-label">' + escapeHtml(label) + '</span>',
-      '  <p class="ai-product-detail__metric-value">' + escapeHtml(value) + '</p>',
-      '</article>'
+  function renderTrendChart(trendData, threshold) {
+    if (!detailTrendChart) {
+      return;
+    }
+
+    var hasHistory = !!(trendData && trendData.has_history);
+    var series = trendData && Array.isArray(trendData.series) ? trendData.series : [];
+    var availableDays = Number(trendData && trendData.available_days ? trendData.available_days : 0);
+
+    if (!hasHistory || !series.length) {
+      detailTrendChart.innerHTML = '<p class="empty-state">No stock movement history available for this product yet.</p>';
+      return;
+    }
+
+    var maxStock = series.reduce(function (maxValue, point) {
+      return Math.max(maxValue, Number(point.stock_level || 0));
+    }, 0);
+    var chartMax = Math.max(maxStock, Number(threshold || 0), 1);
+    var thresholdPercent = chartMax > 0 ? Math.max(0, Math.min(100, ((threshold || 0) / chartMax) * 100)) : 0;
+    var startLabel = formatMovementDate(series[0].date);
+    var endLabel = formatMovementDate(series[series.length - 1].date);
+    var chartMetaParts = [
+      '<span>Showing ' + availableDays + ' recorded day' + (availableDays === 1 ? '' : 's') + ' from the last 30 days.</span>',
+      '<span>' + escapeHtml(startLabel + ' - ' + endLabel) + '</span>'
+    ];
+    var thresholdLabel = Number(threshold || 0) > 0
+      ? '<span class="ai-detail-trend-chart__threshold-label">Threshold ' + escapeHtml(String(threshold)) + ' units</span>'
+      : '';
+
+    detailTrendChart.innerHTML = [
+      '<div class="ai-detail-trend-chart__meta">' + chartMetaParts.join('') + '</div>',
+      '<div class="ai-detail-trend-chart__plot">',
+      '  <div class="ai-detail-trend-chart__threshold" style="bottom:' + thresholdPercent + '%">' + thresholdLabel + '</div>',
+      '  <div class="ai-detail-trend-chart__bars" style="grid-template-columns: repeat(' + series.length + ', minmax(0, 1fr));">',
+      series.map(function (point) {
+        return trendBarMarkup(point, chartMax, threshold, point === series[series.length - 1]);
+      }).join(''),
+      '  </div>',
+      '</div>',
+      '<div class="ai-detail-trend-chart__axis"><span>' + escapeHtml(startLabel) + '</span><span>Latest: ' + escapeHtml(endLabel) + '</span></div>'
     ].join('');
   }
 
-  function humanizeText(value) {
-    return String(value || '')
-      .replace(/_/g, ' ')
-      .replace(/\b[a-z]/g, function (match) {
-        return match.toUpperCase();
-      });
+  function renderMovements(movements) {
+    if (!detailMovements) {
+      return;
+    }
+
+    if (!Array.isArray(movements) || !movements.length) {
+      detailMovements.innerHTML = '<div class="empty-state">No stock movement history available for this product yet.</div>';
+      return;
+    }
+
+    detailMovements.innerHTML = movements.slice(0, 5).map(function (movement) {
+      var isOut = String(movement.movement_type || '').toLowerCase() === 'out';
+      var quantityLabel = (isOut ? '-' : '+') + String(movement.quantity || 0) + ' units';
+      return [
+        '<div class="ai-detail-movement-item">',
+        '  <div class="ai-detail-movement-item__left">',
+        '    <span class="ai-detail-movement-item__icon' + (isOut ? ' is-out' : ' is-in') + '" aria-hidden="true"></span>',
+        '    <div>',
+        '      <strong>' + escapeHtml(formatMovementDate(movement.created_at)) + '</strong>',
+        '      <span>' + escapeHtml(movement.reference || humanizeText(movement.movement_type || 'movement')) + '</span>',
+        '    </div>',
+        '  </div>',
+        '  <span class="ai-detail-movement-item__qty' + (isOut ? ' is-out' : ' is-in') + '">' + escapeHtml(quantityLabel) + '</span>',
+        '</div>'
+      ].join('');
+    }).join('');
+  }
+
+  function syncDrawerVisibility() {
+    if (!detailDrawer || !detailOverlay) {
+      return;
+    }
+
+    detailDrawer.classList.toggle('is-open', state.drawerOpen);
+    detailOverlay.classList.toggle('is-open', state.drawerOpen);
+    detailDrawer.setAttribute('aria-hidden', state.drawerOpen ? 'false' : 'true');
+    detailOverlay.hidden = !state.drawerOpen;
+    document.body.classList.toggle('ai-detail-drawer-open', state.drawerOpen);
+  }
+
+  function openDrawer() {
+    state.drawerOpen = true;
+    syncDrawerVisibility();
+  }
+
+  function closeDrawer() {
+    state.drawerOpen = false;
+    syncDrawerVisibility();
   }
 
   function applyFilters() {
@@ -518,7 +763,7 @@
       recommendationBody.innerHTML = '<tr><td colspan="7" class="empty-state">No recommendations matched the current filters.</td></tr>';
     } else {
       recommendationBody.innerHTML = rows.map(function (row) {
-        var isSelected = Number(row.product_id) === Number(state.selectedProductId);
+        var isSelected = Number(row.product_id) === Number(state.selectedProductId) && state.drawerOpen;
         return [
           '<tr class="ai-recommendations-table__row' + (isSelected ? ' is-selected' : '') + '" data-product-row data-product-id="' + escapeHtml(row.product_id) + '">',
           '  <td>',
@@ -603,10 +848,10 @@
     URL.revokeObjectURL(url);
   }
 
-  function showEmptyState(message) {
+  function showEmptyState() {
     content.hidden = true;
     emptyState.hidden = false;
-    emptyMessage.textContent = message || 'No forecasting data yet';
+    emptyMessage.textContent = 'Record real stock movement entries to generate stockout predictions, reorder suggestions, and demand insights.';
   }
 
   function showContent() {
@@ -654,8 +899,7 @@
     renderRecommendationTable();
     renderProductDetail();
     resetInsight();
-    state.analysisOpen = true;
-    syncAnalysisVisibility();
+    openDrawer();
 
     fetch(productDetailUrl + '&id=' + encodeURIComponent(productId), {
       headers: {
@@ -691,8 +935,8 @@
 
         state.selectedProductDetail = null;
         renderProductDetail();
-        if (productDetailEmpty) {
-          productDetailEmpty.textContent = 'Unable to load the selected product analysis right now.';
+        if (detailStrategyText) {
+          detailStrategyText.textContent = 'Unable to load the selected product analysis right now.';
         }
       });
   }
@@ -741,7 +985,8 @@
 
   function handleResponse(data) {
     if (!data || data.status === 'empty') {
-      showEmptyState(data && data.message ? data.message : 'No forecasting data yet');
+      showEmptyState();
+      closeDrawer();
       return;
     }
 
@@ -762,6 +1007,7 @@
       if (!stillExists) {
         state.selectedProductId = null;
         state.selectedProductDetail = null;
+        closeDrawer();
         renderProductDetail();
       }
     }
@@ -786,7 +1032,7 @@
       }
     })
       .then(function (response) {
-        return response.json();
+        return parseJsonResponse(response, 'AI Forecasting dashboard');
       })
       .then(function (data) {
         handleResponse(data);
@@ -799,12 +1045,49 @@
       });
   }
 
+  function markForReorder() {
+    if (!state.selectedProductDetail || !state.selectedProductDetail.action_references || !state.selectedProductDetail.action_references.mark_for_reorder_url) {
+      return;
+    }
+
+    if (detailMarkReorder) {
+      detailMarkReorder.disabled = true;
+      detailMarkReorder.textContent = 'Saving...';
+    }
+
+    fetch(state.selectedProductDetail.action_references.mark_for_reorder_url, {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+      .then(function (response) {
+        return parseJsonResponse(response, 'AI Forecasting mark reorder');
+      })
+      .then(function (data) {
+        if (!data || data.status !== 'success') {
+          throw new Error(data && data.message ? data.message : 'Unable to mark product for reorder.');
+        }
+
+        if (detailMarkReorder) {
+          detailMarkReorder.textContent = 'Marked for Reorder';
+        }
+      })
+      .catch(function () {
+        if (detailMarkReorder) {
+          detailMarkReorder.disabled = false;
+          detailMarkReorder.textContent = 'Mark for Reorder';
+        }
+      });
+  }
+
   rangeButtons.forEach(function (button) {
     button.addEventListener('click', function () {
       var nextRange = Number(button.getAttribute('data-range'));
       if (!nextRange || nextRange === state.range) {
         return;
       }
+
       state.range = nextRange;
       updateRangeButtons();
       fetchDashboard();
@@ -878,8 +1161,30 @@
     generateInsightButton.addEventListener('click', generateInsight);
   }
 
+  if (detailOverlay) {
+    detailOverlay.addEventListener('click', closeDrawer);
+  }
+
+  if (detailCloseButton) {
+    detailCloseButton.addEventListener('click', closeDrawer);
+  }
+
+  if (detailMarkReorder) {
+    detailMarkReorder.addEventListener('click', markForReorder);
+  }
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+      closeAllCustomSelects();
+      if (state.drawerOpen) {
+        closeDrawer();
+      }
+    }
+  });
+
   setupCustomSelects();
   syncAnalysisVisibility();
+  syncDrawerVisibility();
   renderProductDetail();
   fetchDashboard();
 })();

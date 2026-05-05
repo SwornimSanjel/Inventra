@@ -18,6 +18,7 @@
 
 .topbar-center {
     flex: 1;
+    min-width: 0;
     display: flex;
     justify-content: center;
 }
@@ -27,6 +28,7 @@
     align-items: center;
     gap: 12px;
     margin-left: auto;
+    flex-shrink: 0;
 }
 
 .search-box {
@@ -39,6 +41,7 @@
     padding: 0 14px;
     height: 36px;
     width: min(400px, 100%);
+    margin: 0 auto;
     transition: border-color .2s;
 }
 
