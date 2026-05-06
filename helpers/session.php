@@ -286,5 +286,5 @@ function inventra_is_admin(): bool
 
 function inventra_default_authenticated_url(): string
 {
-    return inventra_is_admin() ? 'admin/dashboard' : 'user/settings';
+    return inventra_is_admin() ? 'admin/dashboard' : 'user/dashboard';
 }

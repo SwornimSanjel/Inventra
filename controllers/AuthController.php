@@ -459,7 +459,7 @@ class AuthController
             exit;
         }
 
-        header('Location: index.php?url=user/settings');
+        header('Location: index.php?url=user/dashboard');
         exit;
     }
 
