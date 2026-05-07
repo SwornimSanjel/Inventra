@@ -18,6 +18,7 @@
 
 .topbar-center {
     flex: 1;
+    min-width: 0;
     display: flex;
     justify-content: center;
 }
@@ -27,6 +28,7 @@
     align-items: center;
     gap: 12px;
     margin-left: auto;
+    flex-shrink: 0;
 }
 
 .search-box {
@@ -39,6 +41,7 @@
     padding: 0 14px;
     height: 36px;
     width: min(400px, 100%);
+    margin: 0 auto;
     transition: border-color .2s;
 }
 
@@ -131,7 +134,7 @@
 }
 
 .notif-popover {
-    width: 400px;
+    width: min(400px, calc(100vw - 24px));
     max-height: 576px;
     background: #ffffff;
     border: 1px solid #dbe2ea;
@@ -233,15 +236,25 @@ button.notif-popover__mark-all {
     padding: 22px 24px 20px;
     border-bottom: 1px solid #edf1f5;
     background: #fff;
-    transition: background-color 0.12s ease;
+    transition: background-color 0.12s ease, opacity 0.12s ease;
 }
 
 .notif-popover__item.is-read {
     background: #fff;
+    opacity: 0.88;
 }
 
 .notif-popover__item.is-unread {
-    background: #fff;
+    background: #fdfefe;
+}
+
+.notif-popover__item.is-clickable {
+    cursor: pointer;
+}
+
+.notif-popover__item.is-clickable:focus-visible {
+    outline: 2px solid rgba(29, 78, 216, 0.18);
+    outline-offset: -2px;
 }
 
 .notif-popover__item:hover {
@@ -464,10 +477,3 @@ button.notif-popover__mark-all {
         max-height: 440px;
     }
 }
-
-
-
-
-
-
-

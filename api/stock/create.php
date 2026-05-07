@@ -4,6 +4,7 @@ header('Content-Type: application/json');
 
 require_once __DIR__ . '/../../helpers/session.php';
 require_once __DIR__ . '/../../models/AdminSession.php';
+require_once __DIR__ . '/../../models/NotificationService.php';
 require_once __DIR__ . '/../../helpers/stock_movements.php';
 require_once __DIR__ . '/../../config/db.php';
 
@@ -179,6 +180,12 @@ try {
     ]);
 
     $conn->commit();
+
+    try {
+        (new NotificationService())->notifyLowStockForProduct($productId);
+    } catch (Throwable $notificationError) {
+        error_log('Failed to create low-stock notification after stock movement: ' . $notificationError->getMessage());
+    }
 
     echo json_encode([
         'success' => true,

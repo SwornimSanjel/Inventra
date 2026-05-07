@@ -151,6 +151,8 @@
 }
 
 .field--quantity{
+  grid-column:1 / -1;
+  width:100%;
   max-width:100%;
 }
 
@@ -306,8 +308,8 @@
 
 .qty-control{
   display:grid;
-  grid-template-columns:48px minmax(0,1fr) 48px;
-  gap:6px;
+  grid-template-columns:52px minmax(0,1fr) 52px;
+  gap:12px;
   align-items:center;
   width:100%;
 }
@@ -744,6 +746,10 @@
 }
 
 @media(max-width:720px){
+  .field--quantity{
+    width:100%;
+  }
+
   .qty-control{
     grid-template-columns:38px minmax(0,1fr) 38px;
   }

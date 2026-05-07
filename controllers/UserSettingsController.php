@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../models/UserSettingsModel.php';
 require_once __DIR__ . '/../models/AdminSession.php';
+require_once __DIR__ . '/../models/NotificationService.php';
 require_once __DIR__ . '/../helpers/session.php';
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -14,11 +15,13 @@ class UserSettingsController
 
     private UserSettingsModel $userSettingsModel;
     private AdminSession $session;
+    private NotificationService $notificationService;
 
     public function __construct()
     {
         $this->userSettingsModel = new UserSettingsModel();
         $this->session = new AdminSession();
+        $this->notificationService = new NotificationService();
     }
 
     public function show(): void
@@ -187,6 +190,11 @@ class UserSettingsController
         $hash = password_hash($newPassword, PASSWORD_BCRYPT);
         $this->userSettingsModel->updatePassword($user, $hash);
         $this->sendPasswordChangedEmail((string) $user['email'], (string) ($user['full_name'] ?? ''));
+        try {
+            $this->notificationService->notifyPasswordChanged($user);
+        } catch (Throwable $e) {
+            error_log('Failed to create user password notification: ' . $e->getMessage());
+        }
 
         if ($this->shouldReturnJson()) {
             $this->jsonResponse(true, ['message' => 'Password updated successfully.']);

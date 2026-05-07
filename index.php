@@ -202,6 +202,11 @@ if (strpos($url, 'admin/ai-forecasting') === 0) {
         exit;
     }
 
+    if ($url === 'admin/ai-forecasting/generate-insight' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $aiForecastingController->generateInsight();
+        exit;
+    }
+
     if ($url === 'admin/ai-forecasting/mark-reorder' && in_array($_SERVER['REQUEST_METHOD'], ['GET', 'POST'], true)) {
         $aiForecastingController->markReorder();
         exit;
@@ -213,17 +218,23 @@ if (strpos($url, 'admin/ai-forecasting') === 0) {
     }
 }
 
-if (strpos($url, 'admin/notifications') === 0) {
+if (strpos($url, 'admin/notifications') === 0 || strpos($url, 'user/notifications') === 0) {
     require_once __DIR__ . '/controllers/NotificationController.php';
     $notificationController = new NotificationController();
+    $notificationScope = strpos($url, 'admin/notifications') === 0 ? 'admin' : 'user';
 
-    if ($url === 'admin/notifications/data' && $_SERVER['REQUEST_METHOD'] === 'GET') {
-        $notificationController->getData();
+    if ($url === $notificationScope . '/notifications/data' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+        $notificationController->getData($notificationScope);
         exit;
     }
 
-    if ($url === 'admin/notifications/mark-all-read' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-        $notificationController->markAllAsRead();
+    if ($url === $notificationScope . '/notifications/mark-read' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $notificationController->markAsRead($notificationScope);
+        exit;
+    }
+
+    if ($url === $notificationScope . '/notifications/mark-all-read' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $notificationController->markAllAsRead($notificationScope);
         exit;
     }
 }

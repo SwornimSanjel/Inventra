@@ -1,15 +1,22 @@
 <?php
+/**
+ * Add Product API
+ *
+ * Mirrors the Inventra1 user-products flow so authenticated users can add
+ * products from the copied user page and still trigger low-stock alerts.
+ */
 
 header('Content-Type: application/json');
 
 require_once __DIR__ . '/../../helpers/session.php';
 require_once __DIR__ . '/../../models/AdminSession.php';
+require_once __DIR__ . '/../../models/NotificationService.php';
 require_once __DIR__ . '/../../config/db.php';
 
 inventra_bootstrap_session();
 
- $adminSession = new AdminSession();
- $account = $adminSession->resolveAuthenticatedAccount();
+$adminSession = new AdminSession();
+$account = $adminSession->resolveAuthenticatedAccount();
 
 if ($account === null) {
     http_response_code(401);
@@ -17,7 +24,7 @@ if ($account === null) {
     exit;
 }
 
-if (($account['role'] ?? 'user') !== 'admin') {
+if (!in_array($account['role'] ?? 'user', ['admin', 'user'], true)) {
     http_response_code(403);
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
@@ -110,6 +117,7 @@ $stmt = $conn->prepare("
         image,
         description
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    RETURNING id
 ");
 
 $categoryName = $categoryRow['name'];
@@ -126,6 +134,16 @@ if (!$stmt->execute([
 ])) {
     echo json_encode(['success' => false, 'message' => 'Unable to save product right now.']);
     exit;
+}
+
+$productId = (int) $stmt->fetchColumn();
+
+// Fire the alert in a non-blocking way so the page action still succeeds even
+// if notification creation hits an edge case.
+try {
+    (new NotificationService())->notifyLowStockForProduct($productId);
+} catch (Throwable $e) {
+    error_log('Failed to create low-stock notification after product create: ' . $e->getMessage());
 }
 
 echo json_encode(['success' => true, 'message' => 'Product added successfully.']);

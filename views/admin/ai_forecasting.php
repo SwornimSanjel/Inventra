@@ -1,16 +1,24 @@
 <?php
 $forecastApiUrl = $forecastingPageState['forecast_api_url'] ?? 'index.php?url=admin/ai-forecasting/data';
+$productDetailApiUrl = $forecastingPageState['product_detail_api_url'] ?? 'index.php?url=admin/ai-forecasting/product-detail';
+$generateInsightApiUrl = $forecastingPageState['generate_insight_api_url'] ?? 'index.php?url=admin/ai-forecasting/generate-insight';
 ?>
 
-<div class="ai-forecasting-page" data-ai-forecasting-page data-api-url="<?= htmlspecialchars($forecastApiUrl) ?>">
+<div
+    class="ai-forecasting-page"
+    data-ai-forecasting-page
+    data-api-url="<?= htmlspecialchars($forecastApiUrl) ?>"
+    data-product-detail-url="<?= htmlspecialchars($productDetailApiUrl) ?>"
+    data-generate-insight-url="<?= htmlspecialchars($generateInsightApiUrl) ?>"
+>
     <div class="page-header ai-forecasting-page__header">
         <div class="ai-forecasting-page__heading">
             <p class="page-subtitle dashboard-page__intro ai-forecasting-page__subtitle">Monitor stock risks, reorder needs, demand forecasts, and inventory recommendations.</p>
         </div>
         <div class="ai-forecasting-toolbar" role="group" aria-label="Forecast range filters">
             <div class="ai-forecasting-range">
-                <button type="button" class="ai-forecasting-range__btn" data-range-btn data-range="7">7d</button>
-                <button type="button" class="ai-forecasting-range__btn is-active" data-range-btn data-range="14">14d</button>
+                <button type="button" class="ai-forecasting-range__btn is-active" data-range-btn data-range="7">7d</button>
+                <button type="button" class="ai-forecasting-range__btn" data-range-btn data-range="14">14d</button>
                 <button type="button" class="ai-forecasting-range__btn" data-range-btn data-range="30">30d</button>
             </div>
             <button type="button" class="btn-outline ai-forecasting-refresh" data-forecast-refresh>
@@ -33,7 +41,8 @@ $forecastApiUrl = $forecastingPageState['forecast_api_url'] ?? 'index.php?url=ad
             </svg>
         </div>
         <h2>No forecasting data yet</h2>
-        <p data-empty-message>At least 7 distinct days of stock movement data are required before the AI Forecasting dashboard can generate recommendations.</p>
+        <p data-empty-message>Record real stock movement entries to generate stockout predictions, reorder suggestions, and demand insights.</p>
+        <a href="index.php?url=admin/stock-update" class="btn-primary ai-forecasting-empty__action">Go to Stock Update</a>
     </section>
 
     <div class="ai-forecasting-content" data-forecast-content hidden>
@@ -54,9 +63,6 @@ $forecastApiUrl = $forecastingPageState['forecast_api_url'] ?? 'index.php?url=ad
                     <button type="button" class="ai-insights-card__link" data-analysis-toggle aria-expanded="false">View full analysis</button>
                 </div>
                 <div class="ai-insights-list" data-insights-list></div>
-                <div class="ai-analysis-panel" data-analysis-panel hidden>
-                    <div class="ai-analysis-panel__body" data-analysis-body></div>
-                </div>
             </article>
 
             <article class="section-card ai-demand-card">
@@ -68,6 +74,17 @@ $forecastApiUrl = $forecastingPageState['forecast_api_url'] ?? 'index.php?url=ad
                 </div>
                 <div class="ai-demand-chart" data-demand-chart></div>
             </article>
+        </section>
+
+        <section class="section-card ai-analysis-panel" data-analysis-panel hidden>
+            <div class="ai-analysis-panel__header">
+                <div>
+                    <p class="eyebrow">Expanded analysis</p>
+                    <h2>AI Forecasting full analysis</h2>
+                    <p class="page-subtitle">Additional forecasting coverage, urgency groups, and demand watchlists for the current range.</p>
+                </div>
+            </div>
+            <div class="ai-analysis-panel__body" data-analysis-body></div>
         </section>
 
         <section class="section-card ai-recommendations-card">
@@ -166,4 +183,76 @@ $forecastApiUrl = $forecastingPageState['forecast_api_url'] ?? 'index.php?url=ad
             </div>
         </section>
     </div>
+
+    <div class="ai-detail-overlay" data-detail-overlay hidden></div>
+    <aside class="ai-detail-drawer" data-detail-drawer aria-hidden="true">
+        <div class="ai-detail-drawer__panel" role="dialog" aria-modal="true" aria-labelledby="aiDetailDrawerTitle">
+            <div class="ai-detail-drawer__header">
+                <div class="ai-detail-drawer__title-wrap">
+                    <div class="ai-detail-drawer__title-row">
+                        <h2 id="aiDetailDrawerTitle" data-detail-product-name>Product Analysis</h2>
+                        <span class="ai-status-badge" data-detail-status>Pending</span>
+                    </div>
+                    <p data-detail-product-meta>Review predictive forecast data before generating an explanation.</p>
+                </div>
+                <button type="button" class="ai-detail-drawer__close" data-detail-close aria-label="Close product details">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="ai-detail-drawer__content">
+                <div class="ai-detail-drawer__metrics" data-detail-primary-metrics></div>
+
+                <section class="ai-detail-card ai-detail-graph-card">
+                    <div class="ai-detail-card__header">
+                        <h3>Stock level - Past 30 days</h3>
+                        <p data-detail-threshold-marker>Min. Threshold: 0 units</p>
+                    </div>
+                    <div class="ai-detail-trend-chart" data-detail-trend-chart></div>
+                </section>
+
+                <section class="ai-detail-card">
+                    <div class="ai-detail-card__header">
+                        <h3>Recent movement pattern</h3>
+                    </div>
+                    <div class="ai-detail-movement-list" data-detail-movements></div>
+                </section>
+
+                <section class="ai-detail-card ai-detail-strategy-card">
+                    <div class="ai-detail-card__header ai-detail-strategy-card__header">
+                        <h3>Predictive / AI Analysis</h3>
+                        <div class="ai-detail-strategy-card__chips">
+                            <span class="ai-detail-chip" data-detail-confidence>Confidence: 0%</span>
+                            <span class="ai-detail-chip ai-detail-chip--accent">AI Strategic Insight</span>
+                        </div>
+                    </div>
+                    <p class="ai-detail-strategy-card__text" data-detail-strategy-text>No predictive insight loaded yet.</p>
+
+                    <div class="ai-detail-gemini">
+                        <div class="ai-detail-gemini__header">
+                            <div>
+                                <h4>Gemini AI Explanation</h4>
+                                <p>Generate a short admin-friendly explanation from the selected predictive forecast result.</p>
+                            </div>
+                            <button type="button" class="btn-outline ai-detail-gemini__button" data-generate-insight disabled>Generate AI Explanation</button>
+                        </div>
+                        <p class="ai-gemini-insight-card__loading" data-insight-loading hidden>Generating AI explanation...</p>
+                        <div class="ai-gemini-insight-card__box ai-detail-gemini__result" data-insight-box hidden>
+                            <p data-insight-text></p>
+                            <span class="ai-gemini-insight-card__source" data-insight-source></span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="ai-detail-drawer__footer">
+                <a href="index.php?url=admin/products" class="btn-outline ai-detail-drawer__secondary" data-detail-view-product>View Product</a>
+                <a href="index.php?url=admin/stock-update" class="btn-outline ai-detail-drawer__secondary" data-detail-update-stock>Update Stock</a>
+                <button type="button" class="btn-primary ai-detail-drawer__action" data-detail-mark-reorder>Mark for Reorder</button>
+            </div>
+        </div>
+    </aside>
 </div>

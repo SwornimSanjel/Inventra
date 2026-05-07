@@ -1,1 +1,6 @@
 .env
+
+# Temporary and log files
+storage/*.tmp
+storage/*.log
+storage/logs/*.log
