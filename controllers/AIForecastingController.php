@@ -21,10 +21,15 @@ class AIForecastingController
     public function show(): void
     {
         $admin = $this->adminSession->requireAuthenticatedAdmin();
+        $mockEmpty = isset($_GET['mock_empty']) && $_GET['mock_empty'] === '1';
+        $forecastApiUrl = 'index.php?url=admin/ai-forecasting/data';
+        if ($mockEmpty) {
+            $forecastApiUrl .= '&mock_empty=1';
+        }
 
         $forecastingPageState = [
             'current_admin' => $admin,
-            'forecast_api_url' => 'index.php?url=admin/ai-forecasting/data',
+            'forecast_api_url' => $forecastApiUrl,
             'product_detail_api_url' => 'index.php?url=admin/ai-forecasting/product-detail',
             'generate_insight_api_url' => 'index.php?url=admin/ai-forecasting/generate-insight',
         ];
@@ -37,9 +42,10 @@ class AIForecastingController
     {
         $this->adminSession->requireAuthenticatedAdmin();
         $rangeDays = isset($_GET['range']) && is_numeric($_GET['range']) ? (int) $_GET['range'] : 14;
+        $forceEmpty = isset($_GET['mock_empty']) && $_GET['mock_empty'] === '1';
 
         header('Content-Type: application/json');
-        echo json_encode($this->aiForecastModel->getForecastResponse($rangeDays));
+        echo json_encode($this->aiForecastModel->getForecastResponse($rangeDays, $forceEmpty));
         exit;
     }
 
