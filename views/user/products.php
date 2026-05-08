@@ -44,7 +44,7 @@ $params = [];
 
 if ($searchTerm !== '') {
     $searchLike = '%' . $searchTerm . '%';
-    $sql .= ' AND (p.name LIKE ? OR COALESCE(p.description, "") LIKE ? OR COALESCE(c.name, p.category, "") LIKE ?)';
+    $sql .= " AND (p.name LIKE ? OR COALESCE(p.description, '') LIKE ? OR COALESCE(c.name, p.category, '') LIKE ?)";
     $params[] = $searchLike;
     $params[] = $searchLike;
     $params[] = $searchLike;

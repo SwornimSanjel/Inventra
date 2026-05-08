@@ -50,7 +50,7 @@ $sql = "
 $params = [];
 
 if ($search !== '') {
-    $sql .= ' AND (p.name LIKE ? OR COALESCE(p.description, "") LIKE ? OR COALESCE(c.name, p.category, "") LIKE ?)';
+    $sql .= " AND (p.name LIKE ? OR COALESCE(p.description, '') LIKE ? OR COALESCE(c.name, p.category, '') LIKE ?)";
     $like = '%' . $search . '%';
     $params[] = $like;
     $params[] = $like;
