@@ -138,6 +138,23 @@ class AuthController
 
         $user = $matchingAccounts[0] ?? null;
 
+        if (!$user) {
+            // Check inactive accounts separately so admins can deactivate access while users get a clear reason.
+            $inactiveUser = $this->findInactiveAccountForCredentials($identifier, $password);
+
+            if ($inactiveUser !== null) {
+                inventra_auth_debug_log('login:inactive_account', [
+                    'account_id' => (int) $inactiveUser['id'],
+                    'source' => (string) ($inactiveUser['source'] ?? ''),
+                    'email' => (string) ($inactiveUser['email'] ?? ''),
+                ]);
+
+                $_SESSION['auth_error'] = 'Your account has been deactivated. Please contact the administrator.';
+                header('Location: index.php?url=login');
+                exit;
+            }
+        }
+
         if (
             !$user ||
             empty($user['password_hash']) ||
@@ -705,6 +722,32 @@ class AuthController
         $defaultPassword = inventra_build_default_password((string) ($account['full_name'] ?? ''));
 
         return hash_equals($defaultPassword, $password);
+    }
+
+    // Used only after the active-account lookup fails; this keeps inactive users blocked from signing in.
+    private function findInactiveAccountForCredentials(string $identifier, string $password): ?array
+    {
+        if ($identifier === '' || $password === '') {
+            return null;
+        }
+
+        $matchingAccounts = $this->getAccountModel()->findAccountsByIdentifier($identifier, false);
+
+        foreach ($matchingAccounts as $account) {
+            if (
+                ($account['source'] ?? '') !== 'users' ||
+                !empty($account['is_active']) ||
+                empty($account['password_hash'])
+            ) {
+                continue;
+            }
+
+            if (password_verify($password, (string) $account['password_hash'])) {
+                return $account;
+            }
+        }
+
+        return null;
     }
 
     private function logPasswordReset(string $email): void
