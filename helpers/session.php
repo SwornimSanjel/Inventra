@@ -43,6 +43,62 @@ function inventra_session_cookie_path(): string
     return $basePath !== '' ? $basePath : '/';
 }
 
+function inventra_build_default_password(string $fullName): string
+{
+    $normalized = trim(preg_replace('/\s+/', ' ', strtolower($fullName)) ?? '');
+    $firstName = explode(' ', $normalized)[0] ?? '';
+    $firstName = preg_replace('/[^a-z]/', '', $firstName) ?? '';
+
+    if ($firstName === '') {
+        $firstName = 'user';
+    }
+
+    return $firstName . '@123';
+}
+
+function inventra_forced_password_change_url(): string
+{
+    return 'auth/first-login-password';
+}
+
+function inventra_password_change_required(): bool
+{
+    $auth = $_SESSION['auth'] ?? null;
+
+    if (is_array($auth) && ($auth['requires_password_change'] ?? false) === true) {
+        return true;
+    }
+
+    return ($_SESSION['requires_password_change'] ?? false) === true;
+}
+
+function inventra_mark_password_change_required(string $reason = 'default_password'): void
+{
+    if (!isset($_SESSION['auth']) || !is_array($_SESSION['auth'])) {
+        $_SESSION['auth'] = [];
+    }
+
+    $_SESSION['auth']['requires_password_change'] = true;
+    $_SESSION['auth']['password_change_reason'] = $reason;
+    $_SESSION['requires_password_change'] = true;
+    $_SESSION['password_change_reason'] = $reason;
+}
+
+function inventra_clear_password_change_required(): void
+{
+    if (isset($_SESSION['auth']) && is_array($_SESSION['auth'])) {
+        unset(
+            $_SESSION['auth']['requires_password_change'],
+            $_SESSION['auth']['password_change_reason']
+        );
+    }
+
+    unset(
+        $_SESSION['requires_password_change'],
+        $_SESSION['password_change_reason']
+    );
+}
+
 function inventra_bootstrap_session(): void
 {
     if (session_status() === PHP_SESSION_ACTIVE) {
@@ -85,6 +141,13 @@ function inventra_set_authenticated_user(array $user): void
     $email = (string) ($user['email'] ?? '');
     $name = (string) ($user['full_name'] ?? '');
     $role = strtolower(trim((string) ($user['role'] ?? 'user'))) === 'admin' ? 'admin' : 'user';
+    $requiresPasswordChange = array_key_exists('requires_password_change', $user)
+        ? (bool) $user['requires_password_change']
+        : inventra_password_change_required();
+    $passwordChangeReason = (string) (
+        $user['password_change_reason']
+        ?? ($_SESSION['auth']['password_change_reason'] ?? ($_SESSION['password_change_reason'] ?? 'default_password'))
+    );
 
     $_SESSION['auth'] = [
         'user_id' => $accountId,
@@ -95,6 +158,12 @@ function inventra_set_authenticated_user(array $user): void
         'logged_in' => true,
         'last_activity' => time(),
     ];
+
+    if ($requiresPasswordChange) {
+        inventra_mark_password_change_required($passwordChangeReason !== '' ? $passwordChangeReason : 'default_password');
+    } else {
+        inventra_clear_password_change_required();
+    }
 
     // Legacy compatibility while the merged app still has some old checks.
     $_SESSION['user_id'] = $accountId;
@@ -145,7 +214,9 @@ function inventra_clear_authenticated_user(): void
         $_SESSION['logged_in'],
         $_SESSION['last_activity'],
         $_SESSION['ip_address'],
-        $_SESSION['user_agent']
+        $_SESSION['user_agent'],
+        $_SESSION['requires_password_change'],
+        $_SESSION['password_change_reason']
     );
 }
 
@@ -286,5 +357,9 @@ function inventra_is_admin(): bool
 
 function inventra_default_authenticated_url(): string
 {
+    if (inventra_password_change_required()) {
+        return inventra_forced_password_change_url();
+    }
+
     return inventra_is_admin() ? 'admin/dashboard' : 'user/dashboard';
 }

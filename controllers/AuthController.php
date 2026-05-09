@@ -76,6 +76,12 @@ class AuthController
 
         if (inventra_is_authenticated()) {
             $this->getAdminSession()->resolveAuthenticatedAccount();
+            if (inventra_password_change_required()) {
+                inventra_auth_debug_log('show_login:redirect_first_login_password');
+                header('Location: index.php?url=' . inventra_forced_password_change_url());
+                exit;
+            }
+
             inventra_auth_debug_log('show_login:redirect_dashboard');
             header('Location: index.php?url=' . inventra_default_authenticated_url());
             exit;
@@ -146,7 +152,12 @@ class AuthController
             exit;
         }
 
+        $requiresPasswordChange = !empty($user['password_change_required'])
+            || $this->isDefaultGeneratedPassword($user, $password);
+
         session_regenerate_id(true);
+        $user['requires_password_change'] = $requiresPasswordChange;
+        $user['password_change_reason'] = 'default_password';
         inventra_set_authenticated_user($user);
 
         try {
@@ -165,7 +176,15 @@ class AuthController
             'is_authenticated' => inventra_is_authenticated(),
         ]);
 
-        unset($_SESSION['auth_error'], $_SESSION['auth_success'], $_SESSION['auth_old']);
+        unset($_SESSION['auth_error'], $_SESSION['auth_old']);
+
+        if ($requiresPasswordChange) {
+            $_SESSION['auth_success'] = 'You signed in with the default password. Please set a new one to continue.';
+            header('Location: index.php?url=' . inventra_forced_password_change_url());
+            exit;
+        }
+
+        unset($_SESSION['auth_success']);
 
         header('Location: index.php?url=' . inventra_default_authenticated_url());
         exit;
@@ -444,6 +463,64 @@ class AuthController
         require __DIR__ . '/../views/layout/auth-shell.php';
     }
 
+    public function firstLoginPassword(): void
+    {
+        $account = $this->getAdminSession()->requireAuthenticatedAccount();
+
+        if (!inventra_password_change_required()) {
+            header('Location: index.php?url=' . inventra_default_authenticated_url());
+            exit;
+        }
+
+        $error = '';
+        $success = 'You signed in with the default password. Please set a new one to continue.';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $newPassword = (string) ($_POST['new_password'] ?? $_POST['password'] ?? '');
+            $confirmPassword = (string) ($_POST['confirm_password'] ?? '');
+
+            if ($newPassword === '') {
+                $error = 'New password is required.';
+            } elseif (!$this->isValidPassword($newPassword)) {
+                $error = 'New password must be at least 8 characters and include at least one of !, @, or #.';
+            } elseif ($confirmPassword === '') {
+                $error = 'Please confirm your new password.';
+            } elseif ($newPassword !== $confirmPassword) {
+                $error = 'New password and confirm password do not match.';
+            } elseif ($this->getAccountModel()->verifyPassword($account, $newPassword)) {
+                $error = 'New password must be different from the default password.';
+            } else {
+                $hash = password_hash($newPassword, PASSWORD_BCRYPT);
+
+                if ($this->getAccountModel()->updatePassword($account, $hash)) {
+                    $this->sendPasswordChangedEmail((string) $account['email'], (string) ($account['full_name'] ?? ''));
+                    try {
+                        $this->getNotificationService()->notifyPasswordChanged($account);
+                    } catch (Throwable $e) {
+                        error_log('Failed to create first-login password-change notification: ' . $e->getMessage());
+                    }
+
+                    inventra_clear_authenticated_user();
+                    inventra_clear_password_change_required();
+                    $_SESSION['auth_success'] = 'Password updated successfully. Please log in with your new password.';
+                    session_regenerate_id(true);
+
+                    header('Location: index.php?url=login');
+                    exit;
+                }
+
+                $error = 'Unable to update password. Please try again.';
+            }
+        } else {
+            $error = $_SESSION['auth_error'] ?? '';
+            $success = $_SESSION['auth_success'] ?? $success;
+            unset($_SESSION['auth_error'], $_SESSION['auth_success']);
+        }
+
+        $view = 'first_login_password';
+        require __DIR__ . '/../views/layout/auth-shell.php';
+    }
+
     public function showPasswordUpdated(): void
     {
         $view = 'password_updated';
@@ -621,6 +698,13 @@ class AuthController
     private function isValidPassword(string $password): bool
     {
         return (bool) preg_match('/^(?=.*[!@#]).{8,}$/', $password);
+    }
+
+    private function isDefaultGeneratedPassword(array $account, string $password): bool
+    {
+        $defaultPassword = inventra_build_default_password((string) ($account['full_name'] ?? ''));
+
+        return hash_equals($defaultPassword, $password);
     }
 
     private function logPasswordReset(string $email): void

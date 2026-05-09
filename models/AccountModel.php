@@ -105,6 +105,9 @@ class AccountModel
             'status',
             'password',
         ];
+        $select[] = $this->usersTableHasColumn('password_change_required')
+            ? 'password_change_required'
+            : 'FALSE AS password_change_required';
 
         $stmt = $this->db->prepare(sprintf(
             'SELECT %s FROM users WHERE id = ? LIMIT 1',
@@ -227,7 +230,11 @@ class AccountModel
             return false;
         }
 
-        $stmt = $this->db->prepare('UPDATE users SET password = ? WHERE id = ?');
+        $sql = $this->usersTableHasColumn('password_change_required')
+            ? 'UPDATE users SET password = ?, password_change_required = FALSE WHERE id = ?'
+            : 'UPDATE users SET password = ? WHERE id = ?';
+
+        $stmt = $this->db->prepare($sql);
         return $stmt->execute([$hash, $id]);
     }
 
@@ -456,8 +463,12 @@ class AccountModel
             return [];
         }
 
+        $passwordChangeSelect = $this->usersTableHasColumn('password_change_required')
+            ? 'password_change_required'
+            : 'FALSE AS password_change_required';
+
         $sql = '
-            SELECT id, full_name, username, email, role, status, password
+            SELECT id, full_name, username, email, role, status, password, ' . $passwordChangeSelect . '
             FROM users
             WHERE (email = ? OR username = ?)
         ';
@@ -479,8 +490,12 @@ class AccountModel
             return [];
         }
 
+        $passwordChangeSelect = $this->usersTableHasColumn('password_change_required')
+            ? 'password_change_required'
+            : 'FALSE AS password_change_required';
+
         $sql = '
-            SELECT id, full_name, username, email, role, status, password
+            SELECT id, full_name, username, email, role, status, password, ' . $passwordChangeSelect . '
             FROM users
             WHERE email = ?
         ';
@@ -527,12 +542,26 @@ class AccountModel
             'status' => $status,
             'is_active' => $status === 'active',
             'password_hash' => (string) ($row['password'] ?? ''),
+            'password_change_required' => $this->normalizeBoolean($row['password_change_required'] ?? false),
         ];
     }
 
     private function normalizeRole(string $role): string
     {
         return strtolower(trim($role)) === 'admin' ? 'admin' : 'user';
+    }
+
+    private function normalizeBoolean(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_int($value)) {
+            return $value === 1;
+        }
+
+        return in_array(strtolower(trim((string) $value)), ['1', 't', 'true', 'yes', 'on'], true);
     }
 
     private function usersTableExists(): bool

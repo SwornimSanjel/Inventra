@@ -26,6 +26,14 @@ function json_response(int $statusCode, array $payload): void
     exit;
 }
 
+if (function_exists('inventra_password_change_required') && inventra_password_change_required()) {
+    json_response(403, [
+        'success' => false,
+        'message' => 'Please change your default password before accessing Inventra.',
+        'redirect' => 'index.php?url=' . inventra_forced_password_change_url(),
+    ]);
+}
+
 function request_input(): array
 {
     $raw = file_get_contents('php://input');
