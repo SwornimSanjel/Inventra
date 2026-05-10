@@ -34,7 +34,11 @@ class UserManagementModel
         $this->ensureColumnExists('avatar', 'ALTER TABLE users ADD COLUMN avatar VARCHAR(255)');
         $this->ensureColumnExists('notify_low_stock', 'ALTER TABLE users ADD COLUMN notify_low_stock BOOLEAN NOT NULL DEFAULT TRUE');
         $this->ensureColumnExists('notify_weekly_summary', 'ALTER TABLE users ADD COLUMN notify_weekly_summary BOOLEAN NOT NULL DEFAULT TRUE');
+<<<<<<< HEAD
         $this->migrateUserRoleToStaff();
+=======
+        $this->ensureColumnExists('password_change_required', 'ALTER TABLE users ADD COLUMN password_change_required BOOLEAN NOT NULL DEFAULT FALSE');
+>>>>>>> dad9c9816375215b01eaef84051b14b80ad35d8e
     }
 
     public function getUsers(string $role = '', string $status = ''): array
@@ -63,9 +67,11 @@ class UserManagementModel
 
     public function createUser(string $fullName, string $email, string $username, string $password, string $role): int
     {
+        $this->ensureColumnExists('password_change_required', 'ALTER TABLE users ADD COLUMN password_change_required BOOLEAN NOT NULL DEFAULT FALSE');
+
         $stmt = $this->db->prepare('
-            INSERT INTO users (full_name, username, email, password, role, status, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            INSERT INTO users (full_name, username, email, password, role, status, password_change_required, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             RETURNING id
         ');
         $stmt->execute([
@@ -75,6 +81,7 @@ class UserManagementModel
             password_hash($password, PASSWORD_BCRYPT),
             $this->normalizeRoleInput($role),
             'active',
+            true,
         ]);
 
         return (int) $stmt->fetchColumn();

@@ -61,6 +61,7 @@ CREATE TABLE users (
     avatar VARCHAR(255),
     notify_low_stock BOOLEAN NOT NULL DEFAULT TRUE,
     notify_weekly_summary BOOLEAN NOT NULL DEFAULT TRUE,
+    password_change_required BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 )
 SQL,

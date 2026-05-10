@@ -44,7 +44,7 @@ $params = [];
 
 if ($searchTerm !== '') {
     $searchLike = '%' . $searchTerm . '%';
-    $sql .= ' AND (p.name LIKE ? OR COALESCE(p.description, "") LIKE ? OR COALESCE(c.name, p.category, "") LIKE ?)';
+    $sql .= " AND (p.name LIKE ? OR COALESCE(p.description, '') LIKE ? OR COALESCE(c.name, p.category, '') LIKE ?)";
     $params[] = $searchLike;
     $params[] = $searchLike;
     $params[] = $searchLike;
@@ -236,19 +236,19 @@ foreach ($stmt->fetchAll() as $product) {
             </button>
         </div>
 
-        <form id="productForm" class="modal-form" enctype="multipart/form-data">
+        <form id="productForm" class="modal-form" enctype="multipart/form-data" novalidate>
             <input type="hidden" name="id" id="productId">
 
             <div class="form-grid">
                 <label class="field">
-                    <span>Product Name</span>
-                    <input type="text" name="name" id="productName" required>
+                    <span>Product Name <span class="required-marker" aria-hidden="true">*</span></span>
+                    <input type="text" name="name" id="productName" required data-label="Product name">
                 </label>
 
                 <label class="field">
-                    <span>Category</span>
+                    <span>Category <span class="required-marker" aria-hidden="true">*</span></span>
                     <div class="products-custom-select products-custom-select--modal" data-products-select id="productCategorySelect">
-                        <input type="hidden" name="category_id" id="productCategory" value="" data-products-select-input>
+                        <input type="hidden" name="category_id" id="productCategory" value="" data-products-select-input data-label="Category">
                         <button type="button" class="products-custom-select__trigger products-custom-select__trigger--modal" data-products-select-trigger aria-expanded="false">
                             <span data-products-select-label>Select category</span>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -273,28 +273,28 @@ foreach ($stmt->fetchAll() as $product) {
                 </label>
 
                 <label class="field">
-                    <span>Quantity</span>
-                    <input type="number" name="qty" id="productQty" min="0" required>
+                    <span>Quantity <span class="required-marker" aria-hidden="true">*</span></span>
+                    <input type="number" name="qty" id="productQty" min="0" required data-label="Quantity">
                 </label>
 
                 <label class="field">
-                    <span>Unit Price</span>
-                    <input type="number" name="price" id="productPrice" min="0" step="0.01" required>
+                    <span>Unit Price <span class="required-marker" aria-hidden="true">*</span></span>
+                    <input type="number" name="price" id="productPrice" min="0" step="0.01" required data-label="Unit price">
                 </label>
 
                 <label class="field">
-                    <span>Lower Limit</span>
-                    <input type="number" name="lower" id="productLower" min="0" required>
+                    <span>Lower Limit <span class="required-marker" aria-hidden="true">*</span></span>
+                    <input type="number" name="lower" id="productLower" min="0" required data-label="Lower limit">
                 </label>
 
                 <label class="field">
-                    <span>Upper Limit</span>
-                    <input type="number" name="upper" id="productUpper" min="0" required>
+                    <span>Upper Limit <span class="required-marker" aria-hidden="true">*</span></span>
+                    <input type="number" name="upper" id="productUpper" min="0" required data-label="Upper limit">
                 </label>
 
                 <label class="field field--full">
-                    <span>Description</span>
-                    <textarea name="description" id="productDescription" rows="4" placeholder="Add a short description"></textarea>
+                    <span>Description <span class="required-marker" aria-hidden="true">*</span></span>
+                    <textarea name="description" id="productDescription" rows="4" placeholder="Add a short description" required data-label="Description"></textarea>
                 </label>
 
                 <label class="field field--full">

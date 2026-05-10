@@ -82,6 +82,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+<<<<<<< HEAD
   function setMovement(type) {
     var stockInBtn = document.getElementById('stockInBtn');
     var stockOutBtn = document.getElementById('stockOutBtn');
@@ -134,6 +135,58 @@ document.addEventListener('DOMContentLoaded', function () {
 
     select.classList.add('staff-native-select');
     root.classList.add('staff-native-select-root');
+=======
+  function setFieldInvalid(field, invalid) {
+    if (field) {
+      field.classList.toggle('is-invalid', Boolean(invalid));
+    }
+  }
+
+  function setProductInvalid(invalid) {
+    var trigger = productSelect.closest('[data-stock-select-root]').querySelector('[data-stock-select-trigger]');
+    setFieldInvalid(trigger, invalid);
+  }
+
+  function validateStockMovementForm(quantity, amountPerPiece) {
+    var partyName = document.getElementById('partyName');
+    var partyContact = document.getElementById('partyContact');
+    var contactValue = (partyContact.value || '').trim();
+    var valid = true;
+
+    setMessage('', '');
+    setProductInvalid(false);
+    [quantityInput, priceInput, partyName, partyContact].forEach(function (field) {
+      setFieldInvalid(field, false);
+    });
+
+    if (!productSelect.value) {
+      setProductInvalid(true);
+      setMessage('Please select a product.', 'is-error');
+      valid = false;
+    } else if (!Number.isInteger(quantity) || quantity <= 0) {
+      setFieldInvalid(quantityInput, true);
+      setMessage('Quantity must be greater than 0.', 'is-error');
+      valid = false;
+    } else if ((partyName.value || '').trim() === '') {
+      setFieldInvalid(partyName, true);
+      setMessage('Full name is required.', 'is-error');
+      valid = false;
+    } else if (contactValue === '') {
+      setFieldInvalid(partyContact, true);
+      setMessage('Contact number is required.', 'is-error');
+      valid = false;
+    } else if (!/^[0-9+\-\s()]{7,20}$/.test(contactValue)) {
+      setFieldInvalid(partyContact, true);
+      setMessage('Please enter a valid contact number.', 'is-error');
+      valid = false;
+    } else if (!Number.isFinite(amountPerPiece) || amountPerPiece <= 0) {
+      setFieldInvalid(priceInput, true);
+      setMessage('Amount per piece must be greater than 0.', 'is-error');
+      valid = false;
+    }
+
+    return valid;
+>>>>>>> dad9c9816375215b01eaef84051b14b80ad35d8e
   }
 
   function recalcTotal() {
@@ -295,6 +348,7 @@ document.addEventListener('DOMContentLoaded', function () {
         toggleSelect(root, false);
       });
 
+<<<<<<< HEAD
       optionsWrap.appendChild(button);
     });
 
@@ -318,8 +372,20 @@ document.addEventListener('DOMContentLoaded', function () {
       menu.hidden = !open;
     }
   }
+=======
+  [quantityInput, priceInput, document.getElementById('partyName'), document.getElementById('partyContact')].forEach(function (field) {
+    field.addEventListener('input', function () {
+      setFieldInvalid(field, false);
+    });
+  });
+
+  document.querySelectorAll('.status-option input[type="radio"]').forEach(function (input) {
+    input.addEventListener('change', syncStatusSelections);
+  });
+>>>>>>> dad9c9816375215b01eaef84051b14b80ad35d8e
 
   productSelect.addEventListener('change', function () {
+    setProductInvalid(false);
     var option = productSelect.options[productSelect.selectedIndex];
     var price = option ? parseFloat(option.getAttribute('data-price') || '0') : 0;
     var root = productSelect.closest('[data-stock-select-root]');
@@ -338,6 +404,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function buildIncomingStatusCards() {
     var incomingStatusSelect = document.getElementById('incomingStatus');
 
+<<<<<<< HEAD
     if (!incomingStatusSelect) {
       return;
     }
@@ -346,6 +413,69 @@ document.addEventListener('DOMContentLoaded', function () {
     var parent = root ? root.parentNode : incomingStatusSelect.parentNode;
     var selectedValue = incomingStatusSelect.value || 'order_dispatched';
     var statusList = document.createElement('div');
+=======
+  document.addEventListener('click', function (event) {
+    customSelects.forEach(function (root) {
+      if (!root.contains(event.target)) {
+        closeCustomSelect(root);
+      }
+    });
+  });
+
+  form.addEventListener('reset', function () {
+    window.setTimeout(function () {
+      setMovement('in');
+      paymentMethod = 'cash';
+      setProductInvalid(false);
+      [quantityInput, priceInput, document.getElementById('partyName'), document.getElementById('partyContact')].forEach(function (field) {
+        setFieldInvalid(field, false);
+      });
+      document.querySelectorAll('.payment-toggle__btn').forEach(function (item, index) {
+        item.classList.toggle('is-active', index === 0);
+      });
+      setMessage('', '');
+      recalcTotal();
+      syncStatusSelections();
+      customSelects.forEach(function (root) {
+        rebuildCustomSelect(root);
+      });
+    }, 0);
+  });
+
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+
+    var quantity = Number((quantityInput.value || '').trim());
+    var amountPerPiece = parseFloat(priceInput.value || '0');
+
+    if (!validateStockMovementForm(quantity, amountPerPiece)) {
+      return;
+    }
+
+    if (movementType === 'out' && quantity > selectedStock()) {
+      setMessage('Stock out quantity cannot exceed the current product stock.', 'is-error');
+      return;
+    }
+
+    var payload = {
+      stock_type: movementType === 'out' ? 'Stock Out' : 'Stock In',
+      product_id: productSelect.value,
+      quantity: quantity,
+      movement_notes: document.getElementById('stockNotes').value,
+      full_name: document.getElementById('partyName').value,
+      contact_number: document.getElementById('partyContact').value,
+      amount_per_piece: amountPerPiece,
+      total_amount: parseFloat(totalInput.value || '0'),
+      payment_status: document.getElementById('paymentStatus').value,
+      payment_method: paymentMethod === 'card' ? 'Card' : 'Cash',
+      incoming_status: movementType === 'in' && form.querySelector('input[name="incoming_status"]:checked')
+        ? incomingStatusLabels[form.querySelector('input[name="incoming_status"]:checked').value] || ''
+        : '',
+      movement_status: movementType === 'out' && form.querySelector('input[name="movement_status"]:checked')
+        ? movementStatusLabels[form.querySelector('input[name="movement_status"]:checked').value] || ''
+        : ''
+    };
+>>>>>>> dad9c9816375215b01eaef84051b14b80ad35d8e
 
     if (root) {
       root.classList.add('is-hidden');

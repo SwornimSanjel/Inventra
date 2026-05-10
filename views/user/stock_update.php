@@ -36,7 +36,7 @@ try {
 
     <div class="stock-layout">
         <section class="section-card stock-form-card">
-            <form id="stockMovementForm" class="stock-form">
+            <form id="stockMovementForm" class="stock-form" novalidate>
                 <div class="stock-block">
                     <div class="stock-card-head">
                         <div>
@@ -49,8 +49,13 @@ try {
                     </div>
 
                     <div class="form-grid form-grid--stock">
+<<<<<<< HEAD
                         <label class="field field--full stock-product-field">
                             <span>Product Name</span>
+=======
+                        <label class="field field--full">
+                            <span>Product Name <span class="required-marker" aria-hidden="true">*</span></span>
+>>>>>>> dad9c9816375215b01eaef84051b14b80ad35d8e
                             <div class="stock-custom-select" data-stock-select-root>
                                 <input type="hidden" id="stockProduct" name="product_id" required>
                                 <button type="button" class="stock-custom-select__trigger" data-stock-select-trigger aria-expanded="false">
@@ -62,7 +67,7 @@ try {
                         </label>
 
                         <label class="field field--quantity">
-                            <span>Quantity</span>
+                            <span>Quantity <span class="required-marker" aria-hidden="true">*</span></span>
                             <div class="qty-control">
                                 <button type="button" class="qty-control__btn" id="quantityMinus" aria-label="Decrease quantity">-</button>
                                 <input type="number" id="stockQuantity" name="quantity" min="1" value="1" required>
@@ -81,18 +86,18 @@ try {
                     <h2 class="stock-card-title">Buyer / Seller Details</h2>
                     <div class="form-grid">
                         <label class="field">
-                            <span>Full Name</span>
-                            <input type="text" id="partyName" name="full_name" placeholder="Supplier or customer name">
+                            <span>Full Name <span class="required-marker" aria-hidden="true">*</span></span>
+                            <input type="text" id="partyName" name="full_name" placeholder="Supplier or customer name" required>
                         </label>
 
                         <label class="field">
-                            <span>Contact Number</span>
-                            <input type="text" id="partyContact" name="contact" placeholder="Phone number">
+                            <span>Contact Number <span class="required-marker" aria-hidden="true">*</span></span>
+                            <input type="tel" id="partyContact" name="contact" placeholder="Phone number" pattern="[0-9+\-\s()]{7,20}" required>
                         </label>
 
                         <label class="field">
-                            <span>Amount Per Piece</span>
-                            <input type="number" id="stockPrice" name="amount_per_piece" min="0" step="0.01" value="0">
+                            <span>Amount Per Piece <span class="required-marker" aria-hidden="true">*</span></span>
+                            <input type="number" id="stockPrice" name="amount_per_piece" min="0.01" step="0.01" value="" required>
                         </label>
 
                         <label class="field">

@@ -26,6 +26,14 @@ function json_response(int $statusCode, array $payload): void
     exit;
 }
 
+if (function_exists('inventra_password_change_required') && inventra_password_change_required()) {
+    json_response(403, [
+        'success' => false,
+        'message' => 'Please change your default password before accessing Inventra.',
+        'redirect' => 'index.php?url=' . inventra_forced_password_change_url(),
+    ]);
+}
+
 function request_input(): array
 {
     $raw = file_get_contents('php://input');
@@ -292,12 +300,12 @@ if ($contactNumber !== '' && !preg_match('/^[0-9+\-\s()]{7,20}$/', $contactNumbe
     $errors['contact_number'] = 'Contact number is invalid.';
 }
 
-if ($amountPerPiece === '' || !is_numeric($amountPerPiece) || (float) $amountPerPiece < 0) {
-    $errors['amount_per_piece'] = 'Amount per piece must be a valid amount.';
+if ($amountPerPiece === '' || !is_numeric($amountPerPiece) || (float) $amountPerPiece <= 0) {
+    $errors['amount_per_piece'] = 'Amount per piece must be numeric and greater than 0.';
 }
 
-if ($totalAmount === '' || !is_numeric($totalAmount) || (float) $totalAmount < 0) {
-    $errors['total_amount'] = 'Total amount must be a valid amount.';
+if ($totalAmount === '' || !is_numeric($totalAmount) || (float) $totalAmount <= 0) {
+    $errors['total_amount'] = 'Total amount must be numeric and greater than 0.';
 }
 
 if (!in_array(strtolower($paymentMethod), ['cash', 'card'], true)) {

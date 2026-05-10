@@ -36,7 +36,8 @@ $quantity = (int) ($payload['quantity'] ?? 0);
 $notes = trim((string) ($payload['notes'] ?? ''));
 $fullName = trim((string) ($payload['full_name'] ?? ''));
 $contact = trim((string) ($payload['contact'] ?? ''));
-$amountPerPiece = (float) ($payload['amount_per_piece'] ?? -1);
+$amountPerPieceRaw = $payload['amount_per_piece'] ?? null;
+$amountPerPiece = is_numeric($amountPerPieceRaw) ? (float) $amountPerPieceRaw : -1;
 $paymentStatus = strtolower(trim((string) ($payload['payment_status'] ?? '')));
 $paymentMethod = strtolower(trim((string) ($payload['payment_method'] ?? '')));
 $incomingStatus = trim((string) ($payload['incoming_status'] ?? ''));
@@ -93,8 +94,8 @@ if ($contact === '' || !preg_match('/^[0-9+\-\s()]{7,20}$/', $contact)) {
     exit;
 }
 
-if ($amountPerPiece < 0) {
-    echo json_encode(['success' => false, 'message' => 'Amount per piece must be valid.']);
+if ($amountPerPiece <= 0) {
+    echo json_encode(['success' => false, 'message' => 'Amount per piece must be numeric and greater than 0.']);
     exit;
 }
 

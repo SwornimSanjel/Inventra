@@ -214,6 +214,18 @@ body{
   justify-content:center;
 }
 
+.auth-back-login-btn{
+  margin-top:12px;
+  background:#f4f6f9;
+  color:#2f3640;
+  border:1px solid #cfd6df;
+}
+
+.auth-back-login-btn:hover,
+.auth-back-login-btn:focus{
+  background:#eef2f6;
+}
+
 .auth-links a{
   color:#2f3640;
   text-decoration:none;

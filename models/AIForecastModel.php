@@ -23,17 +23,17 @@ class AIForecastModel
         $this->ensureReorderMarksTable();
     }
 
-    public function getForecastResponse(int $rangeDays = 7): array
+    public function getForecastResponse(int $rangeDays = 7, bool $forceEmpty = false): array
     {
         $rangeDays = in_array($rangeDays, [7, 14, 30], true) ? $rangeDays : 7;
         $availableDays = $this->getAvailableMovementDays();
 
-        if ($availableDays < self::REQUIRED_DAYS) {
+        if ($forceEmpty || $availableDays < self::REQUIRED_DAYS) {
             return [
                 'status' => 'empty',
                 'message' => 'No forecasting data yet',
                 'required_days' => self::REQUIRED_DAYS,
-                'available_days' => $availableDays,
+                'available_days' => $forceEmpty ? 0 : $availableDays,
                 'selected_range' => $rangeDays,
             ];
         }

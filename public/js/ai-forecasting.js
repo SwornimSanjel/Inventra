@@ -45,6 +45,7 @@
   var categorySelect = page.querySelector('[data-category-select]');
   var refreshButton = page.querySelector('[data-forecast-refresh]');
   var exportButton = page.querySelector('[data-export-csv]');
+  var helperLink = page.querySelector('[data-forecast-helper-link]');
   var rangeButtons = Array.prototype.slice.call(page.querySelectorAll('[data-range-btn]'));
   var customSelects = Array.prototype.slice.call(page.querySelectorAll('[data-ai-select]'));
   var detailOverlay = page.querySelector('[data-detail-overlay]');
@@ -848,13 +849,16 @@
     URL.revokeObjectURL(url);
   }
 
-  function showEmptyState() {
+  function showEmptyState(data) {
+    var requiredDays = Number(data && data.required_days ? data.required_days : 7);
+    page.classList.add('is-empty-state');
     content.hidden = true;
     emptyState.hidden = false;
-    emptyMessage.textContent = 'Record real stock movement entries to generate stockout predictions, reorder suggestions, and demand insights.';
+    emptyMessage.textContent = 'Record at least ' + requiredDays + ' days of stock movement to generate AI predictions.';
   }
 
   function showContent() {
+    page.classList.remove('is-empty-state');
     emptyState.hidden = true;
     content.hidden = false;
   }
@@ -985,7 +989,7 @@
 
   function handleResponse(data) {
     if (!data || data.status === 'empty') {
-      showEmptyState();
+      showEmptyState(data);
       closeDrawer();
       return;
     }
@@ -1038,7 +1042,7 @@
         handleResponse(data);
       })
       .catch(function () {
-        showEmptyState('Unable to load forecasting data right now.');
+        showEmptyState();
       })
       .finally(function () {
         setLoading(false);
@@ -1106,6 +1110,12 @@
 
   if (exportButton) {
     exportButton.addEventListener('click', exportVisibleCsv);
+  }
+
+  if (helperLink) {
+    helperLink.addEventListener('click', function (event) {
+      event.preventDefault();
+    });
   }
 
   if (analysisToggle) {

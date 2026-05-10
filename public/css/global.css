@@ -407,6 +407,11 @@ select:focus{
   background:#fff0f0;
 }
 
+.required-marker.required-marker{
+  color:#dc2626;
+  font-weight:800;
+}
+
 @media(max-width:900px){
   .app-content{padding:16px;}
 }

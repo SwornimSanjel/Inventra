@@ -4,6 +4,7 @@ require_once __DIR__ . '/../models/AdminSession.php';
 require_once __DIR__ . '/../models/AccountModel.php';
 require_once __DIR__ . '/../models/NotificationService.php';
 require_once __DIR__ . '/../models/UserManagementModel.php';
+require_once __DIR__ . '/../helpers/session.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 
@@ -59,15 +60,19 @@ class UsersController
         $fullName = trim((string) ($_POST['full_name'] ?? ''));
         $email = trim((string) ($_POST['email'] ?? ''));
         $username = trim((string) ($_POST['username'] ?? ''));
-        $role = trim((string) ($_POST['role'] ?? 'User'));
+        $role = trim((string) ($_POST['role'] ?? ''));
         $password = $this->buildDefaultPassword($fullName);
 
-        if ($fullName === '' || $email === '' || $username === '') {
+        if ($fullName === '' || $email === '' || $username === '' || $role === '') {
             $this->jsonError('All fields are required.');
         }
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $this->jsonError('Please enter a valid email address.');
+        }
+
+        if (!in_array(strtolower($role), ['admin', 'user', 'staff'], true)) {
+            $this->jsonError('Please select a valid role.');
         }
 
         if ($this->userManagementModel->existsByUsernameOrEmail($username, $email)) {
@@ -117,14 +122,18 @@ class UsersController
         $fullName = trim((string) ($_POST['full_name'] ?? ''));
         $email = trim((string) ($_POST['email'] ?? ''));
         $username = trim((string) ($_POST['username'] ?? ''));
-        $role = trim((string) ($_POST['role'] ?? 'User'));
+        $role = trim((string) ($_POST['role'] ?? ''));
 
-        if ($userId <= 0 || $fullName === '' || $email === '' || $username === '') {
+        if ($userId <= 0 || $fullName === '' || $email === '' || $username === '' || $role === '') {
             $this->jsonError('All fields are required.');
         }
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $this->jsonError('Please enter a valid email address.');
+        }
+
+        if (!in_array(strtolower($role), ['admin', 'user', 'staff'], true)) {
+            $this->jsonError('Please select a valid role.');
         }
 
         if ($this->userManagementModel->existsByUsernameOrEmail($username, $email, $userId)) {
@@ -221,12 +230,11 @@ class UsersController
             <p><strong>Password:</strong> {$password}</p>
             <p><strong>Role:</strong> {$role}</p>
             <p>This account uses the default first-login password format: first name in lowercase + @123.</p>
-            <p>You can sign in with this password for your first login.</p>
+            <p>You can sign in with this password for your first login, then Inventra will require you to create a new password before accessing the system.</p>
             <p>If you prefer, you can also use the Forgot Password option with your registered email to set a new password yourself.</p>
-            <p>Please change your password after your first login.</p>
         ";
 
-        $mail->AltBody = "Welcome to Inventra!\nFull name: {$fullName}\nUsername: {$username}\nPassword: {$password}\nRole: {$role}\nThis account uses the default first-login password format: first name in lowercase + @123.\nUse this password for your first login, or use Forgot Password with your registered email.\nPlease change your password after your first login.";
+        $mail->AltBody = "Welcome to Inventra!\nFull name: {$fullName}\nUsername: {$username}\nPassword: {$password}\nRole: {$role}\nThis account uses the default first-login password format: first name in lowercase + @123.\nUse this password for your first login. Inventra will require you to create a new password before accessing the system, or you can use Forgot Password with your registered email.";
 
         $mail->send();
         return true;
@@ -234,15 +242,7 @@ class UsersController
 
     private function buildDefaultPassword(string $fullName): string
     {
-        $normalized = trim(preg_replace('/\s+/', ' ', strtolower($fullName)) ?? '');
-        $firstName = explode(' ', $normalized)[0] ?? '';
-        $firstName = preg_replace('/[^a-z]/', '', $firstName) ?? '';
-
-        if ($firstName === '') {
-            $firstName = 'user';
-        }
-
-        return $firstName . '@123';
+        return inventra_build_default_password($fullName);
     }
 
     private function jsonError(string $message): void

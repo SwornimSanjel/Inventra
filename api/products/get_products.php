@@ -65,11 +65,15 @@ $sql = "
 $params = [];
 
 if ($search !== '') {
+<<<<<<< HEAD
     $searchConditions = [
         'p.name LIKE ?',
         'COALESCE(p.description, "") LIKE ?',
         'COALESCE(c.name, p.category, "") LIKE ?'
     ];
+=======
+    $sql .= " AND (p.name LIKE ? OR COALESCE(p.description, '') LIKE ? OR COALESCE(c.name, p.category, '') LIKE ?)";
+>>>>>>> dad9c9816375215b01eaef84051b14b80ad35d8e
     $like = '%' . $search . '%';
     $params[] = $like;
     $params[] = $like;

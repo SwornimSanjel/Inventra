@@ -63,6 +63,7 @@ class AdminSession
                 $this->syncSession($account);
                 self::$accountResolved = true;
                 self::$resolvedAccount = $account;
+                $this->enforcePasswordChangeGate();
                 return $account;
             }
         }
@@ -74,6 +75,7 @@ class AdminSession
                 $this->syncSession($account);
                 self::$accountResolved = true;
                 self::$resolvedAccount = $account;
+                $this->enforcePasswordChangeGate();
                 return $account;
             }
         }
@@ -122,5 +124,49 @@ class AdminSession
         if (array_key_exists('avatar', $account)) {
             $_SESSION['admin_avatar'] = (string) ($account['avatar'] ?? '');
         }
+    }
+
+    private function enforcePasswordChangeGate(): void
+    {
+        if (!inventra_password_change_required() || $this->isPasswordChangeAllowedRequest()) {
+            return;
+        }
+
+        $_SESSION['auth_error'] = 'Please change your default password before accessing Inventra.';
+
+        if ($this->requestWantsJson()) {
+            http_response_code(403);
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'message' => 'Please change your default password before accessing Inventra.',
+                'redirect' => 'index.php?url=' . inventra_forced_password_change_url(),
+            ]);
+            exit;
+        }
+
+        header('Location: index.php?url=' . inventra_forced_password_change_url());
+        exit;
+    }
+
+    private function isPasswordChangeAllowedRequest(): bool
+    {
+        $route = trim((string) ($_GET['url'] ?? ''), '/');
+
+        return in_array($route, [
+            inventra_forced_password_change_url(),
+            'auth/logout',
+        ], true);
+    }
+
+    private function requestWantsJson(): bool
+    {
+        $requestUri = strtolower((string) ($_SERVER['REQUEST_URI'] ?? ''));
+        $accept = strtolower((string) ($_SERVER['HTTP_ACCEPT'] ?? ''));
+        $requestedWith = strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? ''));
+
+        return str_contains($requestUri, '/api/')
+            || str_contains($accept, 'application/json')
+            || $requestedWith === 'xmlhttprequest';
     }
 }

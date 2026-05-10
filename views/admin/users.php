@@ -98,24 +98,28 @@ $usersApiBase = $usersPageState['users_api_base'] ?? 'index.php?url=admin/users'
             <button type="button" class="users-modal-close" data-close-modal="createUserModal">&times;</button>
         </div>
 
-        <form id="createUserForm" class="users-form">
+        <form id="createUserForm" class="users-form" novalidate>
             <label>
-                <span>Full Name</span>
-                <input type="text" name="full_name" required>
+                <span>Full Name <span class="required-marker" aria-hidden="true">*</span></span>
+                <input type="text" name="full_name" required data-label="Full name">
             </label>
             <label>
-                <span>Email Address</span>
-                <input type="email" name="email" required>
+                <span>Email Address <span class="required-marker" aria-hidden="true">*</span></span>
+                <input type="email" name="email" required data-label="Email address">
             </label>
             <div class="users-form-row">
                 <label>
-                    <span>Username</span>
-                    <input type="text" name="username" required>
+                    <span>Username <span class="required-marker" aria-hidden="true">*</span></span>
+                    <input type="text" name="username" required data-label="Username">
                 </label>
                 <label>
-                    <span>Role</span>
+                    <span>Role <span class="required-marker" aria-hidden="true">*</span></span>
                     <div class="users-custom-select" data-select-root>
+<<<<<<< HEAD
                         <input type="hidden" name="role" value="Staff" data-select-input>
+=======
+                        <input type="hidden" name="role" value="User" data-select-input data-label="Role">
+>>>>>>> dad9c9816375215b01eaef84051b14b80ad35d8e
                         <button type="button" class="users-custom-select__trigger" data-select-trigger aria-expanded="false">
                             <span data-select-label>Staff</span>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -132,7 +136,7 @@ $usersApiBase = $usersPageState['users_api_base'] ?? 'index.php?url=admin/users'
             <label>
                 <span>Default Password</span>
                 <input type="text" value="firstname@123" readonly>
-                <small class="muted">New accounts will use the first name in lowercase plus `@123`, for example `shirish@123`.</small>
+                <small class="muted">New accounts will use the first name in lowercase plus `@123`, for example `ram@123`.</small>
             </label>
             <div class="users-modal-actions">
                 <button type="button" class="btn-outline" data-close-modal="createUserModal">Cancel</button>
@@ -149,25 +153,29 @@ $usersApiBase = $usersPageState['users_api_base'] ?? 'index.php?url=admin/users'
             <button type="button" class="users-modal-close" data-close-modal="editUserModal">&times;</button>
         </div>
 
-        <form id="editUserForm" class="users-form">
+        <form id="editUserForm" class="users-form" novalidate>
             <input type="hidden" name="user_id">
             <label>
-                <span>Full Name</span>
-                <input type="text" name="full_name" required>
+                <span>Full Name <span class="required-marker" aria-hidden="true">*</span></span>
+                <input type="text" name="full_name" required data-label="Full name">
             </label>
             <label>
-                <span>Email Address</span>
-                <input type="email" name="email" required>
+                <span>Email Address <span class="required-marker" aria-hidden="true">*</span></span>
+                <input type="email" name="email" required data-label="Email address">
             </label>
             <div class="users-form-row">
                 <label>
-                    <span>Username</span>
-                    <input type="text" name="username" required>
+                    <span>Username <span class="required-marker" aria-hidden="true">*</span></span>
+                    <input type="text" name="username" required data-label="Username">
                 </label>
                 <label>
-                    <span>Role</span>
+                    <span>Role <span class="required-marker" aria-hidden="true">*</span></span>
                     <div class="users-custom-select" data-select-root>
+<<<<<<< HEAD
                         <input type="hidden" name="role" value="Staff" data-select-input>
+=======
+                        <input type="hidden" name="role" value="User" data-select-input data-label="Role">
+>>>>>>> dad9c9816375215b01eaef84051b14b80ad35d8e
                         <button type="button" class="users-custom-select__trigger" data-select-trigger aria-expanded="false">
                             <span data-select-label>Staff</span>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

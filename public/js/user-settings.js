@@ -68,18 +68,10 @@
     var currentValue = current ? current.value.trim() : '';
     var nextValue = next ? next.value : '';
     var confirmValue = confirm ? confirm.value : '';
-    var hasValue = currentValue !== '' || nextValue !== '' || confirmValue !== '';
     var valid = true;
 
-    if (!hasValue) {
-      setError(current, '');
-      setError(next, '');
-      setError(confirm, '');
-      return true;
-    }
-
     if (current && currentValue === '') {
-      setError(current, 'Old password is required.');
+      setError(current, 'Current password is required.');
       valid = false;
     } else {
       setError(current, '');

@@ -33,16 +33,51 @@ $generateInsightApiUrl = $forecastingPageState['generate_insight_api_url'] ?? 'i
         </div>
     </div>
 
-    <section class="section-card ai-forecasting-empty" data-forecast-empty hidden>
-        <div class="ai-forecasting-empty__icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                <path d="M3 3v18h18"></path>
-                <path d="M7 15l4-4 3 3 5-6"></path>
-            </svg>
+    <section class="ai-forecasting-empty" data-forecast-empty hidden>
+        <div class="ai-forecasting-empty__float ai-forecasting-empty__float--top" aria-hidden="true">
+            <span class="ai-forecasting-empty__float-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M5 14l3-3 3 3 6-7"></path>
+                    <path d="M16 7h3v3"></path>
+                </svg>
+            </span>
+            <div class="ai-forecasting-empty__float-lines">
+                <span></span>
+                <span></span>
+            </div>
         </div>
-        <h2>No forecasting data yet</h2>
-        <p data-empty-message>Record real stock movement entries to generate stockout predictions, reorder suggestions, and demand insights.</p>
-        <a href="index.php?url=admin/stock-update" class="btn-primary ai-forecasting-empty__action">Go to Stock Update</a>
+
+        <div class="ai-forecasting-empty__float ai-forecasting-empty__float--bottom" aria-hidden="true">
+            <span class="ai-forecasting-empty__float-icon ai-forecasting-empty__float-icon--warning">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M12 8v4"></path>
+                    <path d="M12 16h.01"></path>
+                    <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"></path>
+                </svg>
+            </span>
+            <div class="ai-forecasting-empty__float-lines">
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+
+        <div class="ai-forecasting-empty__center">
+            <div class="ai-forecasting-empty__icon" aria-hidden="true">
+                <div class="ai-forecasting-empty__icon-grid">
+                    <span class="ai-forecasting-empty__icon-square ai-forecasting-empty__icon-square--outer"></span>
+                    <span class="ai-forecasting-empty__icon-square ai-forecasting-empty__icon-square--middle"></span>
+                    <span class="ai-forecasting-empty__icon-square ai-forecasting-empty__icon-square--inner"></span>
+                </div>
+            </div>
+
+            <h2>No forecasting data yet</h2>
+            <p data-empty-message>Record at least 7 days of stock movement to generate AI predictions.</p>
+
+            <div class="ai-forecasting-empty__actions">
+                <a href="index.php?url=admin/stock-update" class="btn-primary ai-forecasting-empty__action">Go to Stock Update <span aria-hidden="true">&rarr;</span></a>
+                <a href="#" class="ai-forecasting-empty__helper" data-forecast-helper-link>How AI Forecasts work</a>
+            </div>
+        </div>
     </section>
 
     <div class="ai-forecasting-content" data-forecast-content hidden>

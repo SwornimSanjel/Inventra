@@ -62,6 +62,11 @@ if ($url === 'login' || strpos($url, 'auth/') === 0) {
         exit;
     }
 
+    if ($url === 'auth/first-login-password' && ($_SERVER['REQUEST_METHOD'] === 'GET' || $_SERVER['REQUEST_METHOD'] === 'POST')) {
+        $authController->firstLoginPassword();
+        exit;
+    }
+
     if ($url === 'auth/password-updated' && $_SERVER['REQUEST_METHOD'] === 'GET') {
         $authController->showPasswordUpdated();
         exit;

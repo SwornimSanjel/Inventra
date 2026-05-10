@@ -5,7 +5,186 @@ document.addEventListener('click', function (event) {
     var input;
     var method;
 
+<<<<<<< HEAD
     if (!button) {
+=======
+  var incomingStatusLabels = {
+    order_dispatched: 'Order Dispatched',
+    in_transit: 'In Transit',
+    received: 'Received at Warehouse'
+  };
+
+  var movementStatusLabels = {
+    dispatched: 'Dispatched from Warehouse',
+    hub: 'Stock Received at Hub',
+    delivered: 'Delivery Confirmed'
+  };
+
+  function setMovement(type) {
+    movementType = type;
+    document.getElementById('stockInBtn').classList.toggle('is-active', type === 'in');
+    document.getElementById('stockOutBtn').classList.toggle('is-active', type === 'out');
+    document.getElementById('stockInStatusCard').classList.toggle('is-hidden', type !== 'in');
+    document.getElementById('stockOutStatusCard').classList.toggle('is-hidden', type !== 'out');
+  }
+
+  function setMessage(text, state) {
+    message.textContent = text || '';
+    message.classList.remove('is-error', 'is-success');
+    if (state) {
+      message.classList.add(state);
+    }
+  }
+
+  function setFieldInvalid(field, invalid) {
+    if (field) {
+      field.classList.toggle('is-invalid', Boolean(invalid));
+    }
+  }
+
+  function setProductInvalid(invalid) {
+    var trigger = productSelect.closest('[data-stock-select-root]').querySelector('[data-stock-select-trigger]');
+    setFieldInvalid(trigger, invalid);
+  }
+
+  function validateStockMovementForm(quantity, amountPerPiece) {
+    var partyName = document.getElementById('partyName');
+    var partyContact = document.getElementById('partyContact');
+    var contactValue = (partyContact.value || '').trim();
+    var valid = true;
+
+    setMessage('', '');
+    setProductInvalid(false);
+    [quantityInput, priceInput, partyName, partyContact].forEach(function (field) {
+      setFieldInvalid(field, false);
+    });
+
+    if (!productSelect.value) {
+      setProductInvalid(true);
+      setMessage('Please select a product.', 'is-error');
+      valid = false;
+    } else if (!Number.isInteger(quantity) || quantity <= 0) {
+      setFieldInvalid(quantityInput, true);
+      setMessage('Quantity must be greater than 0.', 'is-error');
+      valid = false;
+    } else if ((partyName.value || '').trim() === '') {
+      setFieldInvalid(partyName, true);
+      setMessage('Full name is required.', 'is-error');
+      valid = false;
+    } else if (contactValue === '') {
+      setFieldInvalid(partyContact, true);
+      setMessage('Contact number is required.', 'is-error');
+      valid = false;
+    } else if (!/^[0-9+\-\s()]{7,20}$/.test(contactValue)) {
+      setFieldInvalid(partyContact, true);
+      setMessage('Please enter a valid contact number.', 'is-error');
+      valid = false;
+    } else if (!Number.isFinite(amountPerPiece) || amountPerPiece <= 0) {
+      setFieldInvalid(priceInput, true);
+      setMessage('Amount per piece must be greater than 0.', 'is-error');
+      valid = false;
+    }
+
+    return valid;
+  }
+
+  function recalcTotal() {
+    var quantity = parseFloat(quantityInput.value || '0');
+    var price = parseFloat(priceInput.value || '0');
+    totalInput.value = (quantity * price).toFixed(2);
+  }
+
+  function selectedStock() {
+    var option = productSelect.options[productSelect.selectedIndex];
+    return option ? parseInt(option.getAttribute('data-stock') || '0', 10) : 0;
+  }
+
+  function getStatusLabel(movement) {
+    if (movement.movement_type === 'in') {
+      return incomingStatusLabels[movement.incoming_status] || 'Order Dispatched';
+    }
+
+    return movementStatusLabels[movement.movement_status] || 'Dispatched from Warehouse';
+  }
+
+  function getStatusToneClass(movement) {
+    var statusValue = movement.movement_type === 'in' ? movement.incoming_status : movement.movement_status;
+
+    if (statusValue === 'received' || statusValue === 'delivered') {
+      return 'stock-status-badge--success';
+    }
+
+    if (statusValue === 'in_transit' || statusValue === 'hub') {
+      return 'stock-status-badge--info';
+    }
+
+    return 'stock-status-badge--neutral';
+  }
+
+  function getStatusOptionsMarkup(movement) {
+    var options = movement.movement_type === 'in'
+      ? [
+          { value: 'order_dispatched', label: 'Order Dispatched' },
+          { value: 'in_transit', label: 'In Transit' },
+          { value: 'received', label: 'Received at Warehouse' }
+        ]
+      : [
+          { value: 'dispatched', label: 'Dispatched from Warehouse' },
+          { value: 'hub', label: 'Stock Received at Hub' },
+          { value: 'delivered', label: 'Delivery Confirmed' }
+        ];
+
+    return '' +
+      '<div class="stock-history-select" data-history-select-root data-movement-id="' + movement.id + '">' +
+        '<button type="button" class="stock-history-select__trigger" data-history-select-trigger aria-expanded="false">' +
+          '<span data-history-select-label>' + escapeHtml(getStatusLabel(movement)) + '</span>' +
+          '<svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1l5 5 5-5"></path></svg>' +
+        '</button>' +
+        '<div class="stock-history-select__menu" data-history-select-menu hidden>' +
+          options.map(function (option) {
+            var isActive = option.value === (movement.movement_type === 'in' ? movement.incoming_status : movement.movement_status);
+            return '<button type="button" class="stock-history-select__option' + (isActive ? ' is-active' : '') + '" data-history-select-option data-value="' + option.value + '">' + escapeHtml(option.label) + '</button>';
+          }).join('') +
+        '</div>' +
+      '</div>';
+  }
+
+  function closeHistorySelect(root) {
+    if (!root) {
+      return;
+    }
+
+    root.classList.remove('is-open');
+    var trigger = root.querySelector('[data-history-select-trigger]');
+    var menu = root.querySelector('[data-history-select-menu]');
+
+    if (trigger) {
+      trigger.setAttribute('aria-expanded', 'false');
+    }
+
+    if (menu) {
+      menu.hidden = true;
+    }
+  }
+
+  function initializeHistorySelects() {
+    var historySelects = Array.prototype.slice.call(document.querySelectorAll('[data-history-select-root]'));
+
+    function closeAllHistorySelects(exceptRoot) {
+      historySelects.forEach(function (root) {
+        if (root !== exceptRoot) {
+          closeHistorySelect(root);
+        }
+      });
+    }
+
+    historySelects.forEach(function (root) {
+      var trigger = root.querySelector('[data-history-select-trigger]');
+      var menu = root.querySelector('[data-history-select-menu]');
+      var movementId = parseInt(root.getAttribute('data-movement-id') || '0', 10);
+
+      if (!trigger || !menu || movementId <= 0) {
+>>>>>>> dad9c9816375215b01eaef84051b14b80ad35d8e
         return;
     }
 
@@ -129,6 +308,7 @@ document.addEventListener('click', function (event) {
             productInput.value = matchedProduct.id || matchedProduct.product_id || '';
         }
 
+<<<<<<< HEAD
         return productInput.value;
     }
 
@@ -138,6 +318,126 @@ document.addEventListener('click', function (event) {
     movementType = activeTypeButton ? activeTypeButton.getAttribute('data-type') : 'in';
     productValue = formData.get('product_id');
     incomingStatus = formData.get('incoming_status');
+=======
+        historyTable.innerHTML = movements.map(function (movement) {
+          var badgeClass = movement.movement_type === 'out' ? 'chip-low' : 'chip-adequate';
+          return '' +
+            '<tr>' +
+              '<td>' + escapeHtml(movement.reference) + '</td>' +
+              '<td>' + escapeHtml(movement.product_name) + '</td>' +
+              '<td><span class="chip ' + badgeClass + '">' + escapeHtml(String(movement.movement_type).toUpperCase()) + '</span></td>' +
+              '<td style="text-align:center">' + movement.quantity + '</td>' +
+              '<td><span class="stock-status-badge ' + getStatusToneClass(movement) + '">' + escapeHtml(getStatusLabel(movement)) + '</span></td>' +
+              '<td>' + escapeHtml(movement.full_name || 'Not provided') + '</td>' +
+              '<td>' + escapeHtml(movement.payment_status + ' / ' + movement.payment_method) + '</td>' +
+              '<td>' + getStatusOptionsMarkup(movement) + '</td>' +
+              '<td>' + escapeHtml(movement.created_at_label) + '</td>' +
+            '</tr>';
+        }).join('');
+
+        initializeHistorySelects();
+      });
+  }
+
+  document.getElementById('stockInBtn').addEventListener('click', function () { setMovement('in'); });
+  document.getElementById('stockOutBtn').addEventListener('click', function () { setMovement('out'); });
+
+  document.querySelectorAll('.payment-toggle__btn').forEach(function (button) {
+    button.addEventListener('click', function () {
+      paymentMethod = button.getAttribute('data-method') || 'cash';
+      document.querySelectorAll('.payment-toggle__btn').forEach(function (item) {
+        item.classList.remove('is-active');
+      });
+      button.classList.add('is-active');
+    });
+  });
+
+  document.getElementById('quantityPlus').addEventListener('click', function () {
+    quantityInput.value = parseInt(quantityInput.value || '0', 10) + 1;
+    recalcTotal();
+  });
+
+  document.getElementById('quantityMinus').addEventListener('click', function () {
+    quantityInput.value = Math.max(1, parseInt(quantityInput.value || '1', 10) - 1);
+    recalcTotal();
+  });
+
+  quantityInput.addEventListener('input', recalcTotal);
+  priceInput.addEventListener('input', recalcTotal);
+
+  [quantityInput, priceInput, document.getElementById('partyName'), document.getElementById('partyContact')].forEach(function (field) {
+    field.addEventListener('input', function () {
+      setFieldInvalid(field, false);
+    });
+  });
+
+  productSelect.addEventListener('change', function () {
+    setProductInvalid(false);
+  });
+
+  document.querySelectorAll('.status-option input[type="radio"]').forEach(function (input) {
+    input.addEventListener('change', syncStatusSelections);
+  });
+
+  customSelects.forEach(initializeCustomSelect);
+
+  document.addEventListener('click', function (event) {
+    customSelects.forEach(function (root) {
+      if (!root.contains(event.target)) {
+        closeCustomSelect(root);
+      }
+    });
+  });
+
+  form.addEventListener('reset', function () {
+    window.setTimeout(function () {
+      setMovement('in');
+      paymentMethod = 'cash';
+      setProductInvalid(false);
+      [quantityInput, priceInput, document.getElementById('partyName'), document.getElementById('partyContact')].forEach(function (field) {
+        setFieldInvalid(field, false);
+      });
+      document.querySelectorAll('.payment-toggle__btn').forEach(function (item, index) {
+        item.classList.toggle('is-active', index === 0);
+      });
+      setMessage('', '');
+      recalcTotal();
+      syncStatusSelections();
+      customSelects.forEach(function (root) {
+        rebuildCustomSelect(root);
+      });
+    }, 0);
+  });
+
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+
+    var quantity = Number((quantityInput.value || '').trim());
+    var amountPerPiece = parseFloat(priceInput.value || '0');
+
+    if (!validateStockMovementForm(quantity, amountPerPiece)) {
+      return;
+    }
+
+    if (movementType === 'out' && quantity > selectedStock()) {
+      setMessage('Stock out quantity cannot exceed the current product stock.', 'is-error');
+      return;
+    }
+
+    var payload = {
+      product_id: productSelect.value,
+      movement_type: movementType,
+      quantity: quantity,
+      notes: document.getElementById('stockNotes').value,
+      full_name: document.getElementById('partyName').value,
+      contact: document.getElementById('partyContact').value,
+      amount_per_piece: amountPerPiece,
+      payment_status: document.getElementById('paymentStatus').value,
+      payment_method: paymentMethod,
+      incoming_status: form.querySelector('input[name="incoming_status"]:checked') ? form.querySelector('input[name="incoming_status"]:checked').value : '',
+      movement_status: form.querySelector('input[name="movement_status"]:checked') ? form.querySelector('input[name="movement_status"]:checked').value : ''
+    };
+>>>>>>> dad9c9816375215b01eaef84051b14b80ad35d8e
 
     if (!productValue) {
         message.textContent = 'Please select a product.';

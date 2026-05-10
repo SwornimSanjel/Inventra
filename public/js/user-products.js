@@ -68,6 +68,97 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  function setFieldInvalid(field, invalid) {
+    if (field) {
+      field.classList.toggle('is-invalid', Boolean(invalid));
+    }
+  }
+
+  function setCategoryInvalid(invalid) {
+    var trigger = document.querySelector('#productCategorySelect [data-products-select-trigger]');
+    setFieldInvalid(trigger, invalid);
+  }
+
+  function validateRequiredField(id, messageText) {
+    var field = document.getElementById(id);
+    var isValid = field && String(field.value || '').trim() !== '';
+    setFieldInvalid(field, !isValid);
+
+    if (!isValid && messageText) {
+      setMessage(messageText, 'is-error');
+    }
+
+    return isValid;
+  }
+
+  function validateNumberField(id, label, allowZero) {
+    var field = document.getElementById(id);
+    var rawValue = field ? String(field.value || '').trim() : '';
+    var value = Number(rawValue);
+    var isValid = rawValue !== '' && Number.isFinite(value) && value >= (allowZero ? 0 : 0.01);
+    var requiresWholeNumber = id === 'productQty' || id === 'productLower' || id === 'productUpper';
+
+    if (isValid && requiresWholeNumber && !Number.isInteger(value)) {
+      isValid = false;
+    }
+
+    setFieldInvalid(field, !isValid);
+
+    if (!isValid) {
+      setMessage(label + ' must be a valid ' + (requiresWholeNumber ? 'whole number.' : 'number' + (allowZero ? '.' : ' greater than 0.')), 'is-error');
+    }
+
+    return isValid;
+  }
+
+  function validateProductForm(formData) {
+    setMessage('', '');
+    setCategoryInvalid(false);
+    if (newCategoryInput) {
+      setFieldInvalid(newCategoryInput, false);
+    }
+
+    if (!validateRequiredField('productName', 'Product name is required.')) {
+      return false;
+    }
+
+    var categoryValue = String(formData.get('category_id') || '').trim();
+    if (categoryValue === '') {
+      setCategoryInvalid(true);
+      setMessage('Category is required.', 'is-error');
+      return false;
+    }
+
+    if (categoryValue === 'new' && !String(formData.get('new_category') || '').trim()) {
+      setFieldInvalid(newCategoryInput, true);
+      setMessage('Please enter a name for the new category.', 'is-error');
+      return false;
+    }
+
+    if (
+      !validateNumberField('productQty', 'Quantity', true) ||
+      !validateNumberField('productPrice', 'Unit price', true) ||
+      !validateNumberField('productLower', 'Lower limit', true) ||
+      !validateNumberField('productUpper', 'Upper limit', true)
+    ) {
+      return false;
+    }
+
+    var lower = Number(document.getElementById('productLower').value);
+    var upper = Number(document.getElementById('productUpper').value);
+    if (upper < lower) {
+      setFieldInvalid(document.getElementById('productUpper'), true);
+      setMessage('Upper limit must be greater than or equal to lower limit.', 'is-error');
+      return false;
+    }
+
+    if (!validateRequiredField('productDescription', 'Description is required.')) {
+      return false;
+    }
+
+    return true;
+  }
+
   // The user page only supports product creation, so the modal always resets
   // to the Inventra1 create flow when it opens.
   function openModal() {
@@ -175,6 +266,7 @@ document.addEventListener('DOMContentLoaded', function () {
         hiddenInput.value = option.getAttribute('data-value') || '';
         label.textContent = option.textContent.trim();
         toggleNewCategoryFields(hiddenInput.value === 'new');
+        setFieldInvalid(trigger, false);
 
         selectRoot.querySelectorAll('[data-products-select-option]').forEach(function (item) {
           item.classList.toggle('is-active', item === option);
@@ -192,6 +284,12 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
+  Array.prototype.slice.call(form.querySelectorAll('input, textarea')).forEach(function (field) {
+    field.addEventListener('input', function () {
+      setFieldInvalid(field, false);
+    });
+  });
+
   form.addEventListener('submit', function (event) {
     event.preventDefault();
 
@@ -199,9 +297,8 @@ document.addEventListener('DOMContentLoaded', function () {
     setMessage('Saving product...', '');
 
     var formData = new FormData(form);
-    if (formData.get('category_id') === 'new' && !String(formData.get('new_category') || '').trim()) {
+    if (!validateProductForm(formData)) {
       submitBtn.disabled = false;
-      setMessage('Please enter a name for the new category.', 'is-error');
       return;
     }
 
