@@ -1553,15 +1553,15 @@
 
 .stock-custom-select__menu {
   max-height: 280px;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .stock-custom-select__search-wrap {
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 2;
   padding: 8px;
   background: #fff;
+  border-bottom: 1px solid #eef2f6;
 }
 
 .stock-custom-select__search {
@@ -1580,6 +1580,13 @@
   border-color: #8ad4ad;
   background: #fff;
   box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
+}
+
+.stock-custom-select__options {
+  max-height: 223px;
+  overflow-y: auto;
+  padding: 6px 8px 8px;
+  background: #fff;
 }
 
 .stock-custom-select__empty {
@@ -1606,6 +1613,65 @@
   opacity: 0 !important;
   pointer-events: none !important;
   appearance: none !important;
+}
+
+.field--incoming-status {
+  margin-top: 0;
+}
+
+.stock-custom-select--status .stock-custom-select__trigger {
+  min-height: 46px;
+}
+
+.stock-custom-select--status.is-open .stock-custom-select__trigger {
+  display: flex;
+}
+
+.stock-custom-select--status .stock-custom-select__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-height: 220px;
+  margin-top: 0;
+  padding: 8px;
+  border: 1px solid #dbe3ee;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 16px 34px rgba(15,23,42,.12);
+  overflow: auto;
+}
+
+.stock-custom-select--status .stock-custom-select__option {
+  min-height: 42px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #1f2937;
+  font-size: .82rem;
+  font-weight: 500;
+}
+
+.stock-custom-select--status .stock-custom-select__option:hover,
+.stock-custom-select--status .stock-custom-select__option:focus-visible {
+  background: #f3f7fc;
+  color: #0f172a;
+  outline: 0;
+}
+
+.stock-custom-select--status .stock-custom-select__option::before,
+.stock-custom-select--status .stock-custom-select__option.is-active::after {
+  display: none;
+}
+
+.stock-custom-select--status .stock-custom-select__option.is-active {
+  border-color: transparent;
+  background: #eef6ff;
+  color: #0f172a;
+  font-weight: 600;
 }
 
 #stockProduct {

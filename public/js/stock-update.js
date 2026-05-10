@@ -1,1312 +1,774 @@
-document.addEventListener('click', function (event) {
-    var button = event.target.closest('#paymentMethodToggle [data-method]');
-    var toggle;
-    var form;
-    var input;
-    var method;
+(function () {
+  var isUserPanel = String(window.location.href || '').indexOf('user/stock-update') !== -1;
 
-<<<<<<< HEAD
-    if (!button) {
-=======
-  var incomingStatusLabels = {
-    order_dispatched: 'Order Dispatched',
-    in_transit: 'In Transit',
-    received: 'Received at Warehouse'
-  };
-
-  var movementStatusLabels = {
-    dispatched: 'Dispatched from Warehouse',
-    hub: 'Stock Received at Hub',
-    delivered: 'Delivery Confirmed'
-  };
-
-  function setMovement(type) {
-    movementType = type;
-    document.getElementById('stockInBtn').classList.toggle('is-active', type === 'in');
-    document.getElementById('stockOutBtn').classList.toggle('is-active', type === 'out');
-    document.getElementById('stockInStatusCard').classList.toggle('is-hidden', type !== 'in');
-    document.getElementById('stockOutStatusCard').classList.toggle('is-hidden', type !== 'out');
-  }
-
-  function setMessage(text, state) {
-    message.textContent = text || '';
-    message.classList.remove('is-error', 'is-success');
-    if (state) {
-      message.classList.add(state);
-    }
-  }
-
-  function setFieldInvalid(field, invalid) {
-    if (field) {
-      field.classList.toggle('is-invalid', Boolean(invalid));
-    }
-  }
-
-  function setProductInvalid(invalid) {
-    var trigger = productSelect.closest('[data-stock-select-root]').querySelector('[data-stock-select-trigger]');
-    setFieldInvalid(trigger, invalid);
-  }
-
-  function validateStockMovementForm(quantity, amountPerPiece) {
-    var partyName = document.getElementById('partyName');
-    var partyContact = document.getElementById('partyContact');
-    var contactValue = (partyContact.value || '').trim();
-    var valid = true;
-
-    setMessage('', '');
-    setProductInvalid(false);
-    [quantityInput, priceInput, partyName, partyContact].forEach(function (field) {
-      setFieldInvalid(field, false);
-    });
-
-    if (!productSelect.value) {
-      setProductInvalid(true);
-      setMessage('Please select a product.', 'is-error');
-      valid = false;
-    } else if (!Number.isInteger(quantity) || quantity <= 0) {
-      setFieldInvalid(quantityInput, true);
-      setMessage('Quantity must be greater than 0.', 'is-error');
-      valid = false;
-    } else if ((partyName.value || '').trim() === '') {
-      setFieldInvalid(partyName, true);
-      setMessage('Full name is required.', 'is-error');
-      valid = false;
-    } else if (contactValue === '') {
-      setFieldInvalid(partyContact, true);
-      setMessage('Contact number is required.', 'is-error');
-      valid = false;
-    } else if (!/^[0-9+\-\s()]{7,20}$/.test(contactValue)) {
-      setFieldInvalid(partyContact, true);
-      setMessage('Please enter a valid contact number.', 'is-error');
-      valid = false;
-    } else if (!Number.isFinite(amountPerPiece) || amountPerPiece <= 0) {
-      setFieldInvalid(priceInput, true);
-      setMessage('Amount per piece must be greater than 0.', 'is-error');
-      valid = false;
-    }
-
-    return valid;
-  }
-
-  function recalcTotal() {
-    var quantity = parseFloat(quantityInput.value || '0');
-    var price = parseFloat(priceInput.value || '0');
-    totalInput.value = (quantity * price).toFixed(2);
-  }
-
-  function selectedStock() {
-    var option = productSelect.options[productSelect.selectedIndex];
-    return option ? parseInt(option.getAttribute('data-stock') || '0', 10) : 0;
-  }
-
-  function getStatusLabel(movement) {
-    if (movement.movement_type === 'in') {
-      return incomingStatusLabels[movement.incoming_status] || 'Order Dispatched';
-    }
-
-    return movementStatusLabels[movement.movement_status] || 'Dispatched from Warehouse';
-  }
-
-  function getStatusToneClass(movement) {
-    var statusValue = movement.movement_type === 'in' ? movement.incoming_status : movement.movement_status;
-
-    if (statusValue === 'received' || statusValue === 'delivered') {
-      return 'stock-status-badge--success';
-    }
-
-    if (statusValue === 'in_transit' || statusValue === 'hub') {
-      return 'stock-status-badge--info';
-    }
-
-    return 'stock-status-badge--neutral';
-  }
-
-  function getStatusOptionsMarkup(movement) {
-    var options = movement.movement_type === 'in'
-      ? [
-          { value: 'order_dispatched', label: 'Order Dispatched' },
-          { value: 'in_transit', label: 'In Transit' },
-          { value: 'received', label: 'Received at Warehouse' }
-        ]
-      : [
-          { value: 'dispatched', label: 'Dispatched from Warehouse' },
-          { value: 'hub', label: 'Stock Received at Hub' },
-          { value: 'delivered', label: 'Delivery Confirmed' }
-        ];
-
-    return '' +
-      '<div class="stock-history-select" data-history-select-root data-movement-id="' + movement.id + '">' +
-        '<button type="button" class="stock-history-select__trigger" data-history-select-trigger aria-expanded="false">' +
-          '<span data-history-select-label>' + escapeHtml(getStatusLabel(movement)) + '</span>' +
-          '<svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1l5 5 5-5"></path></svg>' +
-        '</button>' +
-        '<div class="stock-history-select__menu" data-history-select-menu hidden>' +
-          options.map(function (option) {
-            var isActive = option.value === (movement.movement_type === 'in' ? movement.incoming_status : movement.movement_status);
-            return '<button type="button" class="stock-history-select__option' + (isActive ? ' is-active' : '') + '" data-history-select-option data-value="' + option.value + '">' + escapeHtml(option.label) + '</button>';
-          }).join('') +
-        '</div>' +
-      '</div>';
-  }
-
-  function closeHistorySelect(root) {
-    if (!root) {
-      return;
-    }
-
-    root.classList.remove('is-open');
-    var trigger = root.querySelector('[data-history-select-trigger]');
-    var menu = root.querySelector('[data-history-select-menu]');
-
-    if (trigger) {
-      trigger.setAttribute('aria-expanded', 'false');
-    }
-
-    if (menu) {
-      menu.hidden = true;
-    }
-  }
-
-  function initializeHistorySelects() {
-    var historySelects = Array.prototype.slice.call(document.querySelectorAll('[data-history-select-root]'));
-
-    function closeAllHistorySelects(exceptRoot) {
-      historySelects.forEach(function (root) {
-        if (root !== exceptRoot) {
-          closeHistorySelect(root);
-        }
-      });
-    }
-
-    historySelects.forEach(function (root) {
-      var trigger = root.querySelector('[data-history-select-trigger]');
-      var menu = root.querySelector('[data-history-select-menu]');
-      var movementId = parseInt(root.getAttribute('data-movement-id') || '0', 10);
-
-      if (!trigger || !menu || movementId <= 0) {
->>>>>>> dad9c9816375215b01eaef84051b14b80ad35d8e
-        return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-    event.stopImmediatePropagation();
-
-    toggle = button.closest('#paymentMethodToggle');
-    form = document.getElementById('stockMovementForm');
-    method = button.getAttribute('data-method') || 'cash';
-
-    if (!toggle) {
-        return;
-    }
-
-    toggle.querySelectorAll('[data-method]').forEach(function (toggleButton) {
-        toggleButton.type = 'button';
-        toggleButton.classList.toggle('is-active', toggleButton.getAttribute('data-method') === method);
-    });
-
-    input = form ? form.querySelector('input[name="payment_method"]') : null;
-    if (!input && form) {
-        input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'payment_method';
-        form.appendChild(input);
-    }
-
-    if (input) {
-        input.value = method;
-    }
-}, true);
-
-document.addEventListener('click', function (event) {
-    var button = event.target.closest('#recordMovementBtn');
-    var form;
-    var message;
-    var formData;
-    var activeTypeButton;
-    var movementType;
-    var productValue;
-    var incomingStatus;
-
-    if (!button) {
-        return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-    event.stopImmediatePropagation();
-
-    form = document.getElementById('stockMovementForm');
-    if (!form) {
-        return;
-    }
-
-    button.type = 'button';
-
-    message = document.getElementById('stockFormMessage');
-    if (!message) {
-        message = document.createElement('p');
-        message.id = 'stockFormMessage';
-        message.className = 'form-message';
-        form.appendChild(message);
-    }
-
-    function ensureProductId() {
-        var productInput = form.querySelector('input[name="product_id"]');
-        var nativeProductSelect = null;
-        var productLabel = '';
-        var matchedProduct = null;
-        var products = Array.isArray(window.stockPageProducts) ? window.stockPageProducts : [];
-
-        document.querySelectorAll('select').forEach(function (select) {
-            var selectedOption = select.options && select.options[select.selectedIndex];
-
-            if (nativeProductSelect || !selectedOption || !selectedOption.value) {
-                return;
-            }
-
-            if ((selectedOption.textContent || '').indexOf('(Stock:') !== -1 || select.name === 'product_id' || select.id === 'stockProduct') {
-                nativeProductSelect = select;
-            }
-        });
-
-        if (!productInput) {
-            productInput = document.createElement('input');
-            productInput.type = 'hidden';
-            productInput.name = 'product_id';
-            productInput.id = 'stockProductSubmitValue';
-            form.appendChild(productInput);
-        }
-
-        if (productInput.value) {
-            return productInput.value;
-        }
-
-        if (nativeProductSelect && nativeProductSelect.value) {
-            productInput.value = nativeProductSelect.value;
-            return productInput.value;
-        }
-
-        productLabel = ((document.querySelector('.stock-product-search__trigger span') || document.querySelector('[data-stock-select-label]') || {}).textContent || '').trim();
-
-        if (!productLabel || productLabel.toLowerCase() === 'select product') {
-            return '';
-        }
-
-        products.forEach(function (product) {
-            if (!matchedProduct) {
-                var stock = product.qty || product.stock || 0;
-                var label = String(product.name || product.product_name || 'Unnamed product') + ' (Stock: ' + stock + ')';
-
-                if (label === productLabel || String(product.name || product.product_name || '') === productLabel.replace(/\s+\(Stock:\s*.*?\)\s*$/i, '')) {
-                    matchedProduct = product;
-                }
-            }
-        });
-
-        if (matchedProduct) {
-            productInput.value = matchedProduct.id || matchedProduct.product_id || '';
-        }
-
-<<<<<<< HEAD
-        return productInput.value;
-    }
-
-    ensureProductId();
-    formData = new FormData(form);
-    activeTypeButton = document.querySelector('.stock-toggle__btn.is-active');
-    movementType = activeTypeButton ? activeTypeButton.getAttribute('data-type') : 'in';
-    productValue = formData.get('product_id');
-    incomingStatus = formData.get('incoming_status');
-=======
-        historyTable.innerHTML = movements.map(function (movement) {
-          var badgeClass = movement.movement_type === 'out' ? 'chip-low' : 'chip-adequate';
-          return '' +
-            '<tr>' +
-              '<td>' + escapeHtml(movement.reference) + '</td>' +
-              '<td>' + escapeHtml(movement.product_name) + '</td>' +
-              '<td><span class="chip ' + badgeClass + '">' + escapeHtml(String(movement.movement_type).toUpperCase()) + '</span></td>' +
-              '<td style="text-align:center">' + movement.quantity + '</td>' +
-              '<td><span class="stock-status-badge ' + getStatusToneClass(movement) + '">' + escapeHtml(getStatusLabel(movement)) + '</span></td>' +
-              '<td>' + escapeHtml(movement.full_name || 'Not provided') + '</td>' +
-              '<td>' + escapeHtml(movement.payment_status + ' / ' + movement.payment_method) + '</td>' +
-              '<td>' + getStatusOptionsMarkup(movement) + '</td>' +
-              '<td>' + escapeHtml(movement.created_at_label) + '</td>' +
-            '</tr>';
-        }).join('');
-
-        initializeHistorySelects();
-      });
-  }
-
-  document.getElementById('stockInBtn').addEventListener('click', function () { setMovement('in'); });
-  document.getElementById('stockOutBtn').addEventListener('click', function () { setMovement('out'); });
-
-  document.querySelectorAll('.payment-toggle__btn').forEach(function (button) {
-    button.addEventListener('click', function () {
-      paymentMethod = button.getAttribute('data-method') || 'cash';
-      document.querySelectorAll('.payment-toggle__btn').forEach(function (item) {
-        item.classList.remove('is-active');
-      });
-      button.classList.add('is-active');
-    });
+  initStockPage({
+    productsUrl: isUserPanel ? 'api/products/get_user_products.php' : 'api/products/get_products.php',
+    historyUrl: isUserPanel ? 'api/stock/user_list.php' : 'api/stock/list.php',
+    updateStatusUrl: isUserPanel ? 'api/stock/user_update_status.php' : 'api/stock/update_status.php'
   });
+})();
 
-  document.getElementById('quantityPlus').addEventListener('click', function () {
-    quantityInput.value = parseInt(quantityInput.value || '0', 10) + 1;
-    recalcTotal();
-  });
-
-  document.getElementById('quantityMinus').addEventListener('click', function () {
-    quantityInput.value = Math.max(1, parseInt(quantityInput.value || '1', 10) - 1);
-    recalcTotal();
-  });
-
-  quantityInput.addEventListener('input', recalcTotal);
-  priceInput.addEventListener('input', recalcTotal);
-
-  [quantityInput, priceInput, document.getElementById('partyName'), document.getElementById('partyContact')].forEach(function (field) {
-    field.addEventListener('input', function () {
-      setFieldInvalid(field, false);
-    });
-  });
-
-  productSelect.addEventListener('change', function () {
-    setProductInvalid(false);
-  });
-
-  document.querySelectorAll('.status-option input[type="radio"]').forEach(function (input) {
-    input.addEventListener('change', syncStatusSelections);
-  });
-
-  customSelects.forEach(initializeCustomSelect);
-
-  document.addEventListener('click', function (event) {
-    customSelects.forEach(function (root) {
-      if (!root.contains(event.target)) {
-        closeCustomSelect(root);
-      }
-    });
-  });
-
-  form.addEventListener('reset', function () {
-    window.setTimeout(function () {
-      setMovement('in');
-      paymentMethod = 'cash';
-      setProductInvalid(false);
-      [quantityInput, priceInput, document.getElementById('partyName'), document.getElementById('partyContact')].forEach(function (field) {
-        setFieldInvalid(field, false);
-      });
-      document.querySelectorAll('.payment-toggle__btn').forEach(function (item, index) {
-        item.classList.toggle('is-active', index === 0);
-      });
-      setMessage('', '');
-      recalcTotal();
-      syncStatusSelections();
-      customSelects.forEach(function (root) {
-        rebuildCustomSelect(root);
-      });
-    }, 0);
-  });
-
-  form.addEventListener('submit', function (event) {
-    event.preventDefault();
-
-    var quantity = Number((quantityInput.value || '').trim());
-    var amountPerPiece = parseFloat(priceInput.value || '0');
-
-    if (!validateStockMovementForm(quantity, amountPerPiece)) {
-      return;
-    }
-
-    if (movementType === 'out' && quantity > selectedStock()) {
-      setMessage('Stock out quantity cannot exceed the current product stock.', 'is-error');
-      return;
-    }
-
-    var payload = {
-      product_id: productSelect.value,
-      movement_type: movementType,
-      quantity: quantity,
-      notes: document.getElementById('stockNotes').value,
-      full_name: document.getElementById('partyName').value,
-      contact: document.getElementById('partyContact').value,
-      amount_per_piece: amountPerPiece,
-      payment_status: document.getElementById('paymentStatus').value,
-      payment_method: paymentMethod,
-      incoming_status: form.querySelector('input[name="incoming_status"]:checked') ? form.querySelector('input[name="incoming_status"]:checked').value : '',
-      movement_status: form.querySelector('input[name="movement_status"]:checked') ? form.querySelector('input[name="movement_status"]:checked').value : ''
-    };
->>>>>>> dad9c9816375215b01eaef84051b14b80ad35d8e
-
-    if (!productValue) {
-        message.textContent = 'Please select a product.';
-        message.className = 'form-message is-error';
-        return;
-    }
-
-    if (movementType === 'in' && !incomingStatus) {
-        message.textContent = 'Please select incoming stock status.';
-        message.className = 'form-message is-error';
-        return;
-    }
-
-    formData.set('type', movementType);
-
-    button.disabled = true;
-    button.textContent = 'Recording...';
-    message.textContent = 'Recording stock movement...';
-    message.className = 'form-message';
-
-    function stockPayloadFromForm() {
-        var totalInput = document.getElementById('stockTotal');
-        var movementStatusInput = form.querySelector('input[name="movement_status"]:checked');
-
-        return {
-            product_id: formData.get('product_id'),
-            quantity: formData.get('quantity'),
-            type: movementType,
-            movement_type: movementType,
-            stock_type: movementType,
-            notes: formData.get('notes') || '',
-            full_name: formData.get('full_name') || '',
-            party_name: formData.get('full_name') || '',
-            contact: formData.get('contact') || '',
-            contact_number: formData.get('contact') || '',
-            amount_per_piece: formData.get('amount_per_piece') || '0',
-            unit_price: formData.get('amount_per_piece') || '0',
-            total_amount: totalInput ? totalInput.value : '0',
-            payment_status: formData.get('payment_status') || 'paid',
-            payment_method: formData.get('payment_method') || 'cash',
-            incoming_status: formData.get('incoming_status') || '',
-            movement_status: movementStatusInput ? movementStatusInput.value : (formData.get('movement_status') || ''),
-            status: movementType === 'in' ? (formData.get('incoming_status') || '') : (movementStatusInput ? movementStatusInput.value : '')
-        };
-    }
-
-    (function submitStockMovement(endpointIndex) {
-        var basePath = window.location.pathname.split('/index.php')[0].replace(/\/$/, '') || '';
-        var endpoints = [
-            '/api/stock/save.php',
-            '/api/stock/add.php',
-            '/api/stock/create.php',
-            '/api/stock/store.php',
-            '/api/stock/movement.php',
-            '/api/stock/update.php'
-        ];
-
-        if (endpointIndex >= endpoints.length) {
-            return Promise.reject(new Error('Stock movement API endpoint was not found.'));
-        }
-
-        return fetch(basePath + endpoints[endpointIndex], {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(stockPayloadFromForm())
-        }).then(function (response) {
-            if (response.status === 404) {
-                return submitStockMovement(endpointIndex + 1);
-            }
-
-            return response;
-        });
-    }(0))
-        .then(function (response) {
-            return response.text().then(function (text) {
-                var data = {};
-
-                try {
-                    data = text ? JSON.parse(text) : {};
-                } catch (error) {
-                    throw new Error(text || 'Unable to record movement.');
-                }
-
-                if (!response.ok || data.success === false) {
-                    throw new Error(data.message || 'Unable to record movement.');
-                }
-
-                return data;
-            });
-        })
-        .then(function (data) {
-            message.textContent = data.message || 'Stock movement recorded successfully.';
-            message.className = 'form-message is-success';
-        })
-        .catch(function (error) {
-            message.textContent = error.message || 'Unable to record movement.';
-            message.className = 'form-message is-error';
-        })
-        .finally(function () {
-            button.disabled = false;
-            button.textContent = 'Record Movement';
-        });
-}, true);
-
-document.addEventListener('submit', function (event) {
-    var form = event.target;
-    var button;
-
-    if (!form || form.id !== 'stockMovementForm') {
-        return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-    event.stopImmediatePropagation();
-
-    button = document.getElementById('recordMovementBtn');
-    if (button) {
-        button.click();
-    }
-}, true);
-
-document.addEventListener('DOMContentLoaded', function () {
+function initStockPage(config) {
+  document.addEventListener('DOMContentLoaded', function () {
     var form = document.getElementById('stockMovementForm');
-    var stockInBtn = document.getElementById('stockInBtn');
-    var stockOutBtn = document.getElementById('stockOutBtn');
+    var productSelect = document.getElementById('stockProduct');
     var quantityInput = document.getElementById('stockQuantity');
-    var quantityMinus = document.getElementById('quantityMinus');
-    var quantityPlus = document.getElementById('quantityPlus');
     var priceInput = document.getElementById('stockPrice');
     var totalInput = document.getElementById('stockTotal');
     var message = document.getElementById('stockFormMessage');
-    var currentType = 'in';
+    var historyTable = document.getElementById('stockHistoryTable');
+    var stockInBtn = document.getElementById('stockInBtn');
+    var stockOutBtn = document.getElementById('stockOutBtn');
+    var stockInStatusCard = document.getElementById('stockInStatusCard');
+    var stockOutStatusCard = document.getElementById('stockOutStatusCard');
+    var incomingStatusSelect = document.getElementById('incomingStatus');
+    var movementStatusSelect = document.getElementById('movementStatus');
+    var paymentStatusSelect = document.getElementById('paymentStatus');
+    var paymentToggle = document.getElementById('paymentMethodToggle');
+    var quantityMinus = document.getElementById('quantityMinus');
+    var quantityPlus = document.getElementById('quantityPlus');
+    var partyName = document.getElementById('partyName');
+    var partyContact = document.getElementById('partyContact');
+    var stockNotes = document.getElementById('stockNotes');
 
-    function appUrl(path) {
-        var base = window.location.pathname.split('/index.php')[0].replace(/\/$/, '');
-        return base + '/' + path.replace(/^\//, '');
+    if (
+      !form || !productSelect || !quantityInput || !priceInput || !totalInput || !message || !historyTable ||
+      !stockInBtn || !stockOutBtn || !stockInStatusCard || !stockOutStatusCard || !incomingStatusSelect || !movementStatusSelect ||
+      !paymentStatusSelect || !paymentToggle || !partyName || !partyContact || !stockNotes
+    ) {
+      return;
     }
 
-    function money(value) {
-        return (parseFloat(value || '0') || 0).toFixed(2);
+    var incomingStatusLabels = {
+      order_dispatched: 'Order Dispatched',
+      in_transit: 'In Transit',
+      received: 'Received at Warehouse'
+    };
+    var movementStatusLabels = {
+      dispatched: 'Dispatched from Warehouse',
+      hub: 'Stock Received at Hub',
+      delivered: 'Delivery Confirmed'
+    };
+    var movementType = 'in';
+    var paymentMethod = 'cash';
+    var products = [];
+    var productRoot = productSelect.closest('[data-stock-select-root]');
+    var productTrigger = productRoot ? productRoot.querySelector('[data-stock-select-trigger]') : null;
+    var productMenu = productRoot ? productRoot.querySelector('[data-stock-select-menu]') : null;
+    var incomingStatusRoot = incomingStatusSelect.closest('[data-stock-select-root]');
+    var movementStatusRoot = movementStatusSelect.closest('[data-stock-select-root]');
+    var setPaymentMethod = function (method) {
+      paymentMethod = method === 'card' ? 'card' : 'cash';
+    };
+
+    initSimpleSelect(paymentStatusSelect);
+    initIncomingStatusSelect();
+    initProductSelect();
+    bindMovementType();
+    bindPaymentMethod();
+    bindQuantityControls();
+    bindCalculatedFields();
+    bindForm();
+    setMovementType('in');
+    updateTotal();
+    setMessage('', '');
+    setPaymentMethod('cash');
+
+    loadProducts().catch(function (error) {
+      console.error('Stock product load failed:', error);
+      if (productRoot && productRoot.classList.contains('is-open') && typeof window.renderStockProductOptions === 'function') {
+        window.renderStockProductOptions('', 'Unable to load products');
+      }
+      setMessage(error.message || 'Unable to load products right now.', 'is-error');
+    });
+
+    loadHistory().catch(function (error) {
+      console.error('Stock movement history load failed:', error);
+      historyTable.innerHTML = '<tr><td colspan="9" class="empty-state">Unable to load stock movement data.</td></tr>';
+      setMessage(error.message || 'Unable to load stock movement data.', 'is-error');
+    });
+
+    function apiJson(url, options) {
+      return fetch(url, options || {}).then(function (response) {
+        return response.text().then(function (text) {
+          var data = null;
+
+          try {
+            data = text ? JSON.parse(text) : null;
+          } catch (error) {
+            throw new Error('Server returned an invalid response.');
+          }
+
+          if (!response.ok || (data && data.success === false && !data.movements && !Array.isArray(data))) {
+            throw new Error((data && (data.message || data.error || data.detail)) || 'Request failed.');
+          }
+
+          return data;
+        });
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function normalizeStatus(value) {
+      return String(value || '').toLowerCase().trim().replace(/\s+/g, '_');
+    }
+
+    function setMessage(text, state) {
+      message.textContent = text || '';
+      message.classList.remove('is-error', 'is-success');
+      if (state) {
+        message.classList.add(state);
+      }
+    }
+
+    function setFieldInvalid(field, invalid) {
+      if (field) {
+        field.classList.toggle('is-invalid', Boolean(invalid));
+      }
+    }
+
+    function selectedProductOption() {
+      return productSelect.options[productSelect.selectedIndex] || null;
+    }
+
+    function selectedProductStock() {
+      var option = selectedProductOption();
+      return option ? parseInt(option.getAttribute('data-stock') || '0', 10) : 0;
     }
 
     function updateTotal() {
-        if (!quantityInput || !priceInput || !totalInput) {
-            return;
-        }
-
-        totalInput.value = money((parseFloat(quantityInput.value || '0') || 0) * (parseFloat(priceInput.value || '0') || 0));
+      var quantity = parseFloat(quantityInput.value || '0');
+      var price = parseFloat(priceInput.value || '0');
+      totalInput.value = (quantity * price).toFixed(2);
     }
 
-    function setQuantity(value) {
-        if (!quantityInput) {
-            return;
-        }
+    function bindCalculatedFields() {
+      quantityInput.addEventListener('input', updateTotal);
+      priceInput.addEventListener('input', updateTotal);
+      partyContact.addEventListener('input', function () {
+        setFieldInvalid(partyContact, false);
+      });
+      partyName.addEventListener('input', function () {
+        setFieldInvalid(partyName, false);
+      });
+      priceInput.addEventListener('input', function () {
+        setFieldInvalid(priceInput, false);
+      });
+      quantityInput.addEventListener('input', function () {
+        setFieldInvalid(quantityInput, false);
+      });
+    }
 
-        quantityInput.value = Math.max(1, parseInt(value || '1', 10) || 1);
+    function bindQuantityControls() {
+      quantityMinus.addEventListener('click', function () {
+        var current = Math.max(1, parseInt(quantityInput.value || '1', 10) || 1);
+        quantityInput.value = String(Math.max(1, current - 1));
         updateTotal();
+      });
+
+      quantityPlus.addEventListener('click', function () {
+        var current = Math.max(1, parseInt(quantityInput.value || '1', 10) || 1);
+        quantityInput.value = String(current + 1);
+        updateTotal();
+      });
     }
 
-    function setStockType(type) {
-        var stockInStatusCard = document.getElementById('stockInStatusCard');
-        var stockOutStatusCard = document.getElementById('stockOutStatusCard');
+    function bindMovementType() {
+      stockInBtn.addEventListener('click', function () {
+        setMovementType('in');
+      });
 
-        currentType = type === 'out' ? 'out' : 'in';
-
-        if (stockInBtn) {
-            stockInBtn.classList.toggle('is-active', currentType === 'in');
-        }
-
-        if (stockOutBtn) {
-            stockOutBtn.classList.toggle('is-active', currentType === 'out');
-        }
-
-        if (stockInStatusCard) {
-            stockInStatusCard.classList.toggle('is-hidden', currentType !== 'in');
-        }
-
-        if (stockOutStatusCard) {
-            stockOutStatusCard.classList.toggle('is-hidden', currentType !== 'out');
-        }
+      stockOutBtn.addEventListener('click', function () {
+        setMovementType('out');
+      });
     }
 
-    function findProductField() {
-        var fields = document.querySelectorAll('label.field, .field');
-        var index;
-
-        for (index = 0; index < fields.length; index += 1) {
-            if ((fields[index].textContent || '').toLowerCase().indexOf('product name') !== -1) {
-                return fields[index];
-            }
-        }
-
-        return null;
+    function setMovementType(nextType) {
+      movementType = nextType === 'out' ? 'out' : 'in';
+      stockInBtn.classList.toggle('is-active', movementType === 'in');
+      stockOutBtn.classList.toggle('is-active', movementType === 'out');
+      stockInStatusCard.classList.toggle('is-hidden', movementType !== 'in');
+      stockOutStatusCard.classList.toggle('is-hidden', movementType !== 'out');
+      incomingStatusSelect.required = movementType === 'in';
+      movementStatusSelect.required = movementType === 'out';
+      if (movementType === 'out') {
+        setFieldInvalid(incomingStatusRoot ? incomingStatusRoot.querySelector('[data-stock-select-trigger]') : null, false);
+      } else {
+        setFieldInvalid(movementStatusRoot ? movementStatusRoot.querySelector('[data-stock-select-trigger]') : null, false);
+      }
     }
 
-    function productFromOption(option) {
-        var name = option.getAttribute('data-name') || (option.textContent || '').replace(/\s+\(Stock:\s*.*?\)\s*$/i, '').trim();
+    function bindPaymentMethod() {
+      var hiddenInput = form.querySelector('input[name="payment_method"]');
 
-        return {
-            id: String(option.value || ''),
-            name: name || 'Unnamed product',
-            sku: String(option.getAttribute('data-sku') || ''),
-            stock: option.getAttribute('data-stock') || '',
-            price: option.getAttribute('data-price') || '',
-            label: option.textContent || name || 'Unnamed product'
-        };
-    }
+      if (!hiddenInput) {
+        hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'payment_method';
+        form.appendChild(hiddenInput);
+      }
 
-    function normalizeProduct(product) {
-        var stock = product.qty || product.stock || 0;
-        var name = product.name || product.product_name || 'Unnamed product';
-
-        return {
-            id: String(product.id || product.product_id || ''),
-            name: String(name),
-            sku: String(product.sku || ''),
-            stock: stock,
-            price: product.unit_price || product.price || 0,
-            label: String(name) + ' (Stock: ' + stock + ')'
-        };
-    }
-
-    function fetchProducts() {
-        var endpoints = [
-            'api/products/get_user_products.php',
-            'api/products/list.php',
-            'api/products/get_products.php',
-            'api/products/read.php',
-            'api/product/list.php',
-            'api/products.php'
-        ];
-
-        function tryEndpoint(index) {
-            if (index >= endpoints.length) {
-                return Promise.resolve([]);
-            }
-
-            return fetch(appUrl(endpoints[index]), { cache: 'no-store' })
-                .then(function (response) {
-                    if (!response.ok) {
-                        throw new Error('Product endpoint failed');
-                    }
-
-                    return response.json();
-                })
-                .then(function (data) {
-                    var rows = Array.isArray(data) ? data : [];
-                    if (!rows.length && data && Array.isArray(data.products)) {
-                        rows = data.products;
-                    }
-                    if (!rows.length && data && Array.isArray(data.data)) {
-                        rows = data.data;
-                    }
-                    if (!rows.length && data && Array.isArray(data.records)) {
-                        rows = data.records;
-                    }
-                    if (!rows.length && data && Array.isArray(data.items)) {
-                        rows = data.items;
-                    }
-                    var products = rows.map(normalizeProduct).filter(function (product) {
-                        return product.id;
-                    });
-
-                    return products.length ? products : tryEndpoint(index + 1);
-                })
-                .catch(function () {
-                    return tryEndpoint(index + 1);
-                });
-        }
-
-        return tryEndpoint(0);
-    }
-
-    function installProductStyles() {
-        var style = document.createElement('style');
-
-        if (document.getElementById('stockProductSearchStyle')) {
-            return;
-        }
-
-        style.id = 'stockProductSearchStyle';
-        style.textContent = ''
-            + '.stock-product-field select{display:none!important;}'
-            + '.stock-product-search{position:relative;width:100%;}'
-            + '.stock-product-search__trigger{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:44px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;color:#0f172a;padding:0 12px;font:inherit;text-align:left;cursor:pointer;}'
-            + '.stock-product-search__menu{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:9999;overflow:hidden;border:1px solid #cbd5e1;border-radius:8px;background:#fff;box-shadow:0 16px 36px rgba(15,23,42,.18);}'
-            + '.stock-product-search__search{padding:8px;border-bottom:1px solid #e2e8f0;background:#f8fafc;}'
-            + '.stock-product-search__search input{width:100%;min-height:38px;border:1px solid #cbd5e1;border-radius:6px;padding:0 10px;color:#111827;font:inherit;outline:none;}'
-            + '.stock-product-search__options{max-height:260px;overflow-y:auto;padding:4px;}'
-            + '.stock-product-search__option,.stock-product-search__empty{display:block;width:100%;min-height:40px;padding:9px 10px;border:0;border-radius:6px;background:transparent;color:#111827;font:inherit;text-align:left;}'
-            + '.stock-product-search__option{cursor:pointer;}'
-            + '.stock-product-search__option:hover,.stock-product-search__option.is-selected{background:#eef2ff;}'
-            + '.stock-product-search__meta{display:block;margin-top:2px;color:#64748b;font-size:12px;}'
-            + '.stock-product-search__empty{color:#64748b;}';
-        document.head.appendChild(style);
-    }
-
-    function buildProductSearch(products) {
-        var field = findProductField();
-        var label;
-        var selectedValue = '';
-        var hidden;
-        var root;
-        var trigger;
-        var triggerLabel;
-        var menu;
-        var search;
-        var optionsWrap;
-
-        products = Array.isArray(products) ? products : [];
-
-        if (!field || field.getAttribute('data-product-search-ready') === 'true') {
-            return;
-        }
-
-        field.querySelectorAll('select').forEach(function (select) {
-            if (!selectedValue && select.value) {
-                selectedValue = select.value;
-            }
+      function syncState(method) {
+        paymentMethod = method === 'card' ? 'card' : 'cash';
+        hiddenInput.value = paymentMethod;
+        paymentToggle.querySelectorAll('[data-method]').forEach(function (toggleButton) {
+          var isActive = toggleButton.getAttribute('data-method') === paymentMethod;
+          toggleButton.classList.toggle('is-active', isActive);
+          toggleButton.setAttribute('aria-pressed', isActive ? 'true' : 'false');
         });
+      }
 
-        field.classList.add('stock-product-field');
-        field.setAttribute('data-product-search-ready', 'true');
+      setPaymentMethod = syncState;
 
-        label = field.querySelector('span');
-        field.innerHTML = '';
+      paymentToggle.querySelectorAll('[data-method]').forEach(function (button) {
+        button.addEventListener('click', function (event) {
+          event.preventDefault();
+          syncState(button.getAttribute('data-method') || 'cash');
+        });
+      });
 
-        if (!label) {
-            label = document.createElement('span');
-            label.textContent = 'Product Name';
-        }
+      syncState(paymentMethod);
+    }
 
-        hidden = document.createElement('input');
-        hidden.type = 'hidden';
-        hidden.id = 'stockProduct';
-        hidden.name = 'product_id';
-        hidden.required = true;
-        hidden.value = selectedValue;
+    function initSimpleSelect(select) {
+      var root = select.closest('[data-stock-select-root]');
+      var trigger = root ? root.querySelector('[data-stock-select-trigger]') : null;
+      var label = root ? root.querySelector('[data-stock-select-label]') : null;
+      var menu = root ? root.querySelector('[data-stock-select-menu]') : null;
 
-        root = document.createElement('div');
-        root.className = 'stock-product-search';
+      if (!root || !trigger || !label || !menu) {
+        return;
+      }
 
-        trigger = document.createElement('button');
-        trigger.type = 'button';
-        trigger.className = 'stock-product-search__trigger';
+      function close() {
+        root.classList.remove('is-open');
         trigger.setAttribute('aria-expanded', 'false');
-
-        triggerLabel = document.createElement('span');
-        triggerLabel.textContent = 'Select product';
-        trigger.appendChild(triggerLabel);
-        trigger.insertAdjacentHTML('beforeend', '<span aria-hidden="true">⌄</span>');
-
-        menu = document.createElement('div');
-        menu.className = 'stock-product-search__menu';
         menu.hidden = true;
-        menu.innerHTML = '<div class="stock-product-search__search"><input type="search" placeholder="Search product or SKU" autocomplete="off"></div><div class="stock-product-search__options"></div>';
+      }
 
-        search = menu.querySelector('input');
-        optionsWrap = menu.querySelector('.stock-product-search__options');
-
-        root.appendChild(hidden);
-        root.appendChild(trigger);
-        root.appendChild(menu);
-        field.appendChild(label);
-        field.appendChild(root);
-
-        function selectedProduct() {
-            return products.find(function (product) {
-                return product.id === hidden.value;
-            });
-        }
-
-        function updateTriggerLabel() {
-            var product = selectedProduct();
-            triggerLabel.textContent = product ? product.label : 'Select product';
-        }
-
-        function render(query) {
-            var normalized = String(query || '').toLowerCase().trim();
-            var matches = products.filter(function (product) {
-                return (product.name + ' ' + product.sku).toLowerCase().indexOf(normalized) !== -1;
-            });
-
-            optionsWrap.innerHTML = '';
-
-            if (!matches.length) {
-                optionsWrap.innerHTML = '<div class="stock-product-search__empty">No products found</div>';
-                return;
+      function render() {
+        menu.innerHTML = '';
+        Array.prototype.slice.call(select.options).forEach(function (option) {
+          var button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'stock-custom-select__option';
+          button.textContent = option.textContent;
+          if (option.disabled) {
+            button.classList.add('is-disabled');
+          }
+          if (option.value === select.value) {
+            button.classList.add('is-active');
+          }
+          button.addEventListener('click', function () {
+            if (option.disabled) {
+              return;
             }
+            select.value = option.value;
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+            close();
+          });
+          menu.appendChild(button);
+        });
+      }
 
-            matches.forEach(function (product) {
-                var button = document.createElement('button');
+      function syncLabel() {
+        var selectedOption = select.options[select.selectedIndex];
+        label.textContent = selectedOption ? selectedOption.textContent : 'Select option';
+      }
 
-                button.type = 'button';
-                button.className = 'stock-product-search__option';
-                button.textContent = product.label;
+      trigger.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        closeAllMenus(root);
+        var shouldOpen = menu.hidden;
+        if (shouldOpen) {
+          render();
+        }
+        root.classList.toggle('is-open', shouldOpen);
+        trigger.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+        menu.hidden = !shouldOpen;
+      });
 
-                if (product.id === hidden.value) {
-                    button.classList.add('is-selected');
-                }
+      select.addEventListener('change', function () {
+        syncLabel();
+        render();
+      });
 
-                if (product.sku) {
-                    button.insertAdjacentHTML('beforeend', '<span class="stock-product-search__meta">SKU: ' + product.sku + '</span>');
-                }
+      syncLabel();
+      render();
+    }
 
-                button.addEventListener('click', function (event) {
-                    event.preventDefault();
-                    hidden.value = product.id;
-                    hidden.dataset.stock = product.stock;
-                    hidden.dataset.price = product.price;
-                    hidden.dataset.name = product.name;
-                    hidden.dataset.sku = product.sku;
-                    hidden.dispatchEvent(new Event('change', { bubbles: true }));
-                    updateTriggerLabel();
-                    if (priceInput && product.price && parseFloat(priceInput.value || '0') === 0) {
-                        priceInput.value = money(product.price);
-                    }
-                    updateTotal();
-                    menu.hidden = true;
-                    trigger.setAttribute('aria-expanded', 'false');
-                });
+    function initIncomingStatusSelect() {
+      initSimpleSelect(incomingStatusSelect);
+      incomingStatusSelect.addEventListener('change', function () {
+        var trigger = incomingStatusRoot ? incomingStatusRoot.querySelector('[data-stock-select-trigger]') : null;
+        setFieldInvalid(trigger, false);
+      });
+      initSimpleSelect(movementStatusSelect);
+      movementStatusSelect.addEventListener('change', function () {
+        var trigger = movementStatusRoot ? movementStatusRoot.querySelector('[data-stock-select-trigger]') : null;
+        setFieldInvalid(trigger, false);
+      });
+    }
 
-                optionsWrap.appendChild(button);
+    function initProductSelect() {
+      var root = productRoot;
+      var trigger = productTrigger;
+      var label = root ? root.querySelector('[data-stock-select-label]') : null;
+      var menu = productMenu;
+
+      if (!root || !trigger || !label || !menu) {
+        return;
+      }
+
+      function close() {
+        root.classList.remove('is-open');
+        trigger.setAttribute('aria-expanded', 'false');
+        menu.hidden = true;
+      }
+
+      function render(query, emptyMessage) {
+        var normalizedQuery = String(query || '').toLowerCase().trim();
+        var filteredProducts = products.filter(function (product) {
+          return [product.name || '', product.sku || ''].join(' ').toLowerCase().indexOf(normalizedQuery) !== -1;
+        });
+        var selectedValue = productSelect.value;
+
+        menu.innerHTML = ''
+          + '<div class="stock-custom-select__search-wrap">'
+          + '<input type="search" class="stock-custom-select__search" placeholder="Search product name or SKU" autocomplete="off">'
+          + '</div>'
+          + '<div class="stock-custom-select__options"></div>';
+
+        var optionsWrap = menu.querySelector('.stock-custom-select__options');
+
+        if (!filteredProducts.length) {
+          optionsWrap.innerHTML = '<div class="stock-custom-select__empty">' + escapeHtml(emptyMessage || 'No products found') + '</div>';
+        } else {
+          filteredProducts.forEach(function (product) {
+            var button = document.createElement('button');
+            var stock = product.qty != null ? product.qty : (product.stock || 0);
+            var displayName = String(product.name || 'Unnamed product') + ' (Stock: ' + stock + ')';
+            button.type = 'button';
+            button.className = 'stock-custom-select__option';
+            button.setAttribute('data-value', String(product.id));
+            if (String(product.id) === selectedValue) {
+              button.classList.add('is-active');
+            }
+            button.innerHTML = escapeHtml(displayName) + (product.sku ? '<br><small>' + escapeHtml(product.sku) + '</small>' : '');
+            button.addEventListener('click', function () {
+              productSelect.value = String(product.id);
+              productSelect.dispatchEvent(new Event('change', { bubbles: true }));
+              close();
             });
+            optionsWrap.appendChild(button);
+          });
         }
 
-        trigger.addEventListener('click', function (event) {
-            var open = menu.hidden;
-
-            event.preventDefault();
+        var searchInput = menu.querySelector('.stock-custom-select__search');
+        if (searchInput) {
+          searchInput.value = query || '';
+          searchInput.addEventListener('click', function (event) {
             event.stopPropagation();
-            menu.hidden = !open;
-            trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
-
-            if (open) {
-                search.value = '';
-                render('');
-                window.setTimeout(function () {
-                    search.focus();
-                }, 0);
+          });
+          searchInput.addEventListener('input', function () {
+            render(searchInput.value);
+            var nextSearchInput = menu.querySelector('.stock-custom-select__search');
+            if (nextSearchInput) {
+              nextSearchInput.focus();
+              nextSearchInput.setSelectionRange(nextSearchInput.value.length, nextSearchInput.value.length);
             }
-        });
-
-        search.addEventListener('input', function () {
-            render(search.value);
-        });
-
-        document.addEventListener('click', function (event) {
-            if (!root.contains(event.target)) {
-                menu.hidden = true;
-                trigger.setAttribute('aria-expanded', 'false');
-            }
-        });
-
-        updateTriggerLabel();
-        render('');
-    }
-
-    function initProductSearch() {
-        var field = findProductField();
-        var products = [];
-
-        installProductStyles();
-
-        if (!field) {
-            return;
+          });
         }
+      }
 
-        field.querySelectorAll('select option').forEach(function (option) {
-            var product = productFromOption(option);
-            if (product.id) {
-                products.push(product);
-            }
-        });
-
-        if (products.length) {
-            buildProductSearch(products);
-            return;
+      function syncLabelAndPrice() {
+        var option = selectedProductOption();
+        var price = option ? parseFloat(option.getAttribute('data-price') || '0') : 0;
+        var stock = option ? parseInt(option.getAttribute('data-stock') || '0', 10) : 0;
+        label.textContent = option && option.value ? String(option.getAttribute('data-name') || option.textContent || 'Select product') + ' (Stock: ' + stock + ')' : 'Select product';
+        if (option && option.value && (!priceInput.value || parseFloat(priceInput.value || '0') <= 0) && price > 0) {
+          priceInput.value = price.toFixed(2);
         }
+        updateTotal();
+        setFieldInvalid(trigger, false);
+      }
 
-        buildProductSearch([]);
-
-        fetchProducts().then(function (fetchedProducts) {
-            var field = findProductField();
-
-            if (field) {
-                field.removeAttribute('data-product-search-ready');
-            }
-
-            buildProductSearch(fetchedProducts);
-        });
-    }
-
-    if (stockInBtn) {
-        stockInBtn.addEventListener('click', function () {
-            setStockType('in');
-        });
-    }
-
-    if (stockOutBtn) {
-        stockOutBtn.addEventListener('click', function () {
-            setStockType('out');
-        });
-    }
-
-    if (quantityMinus) {
-        quantityMinus.addEventListener('click', function () {
-            setQuantity((parseInt(quantityInput.value || '1', 10) || 1) - 1);
-        });
-    }
-
-    if (quantityPlus) {
-        quantityPlus.addEventListener('click', function () {
-            setQuantity((parseInt(quantityInput.value || '1', 10) || 1) + 1);
-        });
-    }
-
-    if (quantityInput) {
-        quantityInput.addEventListener('input', updateTotal);
-    }
-
-    if (priceInput) {
-        priceInput.addEventListener('input', updateTotal);
-    }
-
-    if (form) {
-        form.addEventListener('submit', function (event) {
-            var formData = new FormData(form);
-            var recordButton = document.getElementById('recordMovementBtn');
-            var productValue = formData.get('product_id');
-            var incomingStatus = formData.get('incoming_status');
-
-            event.preventDefault();
-            formData.set('type', currentType);
-
-            if (!productValue) {
-                if (message) {
-                    message.textContent = 'Please select a product.';
-                    message.className = 'form-message is-error';
-                }
-                return;
-            }
-
-            if (currentType === 'in' && !incomingStatus) {
-                if (message) {
-                    message.textContent = 'Please select incoming stock status.';
-                    message.className = 'form-message is-error';
-                }
-                return;
-            }
-
-            if (message) {
-                message.textContent = 'Recording stock movement...';
-                message.className = 'form-message';
-            }
-
-            if (recordButton) {
-                recordButton.disabled = true;
-                recordButton.textContent = 'Recording...';
-            }
-
-            fetch(appUrl('api/stock/save.php'), {
-                method: 'POST',
-                body: formData
-            })
-                .then(function (response) {
-                    return response.json();
-                })
-                .then(function (data) {
-                    if (!data || data.success === false) {
-                        throw new Error(data && data.message ? data.message : 'Unable to record movement.');
-                    }
-
-                    if (message) {
-                        message.textContent = data.message || 'Stock movement recorded successfully.';
-                        message.className = 'form-message is-success';
-                    }
-
-                    form.reset();
-                    setQuantity(1);
-                    updateTotal();
-                    initProductSearch();
-                })
-                .catch(function (error) {
-                    if (message) {
-                        message.textContent = error.message || 'Unable to record movement.';
-                        message.className = 'form-message is-error';
-                    }
-                })
-                .finally(function () {
-                    if (recordButton) {
-                        recordButton.disabled = false;
-                        recordButton.textContent = 'Record Movement';
-                    }
-                });
-        });
-
-        form.addEventListener('reset', function () {
-            window.setTimeout(function () {
-                var productTrigger = document.querySelector('.stock-product-search__trigger span');
-                var productInput = form.querySelector('input[name="product_id"]');
-                var incomingSelect = document.getElementById('incomingStatus');
-                var incomingLabel = document.querySelector('#incomingStatusCard [data-stock-select-label]');
-
-                if (productInput) {
-                    productInput.value = '';
-                }
-
-                if (productTrigger) {
-                    productTrigger.textContent = 'Select product';
-                }
-
-                if (incomingSelect) {
-                    incomingSelect.value = '';
-                }
-
-                if (incomingLabel) {
-                    incomingLabel.textContent = 'Select incoming stock status';
-                }
-
-                setQuantity(1);
-                updateTotal();
-
-                if (message) {
-                    message.textContent = '';
-                    message.className = 'form-message';
-                }
-            }, 0);
-        });
-    }
-
-    initProductSearch();
-    setStockType('in');
-    updateTotal();
-});
-
-document.addEventListener('DOMContentLoaded', function () {
-    function initPaymentMethodToggle() {
-        var toggle = document.getElementById('paymentMethodToggle');
-        var form = document.getElementById('stockMovementForm');
-        var input;
-
-        if (!toggle || toggle.getAttribute('data-payment-toggle-ready') === 'true') {
-            return;
+      trigger.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        closeAllMenus(root);
+        var shouldOpen = menu.hidden;
+        if (shouldOpen) {
+          render('');
         }
-
-        toggle.setAttribute('data-payment-toggle-ready', 'true');
-
-        input = form ? form.querySelector('input[name="payment_method"]') : null;
-        if (!input && form) {
-            input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'payment_method';
-            form.appendChild(input);
+        root.classList.toggle('is-open', shouldOpen);
+        trigger.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+        menu.hidden = !shouldOpen;
+        if (shouldOpen) {
+          var searchInput = menu.querySelector('.stock-custom-select__search');
+          if (searchInput) {
+            searchInput.focus();
+          }
         }
+      });
 
-        function setMethod(method) {
-            var selectedMethod = method || 'cash';
-
-            toggle.querySelectorAll('[data-method]').forEach(function (button) {
-                button.classList.toggle('is-active', button.getAttribute('data-method') === selectedMethod);
-            });
-
-            if (input) {
-                input.value = selectedMethod;
-            }
-        }
-
-        toggle.querySelectorAll('[data-method]').forEach(function (button) {
-            button.addEventListener('click', function (event) {
-                event.preventDefault();
-                setMethod(button.getAttribute('data-method'));
-            });
-        });
-
-        setMethod((toggle.querySelector('[data-method].is-active') || toggle.querySelector('[data-method]') || {}).dataset ? (toggle.querySelector('[data-method].is-active') || toggle.querySelector('[data-method]')).dataset.method : 'cash');
+      productSelect.addEventListener('change', syncLabelAndPrice);
+      syncLabelAndPrice();
+      window.renderStockProductOptions = render;
     }
 
-    initPaymentMethodToggle();
-    window.setTimeout(initPaymentMethodToggle, 300);
-    window.setTimeout(initPaymentMethodToggle, 1000);
-});
-
-document.addEventListener('DOMContentLoaded', function () {
-    function initBasicStockSelect(root) {
-        var select = root.querySelector('select');
+    function closeAllMenus(exceptRoot) {
+      document.querySelectorAll('[data-stock-select-root]').forEach(function (root) {
+        if (root === exceptRoot) {
+          return;
+        }
+        root.classList.remove('is-open');
         var trigger = root.querySelector('[data-stock-select-trigger]');
-        var label = root.querySelector('[data-stock-select-label]');
         var menu = root.querySelector('[data-stock-select-menu]');
-
-        if (!select || !trigger || !label || !menu || root.getAttribute('data-basic-select-ready') === 'true') {
-            return;
+        if (trigger) {
+          trigger.setAttribute('aria-expanded', 'false');
         }
-
-        root.setAttribute('data-basic-select-ready', 'true');
-        select.style.setProperty('display', 'none', 'important');
-
-        function closeSelect() {
-            root.classList.remove('is-open');
-            trigger.setAttribute('aria-expanded', 'false');
-            menu.hidden = true;
+        if (menu) {
+          menu.hidden = true;
         }
-
-        function updateLabel() {
-            var selectedOption = select.options[select.selectedIndex];
-            label.textContent = selectedOption ? selectedOption.textContent : 'Select';
+      });
+      document.querySelectorAll('[data-history-select-root]').forEach(function (root) {
+        if (root === exceptRoot) {
+          return;
         }
-
-        function renderOptions() {
-            menu.innerHTML = '';
-
-            Array.prototype.slice.call(select.options).forEach(function (option) {
-                var button = document.createElement('button');
-
-                button.type = 'button';
-                button.className = 'stock-custom-select__option';
-                button.textContent = option.textContent;
-                button.disabled = option.disabled;
-
-                if (option.value === select.value) {
-                    button.classList.add('is-selected');
-                }
-
-                button.addEventListener('click', function (event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-
-                    if (option.disabled) {
-                        return;
-                    }
-
-                    select.value = option.value;
-                    select.dispatchEvent(new Event('change', { bubbles: true }));
-                    updateLabel();
-                    closeSelect();
-                });
-
-                menu.appendChild(button);
-            });
-        }
-
-        trigger.addEventListener('click', function (event) {
-            var shouldOpen = menu.hidden;
-
-            event.preventDefault();
-            event.stopPropagation();
-
-            document.querySelectorAll('[data-stock-select-root].is-open').forEach(function (openRoot) {
-                var openTrigger = openRoot.querySelector('[data-stock-select-trigger]');
-                var openMenu = openRoot.querySelector('[data-stock-select-menu]');
-
-                openRoot.classList.remove('is-open');
-                if (openTrigger) {
-                    openTrigger.setAttribute('aria-expanded', 'false');
-                }
-                if (openMenu) {
-                    openMenu.hidden = true;
-                }
-            });
-
-            renderOptions();
-            root.classList.toggle('is-open', shouldOpen);
-            trigger.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
-            menu.hidden = !shouldOpen;
-        });
-
-        select.addEventListener('change', updateLabel);
-        updateLabel();
-        renderOptions();
+        closeHistorySelect(root);
+      });
     }
-
-    function installBasicSelectStyles() {
-        var style;
-
-        if (document.getElementById('basicStockSelectStyles')) {
-            return;
-        }
-
-        style = document.createElement('style');
-        style.id = 'basicStockSelectStyles';
-        style.textContent = ''
-            + '[data-stock-select-root]{position:relative;}'
-            + '[data-stock-select-root] [data-stock-select-menu]{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:9999;max-height:220px;overflow-y:auto;padding:4px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;box-shadow:0 16px 36px rgba(15,23,42,.16);}'
-            + '[data-stock-select-root] .stock-custom-select__option{display:block;width:100%;min-height:38px;padding:8px 10px;border:0;border-radius:6px;background:transparent;color:#111827;font:inherit;text-align:left;cursor:pointer;}'
-            + '[data-stock-select-root] .stock-custom-select__option:hover,[data-stock-select-root] .stock-custom-select__option.is-selected{background:#eef2ff;}'
-            + '[data-stock-select-root] .stock-custom-select__option:disabled{color:#94a3b8;cursor:not-allowed;}';
-        document.head.appendChild(style);
-    }
-
-    installBasicSelectStyles();
-
-    document.querySelectorAll('[data-stock-select-root]').forEach(function (root) {
-        if (root.querySelector('#stockProduct') || root.classList.contains('stock-product-search') || root.classList.contains('admin-product-search')) {
-            return;
-        }
-
-        initBasicStockSelect(root);
-    });
 
     document.addEventListener('click', function (event) {
-        document.querySelectorAll('[data-stock-select-root].is-open').forEach(function (root) {
-            var trigger = root.querySelector('[data-stock-select-trigger]');
-            var menu = root.querySelector('[data-stock-select-menu]');
-
-            if (root.contains(event.target)) {
-                return;
-            }
-
-            root.classList.remove('is-open');
-            if (trigger) {
-                trigger.setAttribute('aria-expanded', 'false');
-            }
-            if (menu) {
-                menu.hidden = true;
-            }
-        });
+      if (!event.target.closest('[data-stock-select-root]') && !event.target.closest('[data-history-select-root]')) {
+        closeAllMenus(null);
+      }
     });
-});
 
-document.addEventListener('DOMContentLoaded', function () {
-    function installIncomingDropdownStyles() {
-        var style;
+    function normalizeProducts(data) {
+      if (Array.isArray(data)) {
+        return data;
+      }
 
-        if (document.getElementById('incomingStatusDropdownStyles')) {
-            return;
-        }
+      if (data && Array.isArray(data.products)) {
+        return data.products;
+      }
 
-        style = document.createElement('style');
-        style.id = 'incomingStatusDropdownStyles';
-        style.textContent = ''
-            + '.stock-custom-select--status [data-stock-select-menu][hidden]{display:none!important;}'
-            + '.stock-custom-select--status [data-stock-select-menu]:not([hidden]){position:static!important;display:grid;gap:22px;max-height:none;overflow:visible;margin-top:28px;padding:0;border:0!important;border-radius:0;background:transparent!important;box-shadow:none!important;}'
-            + '.stock-custom-select--status .stock-custom-select__trigger{min-height:38px;}'
-            + '.stock-custom-select--status .stock-custom-select__option{display:flex;align-items:center;gap:18px;width:100%;min-height:54px;padding:0 26px;border:2px solid transparent;border-radius:7px;background:#f8fafc;color:#64748b;font:inherit;font-size:14px;font-weight:500;text-align:left;cursor:pointer;}'
-            + '.stock-custom-select--status .stock-custom-select__option::before{content:"";width:5px;height:5px;border-radius:999px;background:#cbd5e1;flex:0 0 auto;}'
-            + '.stock-custom-select--status .stock-custom-select__option::after{content:"✓";display:none;align-items:center;justify-content:center;width:18px;height:18px;margin-left:auto;border:2px solid #22c55e;border-radius:999px;color:#22c55e;background:transparent;font-size:12px;font-weight:800;line-height:1;}'
-            + '.stock-custom-select--status .stock-custom-select__option:hover{background:#f1f5f9;color:#0f172a;}'
-            + '.stock-custom-select--status .stock-custom-select__option.is-selected{border-color:#86efac;background:#ecfdf3;color:#166534;font-weight:700;}'
-            + '.stock-custom-select--status .stock-custom-select__option.is-selected::before{background:#22c55e;}'
-            + '.stock-custom-select--status .stock-custom-select__option.is-selected::after{display:flex;}'
-            + '.stock-custom-select--status .stock-custom-select__option:disabled{display:none;}';
-        document.head.appendChild(style);
+      if (data && Array.isArray(data.data)) {
+        return data.data;
+      }
+
+      return [];
     }
 
-    function initIncomingStatusDropdown() {
-        var select = document.getElementById('incomingStatus');
-        var root = select ? select.closest('[data-stock-select-root]') : null;
-        var trigger = root ? root.querySelector('[data-stock-select-trigger]') : null;
-        var label = root ? root.querySelector('[data-stock-select-label]') : null;
-        var menu = root ? root.querySelector('[data-stock-select-menu]') : null;
+    function loadProducts() {
+      return apiJson(config.productsUrl).then(function (data) {
+        products = normalizeProducts(data).map(function (product) {
+          return {
+            id: parseInt(product.id, 10),
+            name: product.name || 'Unnamed product',
+            sku: product.sku || '',
+            qty: product.qty != null ? product.qty : (product.stock || 0),
+            unit_price: product.unit_price != null ? product.unit_price : (product.price || 0)
+          };
+        });
 
-        if (!select || !root || !trigger || !label || !menu) {
-            return;
+        var currentValue = productSelect.value;
+        productSelect.innerHTML = '<option value="">Select product</option>';
+
+        products.forEach(function (product) {
+          var option = document.createElement('option');
+          option.value = String(product.id);
+          option.textContent = product.name + ' (Stock: ' + product.qty + ')';
+          option.setAttribute('data-name', product.name);
+          option.setAttribute('data-sku', product.sku);
+          option.setAttribute('data-stock', String(product.qty));
+          option.setAttribute('data-price', String(product.unit_price || 0));
+          productSelect.appendChild(option);
+        });
+
+        if (currentValue && productSelect.querySelector('option[value="' + currentValue + '"]')) {
+          productSelect.value = currentValue;
         }
 
-        installIncomingDropdownStyles();
-        root.style.display = '';
-        root.classList.add('stock-custom-select--status');
-        select.required = true;
+        productSelect.dispatchEvent(new Event('change', { bubbles: true }));
 
-        if (!select.value) {
-            label.textContent = 'Select incoming stock status';
+        if (productRoot && productRoot.classList.contains('is-open') && typeof window.renderStockProductOptions === 'function') {
+          window.renderStockProductOptions('');
         }
+      });
     }
 
-    initIncomingStatusDropdown();
-    window.setTimeout(initIncomingStatusDropdown, 300);
-    window.setTimeout(initIncomingStatusDropdown, 1000);
-});
+    function validateForm() {
+      var quantity = parseInt(quantityInput.value || '0', 10);
+      var price = parseFloat(priceInput.value || '0');
+      var incomingTrigger = incomingStatusRoot ? incomingStatusRoot.querySelector('[data-stock-select-trigger]') : null;
+      var movementTrigger = movementStatusRoot ? movementStatusRoot.querySelector('[data-stock-select-trigger]') : null;
+      var contactValue = String(partyContact.value || '').trim();
+
+      setMessage('', '');
+      setFieldInvalid(productTrigger, false);
+      setFieldInvalid(quantityInput, false);
+      setFieldInvalid(priceInput, false);
+      setFieldInvalid(partyName, false);
+      setFieldInvalid(partyContact, false);
+      setFieldInvalid(incomingTrigger, false);
+      setFieldInvalid(movementTrigger, false);
+
+      if (!productSelect.value) {
+        setFieldInvalid(productTrigger, true);
+        setMessage('Please select a product.', 'is-error');
+        return false;
+      }
+
+      if (!Number.isInteger(quantity) || quantity <= 0) {
+        setFieldInvalid(quantityInput, true);
+        setMessage('Quantity must be greater than 0.', 'is-error');
+        return false;
+      }
+
+      if (movementType === 'out' && quantity > selectedProductStock()) {
+        setFieldInvalid(quantityInput, true);
+        setMessage('Stock out quantity cannot exceed the current product stock.', 'is-error');
+        return false;
+      }
+
+      if (!partyName.value.trim()) {
+        setFieldInvalid(partyName, true);
+        setMessage('Full name is required.', 'is-error');
+        return false;
+      }
+
+      if (!/^[0-9+\-\s()]{7,20}$/.test(contactValue)) {
+        setFieldInvalid(partyContact, true);
+        setMessage('Please enter a valid contact number.', 'is-error');
+        return false;
+      }
+
+      if (!Number.isFinite(price) || price <= 0) {
+        setFieldInvalid(priceInput, true);
+        setMessage('Amount per piece must be greater than 0.', 'is-error');
+        return false;
+      }
+
+      if (movementType === 'in' && !incomingStatusSelect.value) {
+        setFieldInvalid(incomingTrigger, true);
+        setMessage('Please select incoming stock status.', 'is-error');
+        return false;
+      }
+
+      if (movementType === 'out' && !movementStatusSelect.value) {
+        setFieldInvalid(movementTrigger, true);
+        setMessage('Please select movement status.', 'is-error');
+        return false;
+      }
+
+      return true;
+    }
+
+    function resetFormState() {
+      form.reset();
+      setPaymentMethod('cash');
+      paymentStatusSelect.value = 'paid';
+      paymentStatusSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      incomingStatusSelect.value = '';
+      incomingStatusSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      movementStatusSelect.value = '';
+      movementStatusSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      productSelect.value = '';
+      productSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      quantityInput.value = '1';
+      setMovementType('in');
+      updateTotal();
+      setMessage('', '');
+    }
+
+    function bindForm() {
+      form.addEventListener('reset', function () {
+        window.setTimeout(resetFormState, 0);
+      });
+
+      form.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        if (!validateForm()) {
+          return;
+        }
+
+        var payload = {
+          movement_type: movementType,
+          product_id: productSelect.value,
+          quantity: parseInt(quantityInput.value || '0', 10),
+          notes: stockNotes.value,
+          full_name: partyName.value.trim(),
+          contact: partyContact.value.trim(),
+          amount_per_piece: parseFloat(priceInput.value || '0'),
+          payment_status: paymentStatusSelect.value,
+          payment_method: paymentMethod,
+          incoming_status: movementType === 'in' ? incomingStatusSelect.value : '',
+          movement_status: movementType === 'out' ? movementStatusSelect.value : ''
+        };
+
+        setMessage('Recording movement...', '');
+
+        apiJson('api/stock/create.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).then(function (data) {
+          setMessage(data.message || 'Stock movement recorded successfully.', 'is-success');
+          resetFormState();
+          return Promise.all([loadProducts(), loadHistory()]);
+        }).catch(function (error) {
+          console.error('Stock movement create failed:', error);
+          setMessage(error.message || 'Unable to record stock movement.', 'is-error');
+        });
+      });
+    }
+
+    function historyStatusLabel(movement) {
+      if (movement.movement_type === 'in') {
+        return incomingStatusLabels[normalizeStatus(movement.incoming_status)] || movement.incoming_status || 'Order Dispatched';
+      }
+
+      return movementStatusLabels[normalizeStatus(movement.movement_status)] || movement.movement_status || 'Dispatched from Warehouse';
+    }
+
+    function historyStatusValue(movement) {
+      return movement.movement_type === 'in'
+        ? normalizeStatus(movement.incoming_status)
+        : normalizeStatus(movement.movement_status);
+    }
+
+    function historyStatusOptions(movement) {
+      return movement.movement_type === 'in'
+        ? [
+            { value: 'order_dispatched', label: 'Order Dispatched' },
+            { value: 'in_transit', label: 'In Transit' },
+            { value: 'received', label: 'Received at Warehouse' }
+          ]
+        : [
+            { value: 'dispatched', label: 'Dispatched from Warehouse' },
+            { value: 'hub', label: 'Stock Received at Hub' },
+            { value: 'delivered', label: 'Delivery Confirmed' }
+          ];
+    }
+
+    function closeHistorySelect(root) {
+      if (!root) {
+        return;
+      }
+      root.classList.remove('is-open');
+      var trigger = root.querySelector('[data-history-select-trigger]');
+      var menu = root.querySelector('[data-history-select-menu]');
+      if (trigger) {
+        trigger.setAttribute('aria-expanded', 'false');
+      }
+      if (menu) {
+        menu.hidden = true;
+      }
+    }
+
+    function bindHistorySelects() {
+      document.querySelectorAll('[data-history-select-root]').forEach(function (root) {
+        var trigger = root.querySelector('[data-history-select-trigger]');
+        var menu = root.querySelector('[data-history-select-menu]');
+        var label = root.querySelector('[data-history-select-label]');
+        var movementId = parseInt(root.getAttribute('data-movement-id') || '0', 10);
+
+        if (!trigger || !menu || !label || movementId <= 0 || root.getAttribute('data-bound') === 'true') {
+          return;
+        }
+
+        root.setAttribute('data-bound', 'true');
+
+        trigger.addEventListener('click', function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          closeAllMenus(root);
+          var shouldOpen = menu.hidden;
+          root.classList.toggle('is-open', shouldOpen);
+          trigger.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+          menu.hidden = !shouldOpen;
+        });
+
+        menu.querySelectorAll('[data-history-select-option]').forEach(function (button) {
+          button.addEventListener('click', function () {
+            var statusValue = button.getAttribute('data-value') || '';
+            label.textContent = button.textContent;
+            menu.querySelectorAll('[data-history-select-option]').forEach(function (option) {
+              option.classList.toggle('is-active', option === button);
+            });
+            closeHistorySelect(root);
+            apiJson(config.updateStatusUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id: movementId, status: statusValue })
+            }).then(function (data) {
+              setMessage(data.message || 'Stock movement status updated successfully.', 'is-success');
+              loadHistory();
+            }).catch(function (error) {
+              console.error('Stock movement status update failed:', error);
+              setMessage(error.message || 'Unable to update stock movement status.', 'is-error');
+              loadHistory();
+            });
+          });
+        });
+      });
+    }
+
+    function renderHistoryRow(movement) {
+      var badgeClass = movement.movement_type === 'out' ? 'chip-low' : 'chip-adequate';
+      var paymentLabel = [movement.payment_status || '', movement.payment_method || ''].filter(Boolean).join(' / ');
+      var currentStatusValue = historyStatusValue(movement);
+      var optionsMarkup = historyStatusOptions(movement).map(function (option) {
+        return '<button type="button" class="stock-history-select__option' + (option.value === currentStatusValue ? ' is-active' : '') + '" data-history-select-option data-value="' + escapeHtml(option.value) + '">' + escapeHtml(option.label) + '</button>';
+      }).join('');
+
+      return ''
+        + '<tr>'
+        + '<td>' + escapeHtml(movement.reference || '-') + '</td>'
+        + '<td>' + escapeHtml(movement.product_name || movement.product || 'Unknown product') + '</td>'
+        + '<td><span class="chip ' + badgeClass + '">' + escapeHtml(String(movement.movement_type || movement.type || '').toUpperCase()) + '</span></td>'
+        + '<td style="text-align:center">' + escapeHtml(movement.quantity || 0) + '</td>'
+        + '<td><span class="stock-status-badge">' + escapeHtml(historyStatusLabel(movement)) + '</span></td>'
+        + '<td>' + escapeHtml(movement.full_name || movement.party || 'Not provided') + '</td>'
+        + '<td>' + escapeHtml(paymentLabel || '-') + '</td>'
+        + '<td>'
+        + '<div class="stock-history-select" data-history-select-root data-movement-id="' + escapeHtml(movement.id) + '">'
+        + '<button type="button" class="stock-history-select__trigger" data-history-select-trigger aria-expanded="false">'
+        + '<span data-history-select-label>' + escapeHtml(historyStatusLabel(movement)) + '</span>'
+        + '<svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1l5 5 5-5"></path></svg>'
+        + '</button>'
+        + '<div class="stock-history-select__menu" data-history-select-menu hidden>' + optionsMarkup + '</div>'
+        + '</div>'
+        + '</td>'
+        + '<td>' + escapeHtml(movement.created_at_label || movement.created_at || '-') + '</td>'
+        + '</tr>';
+    }
+
+    function loadHistory() {
+      return apiJson(config.historyUrl).then(function (data) {
+        var movements = Array.isArray(data.movements) ? data.movements : (Array.isArray(data.data) ? data.data : []);
+
+        if (!movements.length) {
+          historyTable.innerHTML = '<tr><td colspan="9" class="empty-state">No stock movements have been recorded yet.</td></tr>';
+          return;
+        }
+
+        historyTable.innerHTML = movements.map(renderHistoryRow).join('');
+        bindHistorySelects();
+      });
+    }
+  });
+}

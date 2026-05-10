@@ -96,16 +96,17 @@ class UsersController
         }
 
         $emailSent = false;
-        $message = 'User created successfully.';
+        $roleLabel = strtolower($role) === 'admin' ? 'Admin' : 'Staff';
+        $message = 'Staff created successfully.';
 
         try {
-            $emailSent = $this->sendCredentialsEmail($email, $fullName, $username, $password, $role);
+            $emailSent = $this->sendCredentialsEmail($email, $fullName, $username, $password, $roleLabel);
             if ($emailSent) {
-                $message = 'User created successfully. Default password is ' . $password . ' and it was also sent by email.';
+                $message = 'Staff created successfully. Default password is ' . $password . ' and it was also sent by email.';
             }
         } catch (Throwable $e) {
             error_log('Failed to send credentials email to ' . $email . ': ' . $e->getMessage());
-            $message = 'User created successfully. Default password is ' . $password . '.';
+            $message = 'Staff created successfully. Default password is ' . $password . '.';
         }
 
         $this->jsonSuccess([
@@ -153,7 +154,7 @@ class UsersController
         }
 
         $this->userManagementModel->updateUser($userId, $fullName, $email, $username, $role);
-        $this->jsonSuccess(['message' => 'User updated successfully.']);
+        $this->jsonSuccess(['message' => 'Staff updated successfully.']);
     }
 
     public function toggleStatus(): void
@@ -179,7 +180,7 @@ class UsersController
         }
 
         $this->jsonSuccess([
-            'message' => 'User status updated to ' . $newStatus . '.',
+            'message' => 'Staff status updated to ' . $newStatus . '.',
             'new_status' => $newStatus,
         ]);
     }
@@ -202,7 +203,7 @@ class UsersController
         }
 
         $this->userManagementModel->deleteUser($userId);
-        $this->jsonSuccess(['message' => 'User deleted successfully.']);
+        $this->jsonSuccess(['message' => 'Staff deleted successfully.']);
     }
 
     private function sendCredentialsEmail(string $toEmail, string $fullName, string $username, string $password, string $role): bool

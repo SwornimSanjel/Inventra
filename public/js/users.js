@@ -110,7 +110,7 @@
         '<tr data-user-id="' + user.id + '">' +
           '<td><strong>' + escapeHtml(user.full_name) + '</strong><div class="muted">' + escapeHtml(user.email) + '</div></td>' +
           '<td>' + escapeHtml(user.username) + '</td>' +
-          '<td><span class="users-chip ' + (user.role === 'admin' ? 'users-chip-role-admin' : 'users-chip-role-user') + '">' + escapeHtml(user.display_role) + '</span></td>' +
+          '<td><span class="users-chip ' + (user.role === 'admin' ? 'users-chip-role-admin' : 'users-chip-role-staff') + '">' + escapeHtml(user.display_role) + '</span></td>' +
           '<td><span class="users-chip ' + (user.status === 'active' ? 'users-chip-status-active' : 'users-chip-status-inactive') + '">' + escapeHtml(capitalize(user.status)) + '</span></td>' +
           '<td>' + escapeHtml(formattedDate) + '</td>' +
           '<td class="users-actions-col">' +

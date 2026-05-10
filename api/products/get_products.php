@@ -6,6 +6,7 @@ require_once __DIR__ . '/../../helpers/session.php';
 require_once __DIR__ . '/../../models/AdminSession.php';
 require_once __DIR__ . '/../../helpers/stock_status.php';
 require_once __DIR__ . '/../../config/db.php';
+require_once __DIR__ . '/../../config/database.php';
 
 inventra_bootstrap_session();
 
@@ -36,100 +37,104 @@ if (!in_array($role, ['admin', 'staff'], true)) {
     exit;
 }
 
-$search = trim((string) ($_GET['search'] ?? ''));
-$status = trim((string) ($_GET['status'] ?? ''));
-$categoryId = (int) ($_GET['category_id'] ?? 0);
-
-$skuColumn = null;
-
 try {
-    $skuColumnCheck = $conn->query("SHOW COLUMNS FROM products LIKE 'sku'");
+    $search = trim((string) ($_GET['search'] ?? ''));
+    $status = trim((string) ($_GET['status'] ?? ''));
+    $categoryId = (int) ($_GET['category_id'] ?? 0);
 
-    if ($skuColumnCheck && $skuColumnCheck->fetch()) {
-        $skuColumn = 'sku';
-    }
-} catch (Throwable $exception) {
-    $skuColumn = null;
-}
+    $skuColumn = Database::columnExists('products', 'sku') ? 'sku' : null;
+    $categoryTextColumn = Database::columnExists('products', 'category') ? 'category' : null;
 
-$skuSelect = $skuColumn !== null
-    ? 'COALESCE(p.`' . $skuColumn . '`, "") AS sku,'
-    : '"" AS sku,';
+    $skuSelect = $skuColumn !== null
+        ? 'COALESCE(p."' . $skuColumn . '", \'\') AS sku,'
+        : '\'\' AS sku,';
 
-$sql = "
-    SELECT
-        p.id,
-        p.category_id,
-        p.name,
-        {$skuSelect}
-        COALESCE(c.name, p.category, '') AS category,
-        COALESCE(p.qty, 0) AS qty,
-        COALESCE(p.unit_price, 0) AS unit_price,
-        COALESCE(p.lower_limit, 0) AS lower_limit,
-        COALESCE(p.upper_limit, 0) AS upper_limit,
-        COALESCE(p.image, '') AS image,
-        COALESCE(p.description, '') AS description,
-        p.created_at,
-        p.updated_at
-    FROM products p
-    LEFT JOIN categories c ON c.id = p.category_id
-    WHERE 1=1
-";
+    $categorySelect = $categoryTextColumn !== null
+        ? 'COALESCE(c.name, p."' . $categoryTextColumn . '", \'\') AS category,'
+        : 'COALESCE(c.name, \'\') AS category,';
 
-$params = [];
+    $sql = "
+        SELECT
+            p.id,
+            p.category_id,
+            p.name,
+            {$skuSelect}
+            {$categorySelect}
+            COALESCE(p.qty, 0) AS qty,
+            COALESCE(p.unit_price, 0) AS unit_price,
+            COALESCE(p.lower_limit, 0) AS lower_limit,
+            COALESCE(p.upper_limit, 0) AS upper_limit,
+            COALESCE(p.image, '') AS image,
+            COALESCE(p.description, '') AS description,
+            p.created_at,
+            p.updated_at
+        FROM products p
+        LEFT JOIN categories c ON c.id = p.category_id
+        WHERE 1=1
+    ";
 
-if ($search !== '') {
-    $searchConditions = [
-        'p.name LIKE ?',
-        'COALESCE(p.description, "") LIKE ?',
-        'COALESCE(c.name, p.category, "") LIKE ?'
-    ];
+    $params = [];
 
-    $like = '%' . $search . '%';
+    if ($search !== '') {
+        $searchConditions = [
+            'p.name ILIKE ?',
+            'COALESCE(p.description, \'\') ILIKE ?',
+            ($categoryTextColumn !== null
+                ? 'COALESCE(c.name, p."' . $categoryTextColumn . '", \'\') ILIKE ?'
+                : 'COALESCE(c.name, \'\') ILIKE ?')
+        ];
 
-    $params[] = $like;
-    $params[] = $like;
-    $params[] = $like;
+        $like = '%' . $search . '%';
 
-    if ($skuColumn !== null) {
-        $searchConditions[] = 'COALESCE(p.`' . $skuColumn . '`, "") LIKE ?';
         $params[] = $like;
+        $params[] = $like;
+        $params[] = $like;
+
+        if ($skuColumn !== null) {
+            $searchConditions[] = 'COALESCE(p."' . $skuColumn . '", \'\') ILIKE ?';
+            $params[] = $like;
+        }
+
+        $sql .= ' AND (' . implode(' OR ', $searchConditions) . ')';
     }
 
-    $sql .= ' AND (' . implode(' OR ', $searchConditions) . ')';
-}
-
-if ($categoryId > 0) {
-    $sql .= ' AND p.category_id = ?';
-    $params[] = $categoryId;
-}
-
-$sql .= ' ORDER BY p.name ASC';
-
-$stmt = $conn->prepare($sql);
-$stmt->execute($params);
-
-$result = $stmt;
-$data = [];
-
-while ($row = $result->fetch()) {
-    $computedStatus = strtolower(str_replace(
-        ' ',
-        '_',
-        getStockStatus(
-            (int) $row['qty'],
-            (int) $row['lower_limit'],
-            (int) $row['upper_limit']
-        )
-    ));
-
-    if ($status !== '' && $status !== $computedStatus) {
-        continue;
+    if ($categoryId > 0) {
+        $sql .= ' AND p.category_id = ?';
+        $params[] = $categoryId;
     }
 
-    $row['status'] = $computedStatus;
+    $sql .= ' ORDER BY p.name ASC';
 
-    $data[] = $row;
+    $stmt = $conn->prepare($sql);
+    $stmt->execute($params);
+
+    $data = [];
+
+    while ($row = $stmt->fetch()) {
+        $computedStatus = strtolower(str_replace(
+            ' ',
+            '_',
+            getStockStatus(
+                (int) $row['qty'],
+                (int) $row['lower_limit'],
+                (int) $row['upper_limit']
+            )
+        ));
+
+        if ($status !== '' && $status !== $computedStatus) {
+            continue;
+        }
+
+        $row['status'] = $computedStatus;
+        $data[] = $row;
+    }
+
+    echo json_encode($data);
+} catch (Throwable $exception) {
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Unable to load products right now.',
+        'detail' => $exception->getMessage(),
+    ]);
 }
-
-echo json_encode($data);

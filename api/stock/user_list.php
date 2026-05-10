@@ -20,7 +20,7 @@ if ($account === null) {
 
 $role = strtolower(trim((string) ($account['role'] ?? 'staff')));
 
-if (!in_array($role, ['admin', 'staff', 'user'], true)) {
+if (!in_array($role, ['admin', 'staff'], true)) {
     http_response_code(403);
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
@@ -40,9 +40,9 @@ $result = $conn->query("
         COALESCE(sm.incoming_status, '') AS incoming_status,
         COALESCE(sm.movement_status, '') AS movement_status,
         sm.created_at,
-        p.name AS product_name
+        COALESCE(p.name, 'Unknown product') AS product_name
     FROM stock_movements sm
-    INNER JOIN products p ON p.id = sm.product_id
+    LEFT JOIN products p ON p.id = sm.product_id
     ORDER BY sm.created_at DESC, sm.id DESC
     LIMIT 8
 ");

@@ -146,9 +146,9 @@ function inventra_set_authenticated_user(array $user): void
     $email = (string) ($user['email'] ?? '');
     $name = (string) ($user['full_name'] ?? '');
 
-    $role = strtolower(trim((string) ($user['role'] ?? 'user'))) === 'admin'
+    $role = strtolower(trim((string) ($user['role'] ?? 'staff'))) === 'admin'
         ? 'admin'
-        : 'user';
+        : 'staff';
 
     $requiresPasswordChange = array_key_exists('requires_password_change', $user)
         ? (bool) $user['requires_password_change']
@@ -305,12 +305,12 @@ function inventra_authenticated_user_role(): ?string
         && is_string($auth['role'] ?? null)
     ) {
         $role = strtolower(trim((string) $auth['role']));
-        return $role === 'admin' ? 'admin' : 'user';
+        return $role === 'admin' ? 'admin' : 'staff';
     }
 
     if (isset($_SESSION['role']) && is_string($_SESSION['role'])) {
         $role = strtolower(trim((string) $_SESSION['role']));
-        return $role === 'admin' ? 'admin' : 'user';
+        return $role === 'admin' ? 'admin' : 'staff';
     }
 
     return null;

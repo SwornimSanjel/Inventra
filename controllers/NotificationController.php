@@ -104,14 +104,14 @@ class NotificationController
             ], 401);
         }
 
-        if ($scope === 'admin' && (($account['role'] ?? 'user') !== 'admin')) {
+        if ($scope === 'admin' && (($account['role'] ?? 'staff') !== 'admin')) {
             $this->respondJson([
                 'success' => false,
                 'message' => 'You do not have permission to access these notifications.',
             ], 403);
         }
 
-        if ($scope === 'user' && ((($account['role'] ?? 'user') !== 'user') || (($account['source'] ?? '') !== 'users'))) {
+        if ($scope === 'user' && ((($account['role'] ?? 'staff') !== 'staff') || (($account['source'] ?? '') !== 'users'))) {
             $this->respondJson([
                 'success' => false,
                 'message' => 'You do not have permission to access these notifications.',

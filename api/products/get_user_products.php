@@ -5,6 +5,7 @@ header('Content-Type: application/json');
 require_once __DIR__ . '/../../helpers/session.php';
 require_once __DIR__ . '/../../models/AdminSession.php';
 require_once __DIR__ . '/../../config/db.php';
+require_once __DIR__ . '/../../config/database.php';
 
 inventra_bootstrap_session();
 
@@ -20,16 +21,22 @@ try {
 
     $role = strtolower(trim((string) ($account['role'] ?? 'staff')));
 
-    if (!in_array($role, ['admin', 'staff', 'user'], true)) {
+    if (!in_array($role, ['admin', 'staff'], true)) {
         http_response_code(403);
         echo json_encode(['success' => false, 'message' => 'Unauthorized']);
         exit;
     }
 
+    $skuColumn = Database::columnExists('products', 'sku') ? 'sku' : null;
+    $skuSelect = $skuColumn !== null
+        ? 'COALESCE("' . $skuColumn . '", \'\') AS sku,'
+        : '\'\' AS sku,';
+
     $stmt = $conn->query("
         SELECT
             id,
             name,
+            {$skuSelect}
             COALESCE(qty, 0) AS qty,
             COALESCE(unit_price, 0) AS unit_price
         FROM products

@@ -18,9 +18,9 @@ if ($account === null) {
     exit;
 }
 
-$role = strtolower((string) ($account['role'] ?? ''));
+$role = strtolower((string) ($account['role'] ?? 'staff'));
 
-if (!in_array($role, ['admin', 'user'], true)) {
+if (!in_array($role, ['admin', 'staff'], true)) {
     http_response_code(403);
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;

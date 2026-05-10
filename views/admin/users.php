@@ -115,11 +115,7 @@ $usersApiBase = $usersPageState['users_api_base'] ?? 'index.php?url=admin/users'
                 <label>
                     <span>Role <span class="required-marker" aria-hidden="true">*</span></span>
                     <div class="users-custom-select" data-select-root>
-<<<<<<< HEAD
                         <input type="hidden" name="role" value="Staff" data-select-input>
-=======
-                        <input type="hidden" name="role" value="User" data-select-input data-label="Role">
->>>>>>> dad9c9816375215b01eaef84051b14b80ad35d8e
                         <button type="button" class="users-custom-select__trigger" data-select-trigger aria-expanded="false">
                             <span data-select-label>Staff</span>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -171,11 +167,7 @@ $usersApiBase = $usersPageState['users_api_base'] ?? 'index.php?url=admin/users'
                 <label>
                     <span>Role <span class="required-marker" aria-hidden="true">*</span></span>
                     <div class="users-custom-select" data-select-root>
-<<<<<<< HEAD
                         <input type="hidden" name="role" value="Staff" data-select-input>
-=======
-                        <input type="hidden" name="role" value="User" data-select-input data-label="Role">
->>>>>>> dad9c9816375215b01eaef84051b14b80ad35d8e
                         <button type="button" class="users-custom-select__trigger" data-select-trigger aria-expanded="false">
                             <span data-select-label>Staff</span>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
