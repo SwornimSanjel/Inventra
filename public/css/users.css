@@ -198,6 +198,12 @@
   background: #fff;
 }
 
+.users-form input.is-invalid,
+.users-custom-select__trigger.is-invalid {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.08);
+}
+
 .users-form-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

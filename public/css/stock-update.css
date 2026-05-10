@@ -206,6 +206,13 @@
   font-weight:600;
 }
 
+.field input.is-invalid,
+.field textarea.is-invalid,
+.stock-custom-select__trigger.is-invalid{
+  border-color:#dc2626;
+  box-shadow:0 0 0 4px rgba(220,38,38,.08);
+}
+
 .stock-native-select{
   position:absolute;
   width:1px;

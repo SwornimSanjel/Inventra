@@ -122,6 +122,13 @@
   resize:vertical;
 }
 
+.field input.is-invalid,
+.field textarea.is-invalid,
+.products-custom-select__trigger.is-invalid{
+  border-color:#dc2626;
+  box-shadow:0 0 0 4px rgba(220,38,38,.08);
+}
+
 .form-message{
   color:var(--muted);
   font-size:.84rem;

@@ -217,6 +217,7 @@
       option.classList.toggle('is-active', option.getAttribute('data-value') === nextValue);
     });
 
+    setFieldInvalid(root.querySelector('[data-select-trigger]'), false);
     closeCustomSelect(root);
   }
 
@@ -262,6 +263,65 @@
 
       activeToastTimer = null;
     }, 2200);
+  }
+
+  function setFieldInvalid(field, invalid) {
+    if (field) {
+      field.classList.toggle('is-invalid', Boolean(invalid));
+    }
+  }
+
+  function setRoleInvalid(form, invalid) {
+    setFieldInvalid(form.querySelector('[data-select-trigger]'), invalid);
+  }
+
+  function validateUserForm(form) {
+    var fullName = form.elements.full_name;
+    var email = form.elements.email;
+    var username = form.elements.username;
+    var role = form.elements.role;
+    var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    [fullName, email, username].forEach(function (field) {
+      setFieldInvalid(field, false);
+    });
+    setRoleInvalid(form, false);
+
+    if (!fullName.value.trim()) {
+      setFieldInvalid(fullName, true);
+      showToast('Full name is required.', 'error');
+      fullName.focus();
+      return false;
+    }
+
+    if (!email.value.trim()) {
+      setFieldInvalid(email, true);
+      showToast('Email address is required.', 'error');
+      email.focus();
+      return false;
+    }
+
+    if (!emailPattern.test(email.value.trim())) {
+      setFieldInvalid(email, true);
+      showToast('Please enter a valid email address.', 'error');
+      email.focus();
+      return false;
+    }
+
+    if (!username.value.trim()) {
+      setFieldInvalid(username, true);
+      showToast('Username is required.', 'error');
+      username.focus();
+      return false;
+    }
+
+    if (!role.value.trim()) {
+      setRoleInvalid(form, true);
+      showToast('Role is required.', 'error');
+      return false;
+    }
+
+    return true;
   }
 
   function postForm(path, formData) {
@@ -416,8 +476,21 @@
 
   Array.prototype.slice.call(document.querySelectorAll('[data-filter-select-root]')).forEach(bindFilterSelect);
 
+  [createForm, editForm].forEach(function (form) {
+    Array.prototype.slice.call(form.querySelectorAll('input')).forEach(function (input) {
+      input.addEventListener('input', function () {
+        setFieldInvalid(input, false);
+      });
+    });
+  });
+
   createForm.addEventListener('submit', function (event) {
     event.preventDefault();
+
+    if (!validateUserForm(createForm)) {
+      return;
+    }
+
     var formData = new FormData(createForm);
 
     postForm('/create', formData)
@@ -437,6 +510,11 @@
 
   editForm.addEventListener('submit', function (event) {
     event.preventDefault();
+
+    if (!validateUserForm(editForm)) {
+      return;
+    }
+
     var formData = new FormData(editForm);
 
     postForm('/update', formData)

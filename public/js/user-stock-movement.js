@@ -39,6 +39,58 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  function setFieldInvalid(field, invalid) {
+    if (field) {
+      field.classList.toggle('is-invalid', Boolean(invalid));
+    }
+  }
+
+  function setProductInvalid(invalid) {
+    var trigger = productSelect.closest('[data-stock-select-root]').querySelector('[data-stock-select-trigger]');
+    setFieldInvalid(trigger, invalid);
+  }
+
+  function validateStockMovementForm(quantity, amountPerPiece) {
+    var partyName = document.getElementById('partyName');
+    var partyContact = document.getElementById('partyContact');
+    var contactValue = (partyContact.value || '').trim();
+    var valid = true;
+
+    setMessage('', '');
+    setProductInvalid(false);
+    [quantityInput, priceInput, partyName, partyContact].forEach(function (field) {
+      setFieldInvalid(field, false);
+    });
+
+    if (!productSelect.value) {
+      setProductInvalid(true);
+      setMessage('Please select a product.', 'is-error');
+      valid = false;
+    } else if (!Number.isInteger(quantity) || quantity <= 0) {
+      setFieldInvalid(quantityInput, true);
+      setMessage('Quantity must be greater than 0.', 'is-error');
+      valid = false;
+    } else if ((partyName.value || '').trim() === '') {
+      setFieldInvalid(partyName, true);
+      setMessage('Full name is required.', 'is-error');
+      valid = false;
+    } else if (contactValue === '') {
+      setFieldInvalid(partyContact, true);
+      setMessage('Contact number is required.', 'is-error');
+      valid = false;
+    } else if (!/^[0-9+\-\s()]{7,20}$/.test(contactValue)) {
+      setFieldInvalid(partyContact, true);
+      setMessage('Please enter a valid contact number.', 'is-error');
+      valid = false;
+    } else if (!Number.isFinite(amountPerPiece) || amountPerPiece <= 0) {
+      setFieldInvalid(priceInput, true);
+      setMessage('Amount per piece must be greater than 0.', 'is-error');
+      valid = false;
+    }
+
+    return valid;
+  }
+
   function recalcTotal() {
     var quantity = parseFloat(quantityInput.value || '0');
     var price = parseFloat(priceInput.value || '0');
@@ -402,11 +454,18 @@ document.addEventListener('DOMContentLoaded', function () {
   quantityInput.addEventListener('input', recalcTotal);
   priceInput.addEventListener('input', recalcTotal);
 
+  [quantityInput, priceInput, document.getElementById('partyName'), document.getElementById('partyContact')].forEach(function (field) {
+    field.addEventListener('input', function () {
+      setFieldInvalid(field, false);
+    });
+  });
+
   document.querySelectorAll('.status-option input[type="radio"]').forEach(function (input) {
     input.addEventListener('change', syncStatusSelections);
   });
 
   productSelect.addEventListener('change', function () {
+    setProductInvalid(false);
     var option = productSelect.options[productSelect.selectedIndex];
     var price = option ? parseFloat(option.getAttribute('data-price') || '0') : 0;
 
@@ -430,6 +489,10 @@ document.addEventListener('DOMContentLoaded', function () {
     window.setTimeout(function () {
       setMovement('in');
       paymentMethod = 'cash';
+      setProductInvalid(false);
+      [quantityInput, priceInput, document.getElementById('partyName'), document.getElementById('partyContact')].forEach(function (field) {
+        setFieldInvalid(field, false);
+      });
       document.querySelectorAll('.payment-toggle__btn').forEach(function (item, index) {
         item.classList.toggle('is-active', index === 0);
       });
@@ -445,7 +508,12 @@ document.addEventListener('DOMContentLoaded', function () {
   form.addEventListener('submit', function (event) {
     event.preventDefault();
 
-    var quantity = parseInt(quantityInput.value || '0', 10);
+    var quantity = Number((quantityInput.value || '').trim());
+    var amountPerPiece = parseFloat(priceInput.value || '0');
+
+    if (!validateStockMovementForm(quantity, amountPerPiece)) {
+      return;
+    }
 
     if (movementType === 'out' && quantity > selectedStock()) {
       setMessage('Stock out quantity cannot exceed the current product stock.', 'is-error');
@@ -459,7 +527,7 @@ document.addEventListener('DOMContentLoaded', function () {
       movement_notes: document.getElementById('stockNotes').value,
       full_name: document.getElementById('partyName').value,
       contact_number: document.getElementById('partyContact').value,
-      amount_per_piece: parseFloat(priceInput.value || '0'),
+      amount_per_piece: amountPerPiece,
       total_amount: parseFloat(totalInput.value || '0'),
       payment_status: document.getElementById('paymentStatus').value,
       payment_method: paymentMethod === 'card' ? 'Card' : 'Cash',

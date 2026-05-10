@@ -60,15 +60,19 @@ class UsersController
         $fullName = trim((string) ($_POST['full_name'] ?? ''));
         $email = trim((string) ($_POST['email'] ?? ''));
         $username = trim((string) ($_POST['username'] ?? ''));
-        $role = trim((string) ($_POST['role'] ?? 'User'));
+        $role = trim((string) ($_POST['role'] ?? ''));
         $password = $this->buildDefaultPassword($fullName);
 
-        if ($fullName === '' || $email === '' || $username === '') {
+        if ($fullName === '' || $email === '' || $username === '' || $role === '') {
             $this->jsonError('All fields are required.');
         }
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $this->jsonError('Please enter a valid email address.');
+        }
+
+        if (!in_array(strtolower($role), ['admin', 'user', 'staff'], true)) {
+            $this->jsonError('Please select a valid role.');
         }
 
         if ($this->userManagementModel->existsByUsernameOrEmail($username, $email)) {
@@ -118,14 +122,18 @@ class UsersController
         $fullName = trim((string) ($_POST['full_name'] ?? ''));
         $email = trim((string) ($_POST['email'] ?? ''));
         $username = trim((string) ($_POST['username'] ?? ''));
-        $role = trim((string) ($_POST['role'] ?? 'User'));
+        $role = trim((string) ($_POST['role'] ?? ''));
 
-        if ($userId <= 0 || $fullName === '' || $email === '' || $username === '') {
+        if ($userId <= 0 || $fullName === '' || $email === '' || $username === '' || $role === '') {
             $this->jsonError('All fields are required.');
         }
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $this->jsonError('Please enter a valid email address.');
+        }
+
+        if (!in_array(strtolower($role), ['admin', 'user', 'staff'], true)) {
+            $this->jsonError('Please select a valid role.');
         }
 
         if ($this->userManagementModel->existsByUsernameOrEmail($username, $email, $userId)) {
