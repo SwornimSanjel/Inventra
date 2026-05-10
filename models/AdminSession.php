@@ -20,7 +20,7 @@ class AdminSession
     {
         $account = $this->requireAuthenticatedAccount();
 
-        if (($account['role'] ?? 'user') === 'admin') {
+        if (($account['role'] ?? 'staff') === 'admin') {
             return $this->resolveAuthenticatedAdmin() ?? $account;
         }
 
@@ -92,7 +92,7 @@ class AdminSession
 
         $account = $this->resolveAuthenticatedAccount();
 
-        if ($account === null || ($account['role'] ?? 'user') !== 'admin') {
+        if ($account === null || ($account['role'] ?? 'staff') !== 'admin') {
             self::$adminResolved = true;
             self::$resolvedAdmin = null;
             return null;
@@ -116,7 +116,7 @@ class AdminSession
             'source' => (string) ($account['source'] ?? 'admin'),
             'email' => (string) $account['email'],
             'full_name' => (string) ($account['full_name'] ?? ''),
-            'role' => (string) ($account['role'] ?? 'user'),
+            'role' => (string) ($account['role'] ?? 'staff'),
         ]);
 
         if (array_key_exists('avatar', $account)) {

@@ -6,7 +6,7 @@ $base = BASE_URL;
 
 $nav = [
     ['url' => 'admin/dashboard', 'label' => 'Dashboard', 'icon' => 'grid'],
-    ['url' => 'admin/users', 'label' => 'Users', 'icon' => 'users'],
+    ['url' => 'admin/users', 'label' => 'Staff', 'icon' => 'users'],
     ['url' => 'admin/products', 'label' => 'Products', 'icon' => 'box'],
     ['url' => 'admin/stock-update', 'label' => 'Stock Update', 'icon' => 'stock-update'],
     ['url' => 'admin/ai-forecasting', 'label' => 'AI Forecasting', 'icon' => 'forecast'],

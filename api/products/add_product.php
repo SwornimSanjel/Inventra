@@ -2,8 +2,8 @@
 /**
  * Add Product API
  *
- * Mirrors the Inventra1 user-products flow so authenticated users can add
- * products from the copied user page and still trigger low-stock alerts.
+ * Mirrors the Inventra1 staff-products flow so authenticated staff can add
+ * products from the copied staff page and still trigger low-stock alerts.
  */
 
 header('Content-Type: application/json');
@@ -24,7 +24,9 @@ if ($account === null) {
     exit;
 }
 
-if (!in_array($account['role'] ?? 'user', ['admin', 'user'], true)) {
+$role = strtolower(trim((string) ($account['role'] ?? 'staff')));
+
+if (!in_array($role, ['admin', 'staff'], true)) {
     http_response_code(403);
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;

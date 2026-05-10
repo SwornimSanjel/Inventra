@@ -34,6 +34,7 @@ class UserManagementModel
         $this->ensureColumnExists('avatar', 'ALTER TABLE users ADD COLUMN avatar VARCHAR(255)');
         $this->ensureColumnExists('notify_low_stock', 'ALTER TABLE users ADD COLUMN notify_low_stock BOOLEAN NOT NULL DEFAULT TRUE');
         $this->ensureColumnExists('notify_weekly_summary', 'ALTER TABLE users ADD COLUMN notify_weekly_summary BOOLEAN NOT NULL DEFAULT TRUE');
+        $this->migrateUserRoleToStaff();
     }
 
     public function getUsers(string $role = '', string $status = ''): array
@@ -167,7 +168,7 @@ class UserManagementModel
             'username' => (string) ($user['username'] ?? ''),
             'email' => (string) ($user['email'] ?? ''),
             'role' => $role,
-            'display_role' => $role === 'admin' ? 'Admin' : 'User',
+            'display_role' => $role === 'admin' ? 'Admin' : 'Staff',
             'status' => (string) ($user['status'] ?? 'active'),
             'created_at' => (string) ($user['created_at'] ?? ''),
         ];
@@ -178,5 +179,10 @@ class UserManagementModel
         if (!Database::columnExists('users', $column)) {
             $this->db->exec($sql);
         }
+    }
+
+    private function migrateUserRoleToStaff(): void
+    {
+        $this->db->exec("UPDATE users SET role = 'staff' WHERE LOWER(role) = 'user'");
     }
 }

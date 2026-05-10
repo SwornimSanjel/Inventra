@@ -286,9 +286,9 @@ if (strpos($url, 'admin/') === 0) {
         exit;
     }
 
-    if (($account['role'] ?? 'user') !== 'admin') {
+    if (($account['role'] ?? 'staff') !== 'admin') {
         $_SESSION['auth_error'] = 'You do not have permission to access that page.';
-        header('Location: index.php?url=account');
+        header('Location: index.php?url=user/settings');
         exit;
     }
 }
@@ -304,7 +304,7 @@ if (strpos($url, 'user/') === 0) {
         exit;
     }
 
-    if (($account['role'] ?? 'user') !== 'user') {
+    if (($account['role'] ?? 'staff') !== 'staff') {
         $_SESSION['auth_error'] = 'You do not have permission to access that page.';
         header('Location: index.php?url=admin/dashboard');
         exit;

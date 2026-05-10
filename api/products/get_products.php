@@ -9,8 +9,8 @@ require_once __DIR__ . '/../../config/db.php';
 
 inventra_bootstrap_session();
 
- $adminSession = new AdminSession();
- $account = $adminSession->resolveAuthenticatedAccount();
+$adminSession = new AdminSession();
+$account = $adminSession->resolveAuthenticatedAccount();
 
 if ($account === null) {
     http_response_code(401);
@@ -18,7 +18,9 @@ if ($account === null) {
     exit;
 }
 
-if (($account['role'] ?? 'user') !== 'admin') {
+$role = strtolower(trim((string) ($account['role'] ?? 'staff')));
+
+if (!in_array($role, ['admin', 'staff'], true)) {
     http_response_code(403);
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
@@ -27,12 +29,25 @@ if (($account['role'] ?? 'user') !== 'admin') {
 $search = trim((string) ($_GET['search'] ?? ''));
 $status = trim((string) ($_GET['status'] ?? ''));
 $categoryId = (int) ($_GET['category_id'] ?? 0);
+$skuColumn = null;
+
+try {
+    $skuColumnCheck = $conn->query("SHOW COLUMNS FROM products LIKE 'sku'");
+    if ($skuColumnCheck && $skuColumnCheck->fetch()) {
+        $skuColumn = 'sku';
+    }
+} catch (Throwable $exception) {
+    $skuColumn = null;
+}
+
+$skuSelect = $skuColumn !== null ? 'COALESCE(p.`' . $skuColumn . '`, "") AS sku,' : '"" AS sku,';
 
 $sql = "
     SELECT
         p.id,
         p.category_id,
         p.name,
+        {$skuSelect}
         COALESCE(c.name, p.category, '') AS category,
         COALESCE(p.qty, 0) AS qty,
         COALESCE(p.unit_price, 0) AS unit_price,
@@ -50,11 +65,22 @@ $sql = "
 $params = [];
 
 if ($search !== '') {
-    $sql .= ' AND (p.name LIKE ? OR COALESCE(p.description, "") LIKE ? OR COALESCE(c.name, p.category, "") LIKE ?)';
+    $searchConditions = [
+        'p.name LIKE ?',
+        'COALESCE(p.description, "") LIKE ?',
+        'COALESCE(c.name, p.category, "") LIKE ?'
+    ];
     $like = '%' . $search . '%';
     $params[] = $like;
     $params[] = $like;
     $params[] = $like;
+
+    if ($skuColumn !== null) {
+        $searchConditions[] = 'COALESCE(p.`' . $skuColumn . '`, "") LIKE ?';
+        $params[] = $like;
+    }
+
+    $sql .= ' AND (' . implode(' OR ', $searchConditions) . ')';
 }
 
 if ($categoryId > 0) {

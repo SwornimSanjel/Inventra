@@ -62,7 +62,7 @@ class UserSettingsModel
             'source' => 'users',
             'email' => (string) $user['email'],
             'full_name' => (string) ($user['full_name'] ?? ''),
-            'role' => (string) ($user['role_value'] ?? 'user'),
+            'role' => (string) ($user['role_value'] ?? 'staff'),
         ]);
     }
 }

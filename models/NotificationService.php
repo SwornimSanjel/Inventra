@@ -4,7 +4,7 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/NotificationModel.php';
 
 /**
- * Centralizes the low-stock notifications used by the user inventory flow.
+ * Centralizes the low-stock notifications used by the staff inventory flow.
  */
 class NotificationService
 {
@@ -76,13 +76,13 @@ class NotificationService
             return;
         }
 
-        $displayName = trim($fullName) !== '' ? trim($fullName) : 'A new user';
+        $displayName = trim($fullName) !== '' ? trim($fullName) : 'A new staff member';
 
         $this->notificationModel->createNotificationIfMissing(
             $userId,
             'users',
             'new_user',
-            'New User',
+            'New Staff',
             'Your Inventra account has been created and is ready to use.'
         );
 
@@ -91,7 +91,7 @@ class NotificationService
                 (int) $recipient['id'],
                 (string) $recipient['source'],
                 'new_user',
-                'New User',
+                'New Staff',
                 $displayName . ' has been added to the system.',
                 1440
             );

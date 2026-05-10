@@ -45,7 +45,7 @@
   }
 
   function setLoading() {
-    tableBody.innerHTML = '<tr><td colspan="6" class="empty-state">Loading users...</td></tr>';
+    tableBody.innerHTML = '<tr><td colspan="6" class="empty-state">Loading staff...</td></tr>';
   }
 
   function buildUrl(path, params) {
@@ -71,7 +71,7 @@
       .then(function (response) { return response.json(); })
       .then(function (data) {
         if (!data || !data.success) {
-          throw new Error(data && data.message ? data.message : 'Unable to load users.');
+          throw new Error(data && data.message ? data.message : 'Unable to load staff.');
         }
 
         users = Array.isArray(data.users) ? data.users : [];
@@ -95,7 +95,7 @@
     });
 
     if (!filtered.length) {
-      tableBody.innerHTML = '<tr><td colspan="6" class="empty-state">No users found.</td></tr>';
+      tableBody.innerHTML = '<tr><td colspan="6" class="empty-state">No staff found.</td></tr>';
       updateCounter(0);
       return;
     }
@@ -133,12 +133,12 @@
   function resetModalState(modal) {
     if (modal === createModal) {
       createForm.reset();
-      syncCustomSelect(createForm.querySelector('[data-select-root]'), 'User');
+      syncCustomSelect(createForm.querySelector('[data-select-root]'), 'Staff');
     }
 
     if (modal === editModal) {
       editForm.reset();
-      syncCustomSelect(editForm.querySelector('[data-select-root]'), 'User');
+      syncCustomSelect(editForm.querySelector('[data-select-root]'), 'Staff');
     }
 
     if (modal === deleteModal) {
@@ -203,7 +203,7 @@
 
     var hiddenInput = root.querySelector('[data-select-input]');
     var label = root.querySelector('[data-select-label]');
-    var nextValue = value || 'User';
+    var nextValue = value || 'Staff';
 
     if (hiddenInput) {
       hiddenInput.value = nextValue;
@@ -423,11 +423,11 @@
     postForm('/create', formData)
       .then(function (data) {
         if (!data || !data.success) {
-          throw new Error(data && data.message ? data.message : 'Unable to create user.');
+          throw new Error(data && data.message ? data.message : 'Unable to create staff.');
         }
 
         closeModal(createModal);
-        showToast(data.message || 'User created successfully.', 'success');
+        showToast(data.message || 'Staff created successfully.', 'success');
         loadUsers();
       })
       .catch(function (error) {
@@ -442,11 +442,11 @@
     postForm('/update', formData)
       .then(function (data) {
         if (!data || !data.success) {
-          throw new Error(data && data.message ? data.message : 'Unable to update user.');
+          throw new Error(data && data.message ? data.message : 'Unable to update staff.');
         }
 
         closeModal(editModal);
-        showToast(data.message || 'User updated successfully.', 'success');
+        showToast(data.message || 'Staff updated successfully.', 'success');
         loadUsers();
       })
       .catch(function (error) {
@@ -465,12 +465,12 @@
     postForm('/delete', formData)
       .then(function (data) {
         if (!data || !data.success) {
-          throw new Error(data && data.message ? data.message : 'Unable to delete user.');
+          throw new Error(data && data.message ? data.message : 'Unable to delete staff.');
         }
 
         deleteUserId = null;
         closeModal(deleteModal);
-        showToast(data.message || 'User deleted successfully.', 'success');
+        showToast(data.message || 'Staff deleted successfully.', 'success');
         loadUsers();
       })
       .catch(function (error) {
@@ -498,7 +498,7 @@
       editForm.elements.full_name.value = user.full_name;
       editForm.elements.email.value = user.email;
       editForm.elements.username.value = user.username;
-      syncCustomSelect(editForm.querySelector('[data-select-root]'), user.role === 'admin' ? 'Admin' : 'User');
+      syncCustomSelect(editForm.querySelector('[data-select-root]'), user.role === 'admin' ? 'Admin' : 'Staff');
       openModal(editModal);
       return;
     }
@@ -520,7 +520,7 @@
             throw new Error(data && data.message ? data.message : 'Unable to update status.');
           }
 
-          showToast(data.message || 'User status updated.', 'success');
+          showToast(data.message || 'Staff status updated.', 'success');
           loadUsers();
         })
         .catch(function (error) {

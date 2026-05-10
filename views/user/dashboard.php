@@ -18,7 +18,7 @@
             <span class="stat-card__meta">Catalog groups in use</span>
         </article>
         <article class="stat-card dashboard-card" data-dashboard-view="users" tabindex="0" role="button" aria-pressed="false">
-            <span class="stat-card__label">Active Users</span>
+            <span class="stat-card__label">Active Staff</span>
             <strong class="stat-card__value" id="activeUsers">0</strong>
             <span class="stat-card__meta">Team members with active access</span>
         </article>

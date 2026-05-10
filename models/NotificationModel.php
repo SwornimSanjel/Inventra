@@ -3,7 +3,7 @@
 require_once __DIR__ . '/../config/database.php';
 
 /**
- * Notification data access with admin/user recipient support.
+ * Notification data access with admin/staff recipient support.
  */
 class NotificationModel
 {
@@ -17,7 +17,7 @@ class NotificationModel
             'icon' => ['variant' => 'success', 'symbol' => 'check'],
         ],
         'new_user' => [
-            'label' => 'New User',
+            'label' => 'New Staff',
             'icon' => ['variant' => 'user', 'symbol' => 'user'],
         ],
         'system_update' => [
@@ -71,7 +71,7 @@ class NotificationModel
                     WHEN POSITION(':' IN message) > 0 THEN BTRIM(SPLIT_PART(message, ':', 1))
                     WHEN type = 'low_stock' THEN 'Low Stock'
                     WHEN type = 'request_approved' THEN 'Request Approved'
-                    WHEN type = 'new_user' THEN 'New User'
+                    WHEN type = 'new_user' THEN 'New Staff'
                     WHEN type = 'system_update' THEN 'System Update'
                     WHEN type = 'security_alert' THEN 'Security Alert'
                     ELSE 'Notification'

@@ -173,8 +173,8 @@ class AccountModel
             'full_name' => $this->combineName($firstName, $lastName),
             'email' => (string) ($row['email'] ?? ''),
             'phone' => (string) ($row['phone'] ?? ''),
-            'role' => $this->formatRole($this->normalizeRole((string) ($row['role'] ?? 'user'))),
-            'role_value' => $this->normalizeRole((string) ($row['role'] ?? 'user')),
+            'role' => $this->formatRole($this->normalizeRole((string) ($row['role'] ?? 'staff'))),
+            'role_value' => $this->normalizeRole((string) ($row['role'] ?? 'staff')),
             'avatar' => $avatar,
             'notify_low_stock' => (bool) ($row['notify_low_stock'] ?? true),
             'notify_weekly_summary' => (bool) ($row['notify_weekly_summary'] ?? true),
@@ -504,8 +504,8 @@ class AccountModel
             'full_name' => (string) ($row['full_name'] ?? ''),
             'username' => (string) ($row['username'] ?? ''),
             'email' => (string) ($row['email'] ?? ''),
-            'role' => $this->normalizeRole((string) ($row['role'] ?? 'admin')),
-            'role_value' => $this->normalizeRole((string) ($row['role'] ?? 'admin')),
+            'role' => 'admin',
+            'role_value' => 'admin',
             'status' => 'active',
             'is_active' => true,
             'password_hash' => (string) ($row['password_hash'] ?? ''),
@@ -522,8 +522,8 @@ class AccountModel
             'full_name' => (string) ($row['full_name'] ?? ''),
             'username' => (string) ($row['username'] ?? ''),
             'email' => (string) ($row['email'] ?? ''),
-            'role' => $this->normalizeRole((string) ($row['role'] ?? 'user')),
-            'role_value' => $this->normalizeRole((string) ($row['role'] ?? 'user')),
+            'role' => $this->normalizeRole((string) ($row['role'] ?? 'staff')),
+            'role_value' => $this->normalizeRole((string) ($row['role'] ?? 'staff')),
             'status' => $status,
             'is_active' => $status === 'active',
             'password_hash' => (string) ($row['password'] ?? ''),
@@ -532,7 +532,7 @@ class AccountModel
 
     private function normalizeRole(string $role): string
     {
-        return strtolower(trim($role)) === 'admin' ? 'admin' : 'user';
+        return strtolower(trim($role)) === 'admin' ? 'admin' : 'staff';
     }
 
     private function usersTableExists(): bool

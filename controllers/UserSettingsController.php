@@ -242,7 +242,7 @@ class UserSettingsController
     {
         $account = $this->session->requireAuthenticatedAccount();
 
-        if (($account['role'] ?? 'user') !== 'user' || ($account['source'] ?? '') !== 'users') {
+        if (($account['role'] ?? 'staff') !== 'staff' || ($account['source'] ?? '') !== 'users') {
             $_SESSION['auth_error'] = 'You do not have permission to access that page.';
             header('Location: index.php?url=' . inventra_default_authenticated_url());
             exit;
