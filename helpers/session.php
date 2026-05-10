@@ -3,6 +3,7 @@
 function inventra_auth_debug_log(string $event, array $data = []): void
 {
     $logDir = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'logs';
+
     if (!is_dir($logDir)) {
         mkdir($logDir, 0775, true);
     }
@@ -109,12 +110,15 @@ function inventra_bootstrap_session(): void
     ini_set('session.use_strict_mode', '1');
 
     $sessionSavePath = inventra_session_save_path();
+
     if (!is_dir($sessionSavePath)) {
         mkdir($sessionSavePath, 0775, true);
     }
 
     ini_set('session.save_path', $sessionSavePath);
+
     session_name(inventra_session_cookie_name());
+
     session_set_cookie_params([
         'lifetime' => 0,
         'path' => inventra_session_cookie_path(),
@@ -128,6 +132,7 @@ function inventra_bootstrap_session(): void
     if (isset($_COOKIE['INVENTRASESSID'])) {
         setcookie('INVENTRASESSID', '', time() - 42000, '/');
         setcookie('INVENTRASESSID', '', time() - 42000, inventra_session_cookie_path());
+
         unset($_COOKIE['INVENTRASESSID']);
     }
 
@@ -140,18 +145,20 @@ function inventra_set_authenticated_user(array $user): void
     $source = (string) ($user['source'] ?? 'admin');
     $email = (string) ($user['email'] ?? '');
     $name = (string) ($user['full_name'] ?? '');
-<<<<<<< HEAD
-    $role = strtolower(trim((string) ($user['role'] ?? 'staff'))) === 'admin' ? 'admin' : 'staff';
-=======
-    $role = strtolower(trim((string) ($user['role'] ?? 'user'))) === 'admin' ? 'admin' : 'user';
+
+    $role = strtolower(trim((string) ($user['role'] ?? 'user'))) === 'admin'
+        ? 'admin'
+        : 'user';
+
     $requiresPasswordChange = array_key_exists('requires_password_change', $user)
         ? (bool) $user['requires_password_change']
         : inventra_password_change_required();
+
     $passwordChangeReason = (string) (
         $user['password_change_reason']
-        ?? ($_SESSION['auth']['password_change_reason'] ?? ($_SESSION['password_change_reason'] ?? 'default_password'))
+        ?? ($_SESSION['auth']['password_change_reason']
+        ?? ($_SESSION['password_change_reason'] ?? 'default_password'))
     );
->>>>>>> dad9c9816375215b01eaef84051b14b80ad35d8e
 
     $_SESSION['auth'] = [
         'user_id' => $accountId,
@@ -164,7 +171,11 @@ function inventra_set_authenticated_user(array $user): void
     ];
 
     if ($requiresPasswordChange) {
-        inventra_mark_password_change_required($passwordChangeReason !== '' ? $passwordChangeReason : 'default_password');
+        inventra_mark_password_change_required(
+            $passwordChangeReason !== ''
+                ? $passwordChangeReason
+                : 'default_password'
+        );
     } else {
         inventra_clear_password_change_required();
     }
@@ -232,7 +243,12 @@ function inventra_clear_authenticated_admin(): void
 function inventra_authenticated_user_id(): ?int
 {
     $auth = $_SESSION['auth'] ?? null;
-    if (is_array($auth) && ($auth['logged_in'] ?? false) === true && is_numeric($auth['user_id'] ?? null)) {
+
+    if (
+        is_array($auth)
+        && ($auth['logged_in'] ?? false) === true
+        && is_numeric($auth['user_id'] ?? null)
+    ) {
         return (int) $auth['user_id'];
     }
 
@@ -254,7 +270,13 @@ function inventra_authenticated_user_id(): ?int
 function inventra_authenticated_user_email(): ?string
 {
     $auth = $_SESSION['auth'] ?? null;
-    if (is_array($auth) && ($auth['logged_in'] ?? false) === true && is_string($auth['email'] ?? null) && trim($auth['email']) !== '') {
+
+    if (
+        is_array($auth)
+        && ($auth['logged_in'] ?? false) === true
+        && is_string($auth['email'] ?? null)
+        && trim($auth['email']) !== ''
+    ) {
         return trim((string) $auth['email']);
     }
 
@@ -277,14 +299,18 @@ function inventra_authenticated_user_role(): ?string
 {
     $auth = $_SESSION['auth'] ?? null;
 
-    if (is_array($auth) && ($auth['logged_in'] ?? false) === true && is_string($auth['role'] ?? null)) {
+    if (
+        is_array($auth)
+        && ($auth['logged_in'] ?? false) === true
+        && is_string($auth['role'] ?? null)
+    ) {
         $role = strtolower(trim((string) $auth['role']));
-        return $role === 'admin' ? 'admin' : 'staff';
+        return $role === 'admin' ? 'admin' : 'user';
     }
 
     if (isset($_SESSION['role']) && is_string($_SESSION['role'])) {
         $role = strtolower(trim((string) $_SESSION['role']));
-        return $role === 'admin' ? 'admin' : 'staff';
+        return $role === 'admin' ? 'admin' : 'user';
     }
 
     return null;
@@ -294,14 +320,23 @@ function inventra_authenticated_user_source(): ?string
 {
     $auth = $_SESSION['auth'] ?? null;
 
-    if (is_array($auth) && ($auth['logged_in'] ?? false) === true && is_string($auth['source'] ?? null)) {
+    if (
+        is_array($auth)
+        && ($auth['logged_in'] ?? false) === true
+        && is_string($auth['source'] ?? null)
+    ) {
         $source = trim((string) $auth['source']);
+
         if ($source !== '') {
             return $source;
         }
     }
 
-    if (isset($_SESSION['auth_source']) && is_string($_SESSION['auth_source']) && trim($_SESSION['auth_source']) !== '') {
+    if (
+        isset($_SESSION['auth_source'])
+        && is_string($_SESSION['auth_source'])
+        && trim($_SESSION['auth_source']) !== ''
+    ) {
         return trim((string) $_SESSION['auth_source']);
     }
 
@@ -316,7 +351,12 @@ function inventra_authenticated_user_name(): ?string
 {
     $auth = $_SESSION['auth'] ?? null;
 
-    if (is_array($auth) && ($auth['logged_in'] ?? false) === true && is_string($auth['name'] ?? null) && trim($auth['name']) !== '') {
+    if (
+        is_array($auth)
+        && ($auth['logged_in'] ?? false) === true
+        && is_string($auth['name'] ?? null)
+        && trim($auth['name']) !== ''
+    ) {
         return trim((string) $auth['name']);
     }
 
@@ -335,12 +375,16 @@ function inventra_authenticated_user_name(): ?string
 
 function inventra_authenticated_admin_id(): ?int
 {
-    return inventra_is_admin() ? inventra_authenticated_user_id() : null;
+    return inventra_is_admin()
+        ? inventra_authenticated_user_id()
+        : null;
 }
 
 function inventra_authenticated_admin_email(): ?string
 {
-    return inventra_is_admin() ? inventra_authenticated_user_email() : null;
+    return inventra_is_admin()
+        ? inventra_authenticated_user_email()
+        : null;
 }
 
 function inventra_is_authenticated(): bool
@@ -356,7 +400,8 @@ function inventra_is_authenticated(): bool
 
 function inventra_is_admin(): bool
 {
-    return inventra_is_authenticated() && inventra_authenticated_user_role() === 'admin';
+    return inventra_is_authenticated()
+        && inventra_authenticated_user_role() === 'admin';
 }
 
 function inventra_default_authenticated_url(): string
@@ -365,5 +410,7 @@ function inventra_default_authenticated_url(): string
         return inventra_forced_password_change_url();
     }
 
-    return inventra_is_admin() ? 'admin/dashboard' : 'user/dashboard';
+    return inventra_is_admin()
+        ? 'admin/dashboard'
+        : 'user/dashboard';
 }

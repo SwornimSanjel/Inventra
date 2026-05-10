@@ -14,7 +14,12 @@ $account = $adminSession->resolveAuthenticatedAccount();
 
 if ($account === null) {
     http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+
+    echo json_encode([
+        'success' => false,
+        'message' => 'Unauthorized'
+    ]);
+
     exit;
 }
 
@@ -22,17 +27,24 @@ $role = strtolower(trim((string) ($account['role'] ?? 'staff')));
 
 if (!in_array($role, ['admin', 'staff'], true)) {
     http_response_code(403);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+
+    echo json_encode([
+        'success' => false,
+        'message' => 'Unauthorized'
+    ]);
+
     exit;
 }
 
 $search = trim((string) ($_GET['search'] ?? ''));
 $status = trim((string) ($_GET['status'] ?? ''));
 $categoryId = (int) ($_GET['category_id'] ?? 0);
+
 $skuColumn = null;
 
 try {
     $skuColumnCheck = $conn->query("SHOW COLUMNS FROM products LIKE 'sku'");
+
     if ($skuColumnCheck && $skuColumnCheck->fetch()) {
         $skuColumn = 'sku';
     }
@@ -40,7 +52,9 @@ try {
     $skuColumn = null;
 }
 
-$skuSelect = $skuColumn !== null ? 'COALESCE(p.`' . $skuColumn . '`, "") AS sku,' : '"" AS sku,';
+$skuSelect = $skuColumn !== null
+    ? 'COALESCE(p.`' . $skuColumn . '`, "") AS sku,'
+    : '"" AS sku,';
 
 $sql = "
     SELECT
@@ -65,16 +79,14 @@ $sql = "
 $params = [];
 
 if ($search !== '') {
-<<<<<<< HEAD
     $searchConditions = [
         'p.name LIKE ?',
         'COALESCE(p.description, "") LIKE ?',
         'COALESCE(c.name, p.category, "") LIKE ?'
     ];
-=======
-    $sql .= " AND (p.name LIKE ? OR COALESCE(p.description, '') LIKE ? OR COALESCE(c.name, p.category, '') LIKE ?)";
->>>>>>> dad9c9816375215b01eaef84051b14b80ad35d8e
+
     $like = '%' . $search . '%';
+
     $params[] = $like;
     $params[] = $like;
     $params[] = $like;
@@ -96,21 +108,27 @@ $sql .= ' ORDER BY p.name ASC';
 
 $stmt = $conn->prepare($sql);
 $stmt->execute($params);
+
 $result = $stmt;
 $data = [];
 
 while ($row = $result->fetch()) {
-    $computedStatus = strtolower(str_replace(' ', '_', getStockStatus(
-        (int) $row['qty'],
-        (int) $row['lower_limit'],
-        (int) $row['upper_limit']
-    )));
+    $computedStatus = strtolower(str_replace(
+        ' ',
+        '_',
+        getStockStatus(
+            (int) $row['qty'],
+            (int) $row['lower_limit'],
+            (int) $row['upper_limit']
+        )
+    ));
 
     if ($status !== '' && $status !== $computedStatus) {
         continue;
     }
 
     $row['status'] = $computedStatus;
+
     $data[] = $row;
 }
 
