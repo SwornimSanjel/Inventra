@@ -45,7 +45,7 @@
   }
 
   function setLoading() {
-    tableBody.innerHTML = '<tr><td colspan="6" class="empty-state">Loading users...</td></tr>';
+    tableBody.innerHTML = '<tr><td colspan="6" class="empty-state">Loading staff...</td></tr>';
   }
 
   function buildUrl(path, params) {
@@ -71,7 +71,7 @@
       .then(function (response) { return response.json(); })
       .then(function (data) {
         if (!data || !data.success) {
-          throw new Error(data && data.message ? data.message : 'Unable to load users.');
+          throw new Error(data && data.message ? data.message : 'Unable to load staff.');
         }
 
         users = Array.isArray(data.users) ? data.users : [];
@@ -95,7 +95,7 @@
     });
 
     if (!filtered.length) {
-      tableBody.innerHTML = '<tr><td colspan="6" class="empty-state">No users found.</td></tr>';
+      tableBody.innerHTML = '<tr><td colspan="6" class="empty-state">No staff found.</td></tr>';
       updateCounter(0);
       return;
     }
@@ -110,7 +110,7 @@
         '<tr data-user-id="' + user.id + '">' +
           '<td><strong>' + escapeHtml(user.full_name) + '</strong><div class="muted">' + escapeHtml(user.email) + '</div></td>' +
           '<td>' + escapeHtml(user.username) + '</td>' +
-          '<td><span class="users-chip ' + (user.role === 'admin' ? 'users-chip-role-admin' : 'users-chip-role-user') + '">' + escapeHtml(user.display_role) + '</span></td>' +
+          '<td><span class="users-chip ' + (user.role === 'admin' ? 'users-chip-role-admin' : 'users-chip-role-staff') + '">' + escapeHtml(user.display_role) + '</span></td>' +
           '<td><span class="users-chip ' + (user.status === 'active' ? 'users-chip-status-active' : 'users-chip-status-inactive') + '">' + escapeHtml(capitalize(user.status)) + '</span></td>' +
           '<td>' + escapeHtml(formattedDate) + '</td>' +
           '<td class="users-actions-col">' +
@@ -133,12 +133,12 @@
   function resetModalState(modal) {
     if (modal === createModal) {
       createForm.reset();
-      syncCustomSelect(createForm.querySelector('[data-select-root]'), 'User');
+      syncCustomSelect(createForm.querySelector('[data-select-root]'), 'Staff');
     }
 
     if (modal === editModal) {
       editForm.reset();
-      syncCustomSelect(editForm.querySelector('[data-select-root]'), 'User');
+      syncCustomSelect(editForm.querySelector('[data-select-root]'), 'Staff');
     }
 
     if (modal === deleteModal) {
@@ -203,7 +203,7 @@
 
     var hiddenInput = root.querySelector('[data-select-input]');
     var label = root.querySelector('[data-select-label]');
-    var nextValue = value || 'User';
+    var nextValue = value || 'Staff';
 
     if (hiddenInput) {
       hiddenInput.value = nextValue;
@@ -217,6 +217,7 @@
       option.classList.toggle('is-active', option.getAttribute('data-value') === nextValue);
     });
 
+    setFieldInvalid(root.querySelector('[data-select-trigger]'), false);
     closeCustomSelect(root);
   }
 
@@ -262,6 +263,65 @@
 
       activeToastTimer = null;
     }, 2200);
+  }
+
+  function setFieldInvalid(field, invalid) {
+    if (field) {
+      field.classList.toggle('is-invalid', Boolean(invalid));
+    }
+  }
+
+  function setRoleInvalid(form, invalid) {
+    setFieldInvalid(form.querySelector('[data-select-trigger]'), invalid);
+  }
+
+  function validateUserForm(form) {
+    var fullName = form.elements.full_name;
+    var email = form.elements.email;
+    var username = form.elements.username;
+    var role = form.elements.role;
+    var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    [fullName, email, username].forEach(function (field) {
+      setFieldInvalid(field, false);
+    });
+    setRoleInvalid(form, false);
+
+    if (!fullName.value.trim()) {
+      setFieldInvalid(fullName, true);
+      showToast('Full name is required.', 'error');
+      fullName.focus();
+      return false;
+    }
+
+    if (!email.value.trim()) {
+      setFieldInvalid(email, true);
+      showToast('Email address is required.', 'error');
+      email.focus();
+      return false;
+    }
+
+    if (!emailPattern.test(email.value.trim())) {
+      setFieldInvalid(email, true);
+      showToast('Please enter a valid email address.', 'error');
+      email.focus();
+      return false;
+    }
+
+    if (!username.value.trim()) {
+      setFieldInvalid(username, true);
+      showToast('Username is required.', 'error');
+      username.focus();
+      return false;
+    }
+
+    if (!role.value.trim()) {
+      setRoleInvalid(form, true);
+      showToast('Role is required.', 'error');
+      return false;
+    }
+
+    return true;
   }
 
   function postForm(path, formData) {
@@ -416,18 +476,31 @@
 
   Array.prototype.slice.call(document.querySelectorAll('[data-filter-select-root]')).forEach(bindFilterSelect);
 
+  [createForm, editForm].forEach(function (form) {
+    Array.prototype.slice.call(form.querySelectorAll('input')).forEach(function (input) {
+      input.addEventListener('input', function () {
+        setFieldInvalid(input, false);
+      });
+    });
+  });
+
   createForm.addEventListener('submit', function (event) {
     event.preventDefault();
+
+    if (!validateUserForm(createForm)) {
+      return;
+    }
+
     var formData = new FormData(createForm);
 
     postForm('/create', formData)
       .then(function (data) {
         if (!data || !data.success) {
-          throw new Error(data && data.message ? data.message : 'Unable to create user.');
+          throw new Error(data && data.message ? data.message : 'Unable to create staff.');
         }
 
         closeModal(createModal);
-        showToast(data.message || 'User created successfully.', 'success');
+        showToast(data.message || 'Staff created successfully.', 'success');
         loadUsers();
       })
       .catch(function (error) {
@@ -437,16 +510,21 @@
 
   editForm.addEventListener('submit', function (event) {
     event.preventDefault();
+
+    if (!validateUserForm(editForm)) {
+      return;
+    }
+
     var formData = new FormData(editForm);
 
     postForm('/update', formData)
       .then(function (data) {
         if (!data || !data.success) {
-          throw new Error(data && data.message ? data.message : 'Unable to update user.');
+          throw new Error(data && data.message ? data.message : 'Unable to update staff.');
         }
 
         closeModal(editModal);
-        showToast(data.message || 'User updated successfully.', 'success');
+        showToast(data.message || 'Staff updated successfully.', 'success');
         loadUsers();
       })
       .catch(function (error) {
@@ -465,12 +543,12 @@
     postForm('/delete', formData)
       .then(function (data) {
         if (!data || !data.success) {
-          throw new Error(data && data.message ? data.message : 'Unable to delete user.');
+          throw new Error(data && data.message ? data.message : 'Unable to delete staff.');
         }
 
         deleteUserId = null;
         closeModal(deleteModal);
-        showToast(data.message || 'User deleted successfully.', 'success');
+        showToast(data.message || 'Staff deleted successfully.', 'success');
         loadUsers();
       })
       .catch(function (error) {
@@ -498,7 +576,7 @@
       editForm.elements.full_name.value = user.full_name;
       editForm.elements.email.value = user.email;
       editForm.elements.username.value = user.username;
-      syncCustomSelect(editForm.querySelector('[data-select-root]'), user.role === 'admin' ? 'Admin' : 'User');
+      syncCustomSelect(editForm.querySelector('[data-select-root]'), user.role === 'admin' ? 'Admin' : 'Staff');
       openModal(editModal);
       return;
     }
@@ -520,7 +598,7 @@
             throw new Error(data && data.message ? data.message : 'Unable to update status.');
           }
 
-          showToast(data.message || 'User status updated.', 'success');
+          showToast(data.message || 'Staff status updated.', 'success');
           loadUsers();
         })
         .catch(function (error) {

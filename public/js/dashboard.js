@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function () {
     },
     users: {
       eyebrow: 'Access list',
-      title: 'Active users overview',
+      title: 'Active staff overview',
       description: 'Team members who currently have active access to the system.',
       href: 'index.php?url=admin/users'
     },
@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function renderUsers(rows) {
     tableHead.innerHTML = '<tr><th>ID</th><th>Full Name</th><th>Email</th><th>Role</th><th>Status</th></tr>';
     if (!rows.length) {
-      tableBody.innerHTML = '<tr><td colspan="5" class="empty-state">No active users found right now.</td></tr>';
+      tableBody.innerHTML = '<tr><td colspan="5" class="empty-state">No active staff found right now.</td></tr>';
       return;
     }
 
@@ -134,21 +134,33 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   fetch('api/dashboard/get_dashboard.php')
-    .then(function (response) { return response.json(); })
+    .then(function (response) {
+      return response.json().then(function (data) {
+        if (!response.ok) {
+          throw new Error(data && (data.message || data.error) ? (data.message || data.error) : 'Dashboard request failed');
+        }
+        return data;
+      });
+    })
     .then(function (data) {
       if (!data || data.error) {
         throw new Error(data && data.error ? data.error : 'Dashboard request failed');
       }
 
       dashboardData = data;
+      var panelBase = data.panel_base === 'user' ? 'user' : 'admin';
+      panelConfig.products.href = 'index.php?url=' + panelBase + '/products';
+      panelConfig.categories.href = 'index.php?url=' + panelBase + '/products';
+      panelConfig.low_stock.href = 'index.php?url=' + panelBase + '/products';
+      panelConfig.users.href = panelBase === 'admin' ? 'index.php?url=admin/users' : 'index.php?url=user/settings';
       document.getElementById('totalProducts').textContent = data.summary.total_products || 0;
       document.getElementById('totalCategories').textContent = data.summary.total_categories || 0;
       document.getElementById('activeUsers').textContent = data.summary.active_users || 0;
       document.getElementById('lowStockItems').textContent = data.summary.low_stock_items || 0;
       renderView(activeView);
     })
-    .catch(function () {
-      tableBody.innerHTML = '<tr><td colspan="6" class="empty-state">Unable to load dashboard data right now.</td></tr>';
+    .catch(function (error) {
+      tableBody.innerHTML = '<tr><td colspan="6" class="empty-state">' + escapeHtml(error.message || 'Unable to load dashboard data right now.') + '</td></tr>';
     });
 });
 

@@ -18,9 +18,9 @@ if ($account === null) {
     exit;
 }
 
-$role = strtolower((string) ($account['role'] ?? ''));
+$role = strtolower((string) ($account['role'] ?? 'staff'));
 
-if (!in_array($role, ['admin', 'user'], true)) {
+if (!in_array($role, ['admin', 'staff'], true)) {
     http_response_code(403);
     echo json_encode(['error' => 'Unauthorized']);
     exit;
@@ -101,7 +101,7 @@ foreach ($usersResult->fetchAll() as $row) {
         'id' => (int) $row['id'],
         'full_name' => $row['full_name'],
         'email' => $row['email'],
-        'role' => strtolower((string) ($row['role'] ?? '')) === 'admin' ? 'Admin' : 'User',
+        'role' => strtolower((string) ($row['role'] ?? '')) === 'admin' ? 'Admin' : 'Staff',
         'status' => ucfirst((string) $row['status']),
     ];
 }

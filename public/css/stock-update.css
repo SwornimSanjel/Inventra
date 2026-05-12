@@ -206,12 +206,42 @@
   font-weight:600;
 }
 
+.field input.is-invalid,
+.field textarea.is-invalid,
+.stock-custom-select__trigger.is-invalid{
+  border-color:#dc2626;
+  box-shadow:0 0 0 4px rgba(220,38,38,.08);
+}
+
 .stock-native-select{
   position:absolute;
   width:1px;
   height:1px;
   opacity:0;
   pointer-events:none;
+}
+
+.stock-custom-select--product-native .stock-native-select{
+  position:static;
+  width:100%;
+  height:46px;
+  min-height:46px;
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+  appearance:auto;
+  -webkit-appearance:auto;
+  border:1px solid #cbd5e1;
+  border-radius:8px;
+  background:#fff;
+  color:#111827;
+  padding:0 38px 0 12px;
+  font:inherit;
+}
+
+.stock-custom-select--product-native .stock-custom-select__trigger,
+.stock-custom-select--product-native .stock-custom-select__menu{
+  display:none!important;
 }
 
 .stock-custom-select{
@@ -1397,4 +1427,261 @@
   .stock-movement-footer .btn-outline{
     width:100%;
   }
+}
+.stock-custom-select--status .stock-custom-select__trigger {
+  min-height: 50px;
+}
+
+.field--incoming-status {
+  margin-top: 22px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.stock-custom-select--status .stock-custom-select__menu {
+  position: static;
+  width: 100%;
+  max-height: none;
+  margin-top: 14px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: none;
+  overflow: visible;
+  transform: none;
+}
+
+.stock-custom-select--status.is-open .stock-custom-select__trigger {
+  display: none;
+}
+
+.stock-custom-select--status .stock-custom-select__option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 36px;
+  margin: 0 0 12px;
+  padding: 0 42px 0 36px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: #fafafa;
+  color: #6b7280;
+  font-weight: 500;
+  font-size: 11px;
+  text-align: left;
+}
+
+.stock-custom-select--status .stock-custom-select__option:last-child {
+  margin-bottom: 0;
+}
+
+.stock-custom-select--status .stock-custom-select__option::before {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #cbd5df;
+  transform: translateY(-50%);
+}
+
+.stock-custom-select--status .stock-custom-select__option.is-disabled {
+  display: none;
+}
+
+.stock-custom-select--status .stock-custom-select__option.is-active {
+  border-color: #9df3bf;
+  background: #ecfff3;
+  color: #166534;
+  font-weight: 700;
+}
+
+.stock-custom-select--status .stock-custom-select__option.is-active::before {
+  background: #22c55e;
+}
+
+.stock-custom-select--status .stock-custom-select__option.is-active::after {
+  content: "✓";
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border: 1px solid #22c55e;
+  border-radius: 50%;
+  color: #16a34a;
+  font-size: 10px;
+  line-height: 12px;
+  text-align: center;
+  transform: translateY(-50%);
+}
+
+@media (max-width: 640px) {
+  .stock-custom-select--status .stock-custom-select__menu {
+    padding: 10px;
+  }
+
+  .stock-custom-select--status .stock-custom-select__option {
+    min-height: 44px;
+    padding-right: 38px;
+  }
+}
+.stock-native-select {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stock-custom-select__menu {
+  max-height: 280px;
+  overflow: hidden;
+}
+
+.stock-custom-select__search-wrap {
+  position: relative;
+  z-index: 2;
+  padding: 8px;
+  background: #fff;
+  border-bottom: 1px solid #eef2f6;
+}
+
+.stock-custom-select__search {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid #d8e1ec;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #111827;
+  font: inherit;
+  outline: none;
+}
+
+.stock-custom-select__search:focus {
+  border-color: #8ad4ad;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
+}
+
+.stock-custom-select__options {
+  max-height: 223px;
+  overflow-y: auto;
+  padding: 6px 8px 8px;
+  background: #fff;
+}
+
+.stock-custom-select__empty {
+  padding: 12px;
+  color: #7d8790;
+  font-size: 13px;
+  text-align: center;
+}
+
+.stock-custom-select__option[hidden],
+.stock-custom-select__empty[hidden] {
+  display: none;
+}
+
+.stock-custom-select > .stock-native-select,
+.stock-custom-select select[data-stock-select-native] {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  appearance: none !important;
+}
+
+.field--incoming-status {
+  margin-top: 0;
+}
+
+.stock-custom-select--status .stock-custom-select__trigger {
+  min-height: 46px;
+}
+
+.stock-custom-select--status.is-open .stock-custom-select__trigger {
+  display: flex;
+}
+
+.stock-custom-select--status .stock-custom-select__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-height: 220px;
+  margin-top: 0;
+  padding: 8px;
+  border: 1px solid #dbe3ee;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 16px 34px rgba(15,23,42,.12);
+  overflow: auto;
+}
+
+.stock-custom-select--status .stock-custom-select__option {
+  min-height: 42px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #1f2937;
+  font-size: .82rem;
+  font-weight: 500;
+}
+
+.stock-custom-select--status .stock-custom-select__option:hover,
+.stock-custom-select--status .stock-custom-select__option:focus-visible {
+  background: #f3f7fc;
+  color: #0f172a;
+  outline: 0;
+}
+
+.stock-custom-select--status .stock-custom-select__option::before,
+.stock-custom-select--status .stock-custom-select__option.is-active::after {
+  display: none;
+}
+
+.stock-custom-select--status .stock-custom-select__option.is-active {
+  border-color: transparent;
+  background: #eef6ff;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+#stockProduct {
+  display: none !important;
+  visibility: hidden !important;
+  position: absolute !important;
+  left: -9999px !important;
+  width: 1px !important;
+  height: 1px !important;
+  min-height: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }

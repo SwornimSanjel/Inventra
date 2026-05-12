@@ -121,17 +121,14 @@ if (strpos($url, 'user/') === 0) {
   </div>
 
   <script src="<?= BASE_URL ?>public/js/main.js<?= asset_version('public/js/main.js') ?>"></script>
-  <?php if ($url === 'admin/dashboard'): ?>
+  <?php if ($url === 'admin/dashboard' || $url === 'user/dashboard'): ?>
     <script src="<?= BASE_URL ?>public/js/dashboard.js<?= asset_version('public/js/dashboard.js') ?>"></script>
   <?php endif; ?>
   <?php if ($url === 'admin/products'): ?>
     <script src="<?= BASE_URL ?>public/js/products.js<?= asset_version('public/js/products.js') ?>"></script>
   <?php endif; ?>
-  <?php if ($url === 'admin/stock-update'): ?>
+  <?php if ($url === 'admin/stock-update' || $url === 'user/stock-update'): ?>
     <script src="<?= BASE_URL ?>public/js/stock-update.js<?= asset_version('public/js/stock-update.js') ?>"></script>
-  <?php endif; ?>
-  <?php if ($url === 'user/stock-update'): ?>
-    <script src="<?= BASE_URL ?>public/js/user-stock-movement.js<?= asset_version('public/js/user-stock-movement.js') ?>"></script>
   <?php endif; ?>
   <?php if ($url === 'admin/users'): ?>
     <script src="<?= BASE_URL ?>public/js/users.js<?= asset_version('public/js/users.js') ?>"></script>
@@ -147,9 +144,6 @@ if (strpos($url, 'user/') === 0) {
   <?php endif; ?>
   <?php if ($url === 'user/settings'): ?>
     <script src="<?= BASE_URL ?>public/js/user-settings.js<?= asset_version('public/js/user-settings.js') ?>"></script>
-  <?php endif; ?>
-  <?php if ($url === 'user/dashboard'): ?>
-    <script src="<?= BASE_URL ?>public/js/user-dashboard.js<?= asset_version('public/js/user-dashboard.js') ?>"></script>
   <?php endif; ?>
 
 </body>

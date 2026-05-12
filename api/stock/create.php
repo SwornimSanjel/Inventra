@@ -36,7 +36,8 @@ $quantity = (int) ($payload['quantity'] ?? 0);
 $notes = trim((string) ($payload['notes'] ?? ''));
 $fullName = trim((string) ($payload['full_name'] ?? ''));
 $contact = trim((string) ($payload['contact'] ?? ''));
-$amountPerPiece = (float) ($payload['amount_per_piece'] ?? -1);
+$amountPerPieceRaw = $payload['amount_per_piece'] ?? null;
+$amountPerPiece = is_numeric($amountPerPieceRaw) ? (float) $amountPerPieceRaw : -1;
 $paymentStatus = strtolower(trim((string) ($payload['payment_status'] ?? '')));
 $paymentMethod = strtolower(trim((string) ($payload['payment_method'] ?? '')));
 $incomingStatus = trim((string) ($payload['incoming_status'] ?? ''));
@@ -93,8 +94,8 @@ if ($contact === '' || !preg_match('/^[0-9+\-\s()]{7,20}$/', $contact)) {
     exit;
 }
 
-if ($amountPerPiece < 0) {
-    echo json_encode(['success' => false, 'message' => 'Amount per piece must be valid.']);
+if ($amountPerPiece <= 0) {
+    echo json_encode(['success' => false, 'message' => 'Amount per piece must be numeric and greater than 0.']);
     exit;
 }
 
@@ -143,29 +144,35 @@ try {
 
     $reference = inventra_generate_stock_reference();
 
-    $movementStmt = $conn->prepare("
-        INSERT INTO stock_movements (
-            reference,
-            product_id,
-            user_id,
-            movement_type,
-            quantity,
-            notes,
-            full_name,
-            contact,
-            amount_per_piece,
-            total_amount,
-            payment_status,
-            payment_method,
-            incoming_status,
-            movement_status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    $columnStmt = $conn->prepare("
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'stock_movements'
+          AND column_name = 'user_id'
+        LIMIT 1
     ");
+    $columnStmt->execute();
+    $hasUserIdColumn = (bool) $columnStmt->fetchColumn();
 
-    $movementStmt->execute([
+    $movementColumns = [
+        'reference',
+        'product_id',
+        'movement_type',
+        'quantity',
+        'notes',
+        'full_name',
+        'contact',
+        'amount_per_piece',
+        'total_amount',
+        'payment_status',
+        'payment_method',
+        'incoming_status',
+        'movement_status',
+    ];
+
+    $movementValues = [
         $reference,
         $productId,
-        $userId,
         $movementType,
         $quantity,
         $notes,
@@ -177,7 +184,21 @@ try {
         $paymentMethod,
         $incomingStatus,
         $movementStatus,
-    ]);
+    ];
+
+    if ($hasUserIdColumn) {
+        array_splice($movementColumns, 2, 0, 'user_id');
+        array_splice($movementValues, 2, 0, $userId);
+    }
+
+    $placeholders = implode(', ', array_fill(0, count($movementColumns), '?'));
+    $movementStmt = $conn->prepare('
+        INSERT INTO stock_movements (
+            ' . implode(', ', $movementColumns) . '
+        ) VALUES (' . $placeholders . ')
+    ');
+
+    $movementStmt->execute($movementValues);
 
     $conn->commit();
 

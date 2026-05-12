@@ -4,14 +4,14 @@ $usersApiBase = $usersPageState['users_api_base'] ?? 'index.php?url=admin/users'
 
 <div class="page-header users-header">
     <div>
-        <p class="page-subtitle dashboard-page__intro">Create, update, and manage user access from the main admin panel.</p>
+        <p class="page-subtitle dashboard-page__intro">Create, update, and manage staff access from the main admin panel.</p>
     </div>
     <button class="btn-primary" type="button" id="openCreateUserModal">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
-        Create User
+        Create Staff
     </button>
 </div>
 
@@ -22,7 +22,7 @@ $usersApiBase = $usersPageState['users_api_base'] ?? 'index.php?url=admin/users'
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <input type="text" id="usersSearchInput" placeholder="Search users...">
+            <input type="text" id="usersSearchInput" placeholder="Search staff...">
         </div>
 
         <div class="users-filters">
@@ -39,7 +39,7 @@ $usersApiBase = $usersPageState['users_api_base'] ?? 'index.php?url=admin/users'
                     <div class="users-custom-select__menu" data-filter-select-menu hidden>
                         <button type="button" class="users-custom-select__option is-active" data-filter-select-option data-value="all">All Roles</button>
                         <button type="button" class="users-custom-select__option" data-filter-select-option data-value="admin">Admin</button>
-                        <button type="button" class="users-custom-select__option" data-filter-select-option data-value="user">User</button>
+                        <button type="button" class="users-custom-select__option" data-filter-select-option data-value="staff">Staff</button>
                     </div>
                 </div>
             </label>
@@ -78,7 +78,7 @@ $usersApiBase = $usersPageState['users_api_base'] ?? 'index.php?url=admin/users'
             </thead>
             <tbody id="usersTableBody">
                 <tr>
-                    <td colspan="6" class="empty-state">Loading users...</td>
+                    <td colspan="6" class="empty-state">Loading staff...</td>
                 </tr>
             </tbody>
         </table>
@@ -94,36 +94,36 @@ $usersApiBase = $usersPageState['users_api_base'] ?? 'index.php?url=admin/users'
 <section class="users-modal" id="createUserModal" hidden aria-hidden="true">
     <div class="users-modal-card">
         <div class="users-modal-header">
-            <h2>Create New User</h2>
+            <h2>Create New Staff</h2>
             <button type="button" class="users-modal-close" data-close-modal="createUserModal">&times;</button>
         </div>
 
-        <form id="createUserForm" class="users-form">
+        <form id="createUserForm" class="users-form" novalidate>
             <label>
-                <span>Full Name</span>
-                <input type="text" name="full_name" required>
+                <span>Full Name <span class="required-marker" aria-hidden="true">*</span></span>
+                <input type="text" name="full_name" required data-label="Full name">
             </label>
             <label>
-                <span>Email Address</span>
-                <input type="email" name="email" required>
+                <span>Email Address <span class="required-marker" aria-hidden="true">*</span></span>
+                <input type="email" name="email" required data-label="Email address">
             </label>
             <div class="users-form-row">
                 <label>
-                    <span>Username</span>
-                    <input type="text" name="username" required>
+                    <span>Username <span class="required-marker" aria-hidden="true">*</span></span>
+                    <input type="text" name="username" required data-label="Username">
                 </label>
                 <label>
-                    <span>Role</span>
+                    <span>Role <span class="required-marker" aria-hidden="true">*</span></span>
                     <div class="users-custom-select" data-select-root>
-                        <input type="hidden" name="role" value="User" data-select-input>
+                        <input type="hidden" name="role" value="Staff" data-select-input>
                         <button type="button" class="users-custom-select__trigger" data-select-trigger aria-expanded="false">
-                            <span data-select-label>User</span>
+                            <span data-select-label>Staff</span>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="6 9 12 15 18 9"></polyline>
                             </svg>
                         </button>
                         <div class="users-custom-select__menu" data-select-menu hidden>
-                            <button type="button" class="users-custom-select__option is-active" data-select-option data-value="User">User</button>
+                            <button type="button" class="users-custom-select__option is-active" data-select-option data-value="Staff">Staff</button>
                             <button type="button" class="users-custom-select__option" data-select-option data-value="Admin">Admin</button>
                         </div>
                     </div>
@@ -136,7 +136,7 @@ $usersApiBase = $usersPageState['users_api_base'] ?? 'index.php?url=admin/users'
             </label>
             <div class="users-modal-actions">
                 <button type="button" class="btn-outline" data-close-modal="createUserModal">Cancel</button>
-                <button type="submit" class="btn-primary">Save User</button>
+                <button type="submit" class="btn-primary">Save Staff</button>
             </div>
         </form>
     </div>
@@ -145,37 +145,37 @@ $usersApiBase = $usersPageState['users_api_base'] ?? 'index.php?url=admin/users'
 <section class="users-modal" id="editUserModal" hidden aria-hidden="true">
     <div class="users-modal-card">
         <div class="users-modal-header">
-            <h2>Edit User</h2>
+            <h2>Edit Staff</h2>
             <button type="button" class="users-modal-close" data-close-modal="editUserModal">&times;</button>
         </div>
 
-        <form id="editUserForm" class="users-form">
+        <form id="editUserForm" class="users-form" novalidate>
             <input type="hidden" name="user_id">
             <label>
-                <span>Full Name</span>
-                <input type="text" name="full_name" required>
+                <span>Full Name <span class="required-marker" aria-hidden="true">*</span></span>
+                <input type="text" name="full_name" required data-label="Full name">
             </label>
             <label>
-                <span>Email Address</span>
-                <input type="email" name="email" required>
+                <span>Email Address <span class="required-marker" aria-hidden="true">*</span></span>
+                <input type="email" name="email" required data-label="Email address">
             </label>
             <div class="users-form-row">
                 <label>
-                    <span>Username</span>
-                    <input type="text" name="username" required>
+                    <span>Username <span class="required-marker" aria-hidden="true">*</span></span>
+                    <input type="text" name="username" required data-label="Username">
                 </label>
                 <label>
-                    <span>Role</span>
+                    <span>Role <span class="required-marker" aria-hidden="true">*</span></span>
                     <div class="users-custom-select" data-select-root>
-                        <input type="hidden" name="role" value="User" data-select-input>
+                        <input type="hidden" name="role" value="Staff" data-select-input>
                         <button type="button" class="users-custom-select__trigger" data-select-trigger aria-expanded="false">
-                            <span data-select-label>User</span>
+                            <span data-select-label>Staff</span>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="6 9 12 15 18 9"></polyline>
                             </svg>
                         </button>
                         <div class="users-custom-select__menu" data-select-menu hidden>
-                            <button type="button" class="users-custom-select__option is-active" data-select-option data-value="User">User</button>
+                            <button type="button" class="users-custom-select__option is-active" data-select-option data-value="Staff">Staff</button>
                             <button type="button" class="users-custom-select__option" data-select-option data-value="Admin">Admin</button>
                         </div>
                     </div>
@@ -183,7 +183,7 @@ $usersApiBase = $usersPageState['users_api_base'] ?? 'index.php?url=admin/users'
             </div>
             <div class="users-modal-actions">
                 <button type="button" class="btn-outline" data-close-modal="editUserModal">Cancel</button>
-                <button type="submit" class="btn-primary">Update User</button>
+                <button type="submit" class="btn-primary">Update Staff</button>
             </div>
         </form>
     </div>
@@ -192,7 +192,7 @@ $usersApiBase = $usersPageState['users_api_base'] ?? 'index.php?url=admin/users'
 <section class="users-modal" id="deleteUserModal" hidden aria-hidden="true">
     <div class="users-modal-card users-modal-card-small">
         <div class="users-modal-header">
-            <h2>Delete User</h2>
+            <h2>Delete Staff</h2>
             <button type="button" class="users-modal-close" data-close-modal="deleteUserModal">&times;</button>
         </div>
         <p class="users-delete-copy">Are you sure you want to delete <strong id="deleteUserLabel"></strong>?</p>

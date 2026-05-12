@@ -93,7 +93,7 @@
   color: #fff;
 }
 
-.users-chip-role-user {
+.users-chip-role-staff {
   background: #eef2ff;
   color: #334155;
 }
@@ -196,6 +196,12 @@
   border: 1px solid var(--border);
   border-radius: 12px;
   background: #fff;
+}
+
+.users-form input.is-invalid,
+.users-custom-select__trigger.is-invalid {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.08);
 }
 
 .users-form-row {

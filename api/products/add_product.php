@@ -2,8 +2,8 @@
 /**
  * Add Product API
  *
- * Mirrors the Inventra1 user-products flow so authenticated users can add
- * products from the copied user page and still trigger low-stock alerts.
+ * Mirrors the Inventra1 staff-products flow so authenticated staff can add
+ * products from the copied staff page and still trigger low-stock alerts.
  */
 
 header('Content-Type: application/json');
@@ -24,7 +24,9 @@ if ($account === null) {
     exit;
 }
 
-if (!in_array($account['role'] ?? 'user', ['admin', 'user'], true)) {
+$role = strtolower(trim((string) ($account['role'] ?? 'staff')));
+
+if (!in_array($role, ['admin', 'staff'], true)) {
     http_response_code(403);
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
@@ -35,16 +37,54 @@ $categoryRaw = trim((string) ($_POST['category_id'] ?? ''));
 $categoryId = ctype_digit($categoryRaw) ? (int) $categoryRaw : 0;
 $newCategory = trim((string) ($_POST['new_category'] ?? ''));
 $newCategoryDescription = trim((string) ($_POST['new_category_description'] ?? ''));
-$qty = max(0, (int) ($_POST['qty'] ?? 0));
-$price = max(0, (float) ($_POST['price'] ?? 0));
-$lower = max(0, (int) ($_POST['lower'] ?? 0));
-$upper = max($lower, (int) ($_POST['upper'] ?? 0));
+$qtyRaw = trim((string) ($_POST['qty'] ?? ''));
+$priceRaw = trim((string) ($_POST['price'] ?? ''));
+$lowerRaw = trim((string) ($_POST['lower'] ?? ''));
+$upperRaw = trim((string) ($_POST['upper'] ?? ''));
 $description = trim((string) ($_POST['description'] ?? ''));
+$errors = [];
 
-if ($name === '' || ($categoryId <= 0 && $categoryRaw !== 'new')) {
-    echo json_encode(['success' => false, 'message' => 'Product name and category are required.']);
+if ($name === '') {
+    $errors['name'] = 'Product name is required.';
+}
+
+if ($categoryRaw === '' || ($categoryId <= 0 && $categoryRaw !== 'new')) {
+    $errors['category_id'] = 'Category is required.';
+}
+
+if ($qtyRaw === '' || filter_var($qtyRaw, FILTER_VALIDATE_INT) === false || (int) $qtyRaw < 0) {
+    $errors['qty'] = 'Quantity must be a valid whole number.';
+}
+
+if ($priceRaw === '' || !is_numeric($priceRaw) || (float) $priceRaw < 0) {
+    $errors['price'] = 'Unit price must be a valid number.';
+}
+
+if ($lowerRaw === '' || filter_var($lowerRaw, FILTER_VALIDATE_INT) === false || (int) $lowerRaw < 0) {
+    $errors['lower'] = 'Lower limit must be a valid whole number.';
+}
+
+if ($upperRaw === '' || filter_var($upperRaw, FILTER_VALIDATE_INT) === false || (int) $upperRaw < 0) {
+    $errors['upper'] = 'Upper limit must be a valid whole number.';
+}
+
+if ($description === '') {
+    $errors['description'] = 'Description is required.';
+}
+
+if ($errors === [] && (int) $upperRaw < (int) $lowerRaw) {
+    $errors['upper'] = 'Upper limit must be greater than or equal to lower limit.';
+}
+
+if ($errors !== []) {
+    echo json_encode(['success' => false, 'message' => reset($errors), 'errors' => $errors]);
     exit;
 }
+
+$qty = (int) $qtyRaw;
+$price = (float) $priceRaw;
+$lower = (int) $lowerRaw;
+$upper = (int) $upperRaw;
 
 if ($categoryRaw === 'new') {
     if ($newCategory === '') {

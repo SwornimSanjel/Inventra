@@ -65,25 +65,25 @@ if ($profileInitials === '') {
 
                 <div class="settings-form-grid">
                     <div class="settings-field">
-                        <label class="settings-label" for="userSettingsFirstName">First Name</label>
+                        <label class="settings-label" for="userSettingsFirstName">First Name <span class="required-marker" aria-hidden="true">*</span></label>
                         <input class="settings-input <?= !empty($profileErrors['first_name']) ? 'is-invalid' : '' ?>" id="userSettingsFirstName" name="first_name" type="text" value="<?= htmlspecialchars((string) ($profile['first_name'] ?? '')) ?>" required data-label="First name">
                         <p class="settings-error" data-error-for="userSettingsFirstName"><?= htmlspecialchars((string) ($profileErrors['first_name'] ?? '')) ?></p>
                     </div>
 
                     <div class="settings-field">
-                        <label class="settings-label" for="userSettingsLastName">Last Name</label>
+                        <label class="settings-label" for="userSettingsLastName">Last Name <span class="required-marker" aria-hidden="true">*</span></label>
                         <input class="settings-input <?= !empty($profileErrors['last_name']) ? 'is-invalid' : '' ?>" id="userSettingsLastName" name="last_name" type="text" value="<?= htmlspecialchars((string) ($profile['last_name'] ?? '')) ?>" required data-label="Last name">
                         <p class="settings-error" data-error-for="userSettingsLastName"><?= htmlspecialchars((string) ($profileErrors['last_name'] ?? '')) ?></p>
                     </div>
 
                     <div class="settings-field">
-                        <label class="settings-label" for="userSettingsEmail">Email Address</label>
+                        <label class="settings-label" for="userSettingsEmail">Email Address <span class="required-marker" aria-hidden="true">*</span></label>
                         <input class="settings-input <?= !empty($profileErrors['email']) ? 'is-invalid' : '' ?>" id="userSettingsEmail" name="email" type="email" value="<?= htmlspecialchars((string) ($profile['email'] ?? '')) ?>" required data-label="Email address" data-validate="email">
                         <p class="settings-error" data-error-for="userSettingsEmail"><?= htmlspecialchars((string) ($profileErrors['email'] ?? '')) ?></p>
                     </div>
 
                     <div class="settings-field">
-                        <label class="settings-label" for="userSettingsPhone">Phone Number</label>
+                        <label class="settings-label" for="userSettingsPhone">Phone Number <span class="required-marker" aria-hidden="true">*</span></label>
                         <input class="settings-input <?= !empty($profileErrors['phone']) ? 'is-invalid' : '' ?>" id="userSettingsPhone" name="phone" type="tel" value="<?= htmlspecialchars((string) ($profile['phone'] ?? '')) ?>" required data-label="Phone number">
                         <p class="settings-error" data-error-for="userSettingsPhone"><?= htmlspecialchars((string) ($profileErrors['phone'] ?? '')) ?></p>
                     </div>
@@ -127,7 +127,7 @@ if ($profileInitials === '') {
                 <div class="user-security-fields <?= $securityExpanded ? 'is-open' : '' ?>" data-password-fields>
                     <div class="settings-form-grid settings-form-grid--security">
                         <div class="settings-field settings-field--full">
-                            <label class="settings-label" for="userSettingsCurrentPassword">Old Password</label>
+                            <label class="settings-label" for="userSettingsCurrentPassword">Current Password <span class="required-marker" aria-hidden="true">*</span></label>
                             <div class="settings-input-wrap settings-input-wrap--icon">
                                 <span class="settings-field-icon settings-field-icon--left" aria-hidden="true">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -135,7 +135,7 @@ if ($profileInitials === '') {
                                         <path d="M8 11V8a4 4 0 1 1 8 0v3"></path>
                                     </svg>
                                 </span>
-                                <input class="settings-input settings-input--with-left-icon settings-input--with-right-icon <?= !empty($securityErrors['current_password']) ? 'is-invalid' : '' ?>" id="userSettingsCurrentPassword" name="current_password" type="password" placeholder="Your current password" data-password-field data-label="Old password">
+                                <input class="settings-input settings-input--with-left-icon settings-input--with-right-icon <?= !empty($securityErrors['current_password']) ? 'is-invalid' : '' ?>" id="userSettingsCurrentPassword" name="current_password" type="password" placeholder="Your current password" required data-password-field data-label="Current password">
                                 <button class="settings-password-toggle" type="button" aria-label="Show password">
                                     <svg class="icon-eye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z"></path>
@@ -153,7 +153,7 @@ if ($profileInitials === '') {
                         </div>
 
                         <div class="settings-field">
-                            <label class="settings-label" for="userSettingsNewPassword">New Password</label>
+                            <label class="settings-label" for="userSettingsNewPassword">New Password <span class="required-marker" aria-hidden="true">*</span></label>
                             <div class="settings-input-wrap settings-input-wrap--icon">
                                 <span class="settings-field-icon settings-field-icon--left" aria-hidden="true">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -161,7 +161,7 @@ if ($profileInitials === '') {
                                         <path d="M8 11V8a4 4 0 1 1 8 0v3"></path>
                                     </svg>
                                 </span>
-                                <input class="settings-input settings-input--with-left-icon settings-input--with-right-icon <?= !empty($securityErrors['new_password']) ? 'is-invalid' : '' ?>" id="userSettingsNewPassword" name="new_password" type="password" placeholder="Use at least one !@#$_" data-password-field data-password-new data-label="New password">
+                                <input class="settings-input settings-input--with-left-icon settings-input--with-right-icon <?= !empty($securityErrors['new_password']) ? 'is-invalid' : '' ?>" id="userSettingsNewPassword" name="new_password" type="password" placeholder="Use at least one !@#$_" required data-password-field data-password-new data-label="New password">
                                 <button class="settings-password-toggle" type="button" aria-label="Show password">
                                     <svg class="icon-eye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z"></path>
@@ -179,9 +179,9 @@ if ($profileInitials === '') {
                         </div>
 
                         <div class="settings-field">
-                            <label class="settings-label" for="userSettingsConfirmPassword">Confirm New Password</label>
+                            <label class="settings-label" for="userSettingsConfirmPassword">Confirm New Password <span class="required-marker" aria-hidden="true">*</span></label>
                             <div class="settings-input-wrap settings-input-wrap--icon">
-                                <input class="settings-input settings-input--with-right-icon <?= !empty($securityErrors['confirm_password']) ? 'is-invalid' : '' ?>" id="userSettingsConfirmPassword" name="confirm_password" type="password" placeholder="Repeat new password" data-password-field data-password-confirm data-label="Confirm new password">
+                                <input class="settings-input settings-input--with-right-icon <?= !empty($securityErrors['confirm_password']) ? 'is-invalid' : '' ?>" id="userSettingsConfirmPassword" name="confirm_password" type="password" placeholder="Repeat new password" required data-password-field data-password-confirm data-label="Confirm new password">
                                 <button class="settings-password-toggle" type="button" aria-label="Show password">
                                     <svg class="icon-eye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z"></path>

@@ -35,6 +35,8 @@ class UserManagementModel
         $this->ensureColumnExists('notify_low_stock', 'ALTER TABLE users ADD COLUMN notify_low_stock BOOLEAN NOT NULL DEFAULT TRUE');
         $this->ensureColumnExists('notify_weekly_summary', 'ALTER TABLE users ADD COLUMN notify_weekly_summary BOOLEAN NOT NULL DEFAULT TRUE');
         $this->ensureColumnExists('password_change_required', 'ALTER TABLE users ADD COLUMN password_change_required BOOLEAN NOT NULL DEFAULT FALSE');
+
+        $this->migrateUserRoleToStaff();
     }
 
     public function getUsers(string $role = '', string $status = ''): array
@@ -56,20 +58,39 @@ class UserManagementModel
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
+
         $rows = $stmt->fetchAll();
 
         return array_map([$this, 'normalizeUser'], $rows);
     }
 
-    public function createUser(string $fullName, string $email, string $username, string $password, string $role): int
-    {
-        $this->ensureColumnExists('password_change_required', 'ALTER TABLE users ADD COLUMN password_change_required BOOLEAN NOT NULL DEFAULT FALSE');
+    public function createUser(
+        string $fullName,
+        string $email,
+        string $username,
+        string $password,
+        string $role
+    ): int {
+        $this->ensureColumnExists(
+            'password_change_required',
+            'ALTER TABLE users ADD COLUMN password_change_required BOOLEAN NOT NULL DEFAULT FALSE'
+        );
 
         $stmt = $this->db->prepare('
-            INSERT INTO users (full_name, username, email, password, role, status, password_change_required, created_at)
+            INSERT INTO users (
+                full_name,
+                username,
+                email,
+                password,
+                role,
+                status,
+                password_change_required,
+                created_at
+            )
             VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             RETURNING id
         ');
+
         $stmt->execute([
             $fullName,
             $username,
@@ -83,8 +104,13 @@ class UserManagementModel
         return (int) $stmt->fetchColumn();
     }
 
-    public function updateUser(int $id, string $fullName, string $email, string $username, string $role): bool
-    {
+    public function updateUser(
+        int $id,
+        string $fullName,
+        string $email,
+        string $username,
+        string $role
+    ): bool {
         $stmt = $this->db->prepare('
             UPDATE users
             SET full_name = ?, username = ?, email = ?, role = ?
@@ -103,6 +129,7 @@ class UserManagementModel
     public function deleteUser(int $id): bool
     {
         $stmt = $this->db->prepare('DELETE FROM users WHERE id = ?');
+
         return $stmt->execute([$id]);
     }
 
@@ -110,13 +137,16 @@ class UserManagementModel
     {
         $stmt = $this->db->prepare('SELECT status FROM users WHERE id = ? LIMIT 1');
         $stmt->execute([$id]);
+
         $row = $stmt->fetch();
 
         if (!$row) {
             return null;
         }
 
-        $newStatus = ($row['status'] ?? 'active') === 'active' ? 'inactive' : 'active';
+        $newStatus = ($row['status'] ?? 'active') === 'active'
+            ? 'inactive'
+            : 'active';
 
         $update = $this->db->prepare('UPDATE users SET status = ? WHERE id = ?');
         $update->execute([$newStatus, $id]);
@@ -124,8 +154,11 @@ class UserManagementModel
         return $newStatus;
     }
 
-    public function existsByUsernameOrEmail(string $username, string $email, ?int $excludeId = null): bool
-    {
+    public function existsByUsernameOrEmail(
+        string $username,
+        string $email,
+        ?int $excludeId = null
+    ): bool {
         $sql = 'SELECT id FROM users WHERE (username = ? OR email = ?)';
         $params = [$username, $email];
 
@@ -150,7 +183,9 @@ class UserManagementModel
             WHERE id = ?
             LIMIT 1
         ');
+
         $stmt->execute([$id]);
+
         $row = $stmt->fetch();
 
         return $row ? $this->normalizeUser($row) : null;
@@ -158,12 +193,16 @@ class UserManagementModel
 
     private function normalizeRoleInput(string $role): string
     {
-        return strtolower(trim($role)) === 'admin' ? 'admin' : 'staff';
+        return strtolower(trim($role)) === 'admin'
+            ? 'admin'
+            : 'staff';
     }
 
     private function normalizeUser(array $user): array
     {
-        $role = $this->normalizeRoleInput((string) ($user['role'] ?? 'staff'));
+        $role = $this->normalizeRoleInput(
+            (string) ($user['role'] ?? 'staff')
+        );
 
         return [
             'id' => (int) $user['id'],
@@ -171,7 +210,7 @@ class UserManagementModel
             'username' => (string) ($user['username'] ?? ''),
             'email' => (string) ($user['email'] ?? ''),
             'role' => $role,
-            'display_role' => $role === 'admin' ? 'Admin' : 'User',
+            'display_role' => $role === 'admin' ? 'Admin' : 'Staff',
             'status' => (string) ($user['status'] ?? 'active'),
             'created_at' => (string) ($user['created_at'] ?? ''),
         ];
@@ -182,5 +221,14 @@ class UserManagementModel
         if (!Database::columnExists('users', $column)) {
             $this->db->exec($sql);
         }
+    }
+
+    private function migrateUserRoleToStaff(): void
+    {
+        $this->db->exec("
+            UPDATE users
+            SET role = 'staff'
+            WHERE LOWER(role) = 'user'
+        ");
     }
 }

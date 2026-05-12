@@ -91,15 +91,7 @@
     var currentValue = current ? current.value.trim() : '';
     var nextValue = next ? next.value : '';
     var confirmValue = confirm ? confirm.value : '';
-    var hasValue = currentValue !== '' || nextValue !== '' || confirmValue !== '';
     var valid = true;
-
-    if (!hasValue) {
-      setError(current, '');
-      setError(next, '');
-      setError(confirm, '');
-      return true;
-    }
 
     if (current && currentValue === '') {
       setError(current, 'Current password is required.');
@@ -114,8 +106,8 @@
     } else if (next && nextValue.length < 8) {
       setError(next, 'Use at least 8 characters.');
       valid = false;
-    } else if (next && !/[^A-Za-z0-9]/.test(nextValue)) {
-      setError(next, 'Use at least one special character.');
+    } else if (next && !/[!@#]/.test(nextValue)) {
+      setError(next, 'Use at least one of !, @, or #.');
       valid = false;
     } else {
       setError(next, '');

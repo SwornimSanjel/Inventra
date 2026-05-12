@@ -9,8 +9,8 @@ require_once __DIR__ . '/../../config/db.php';
 
 inventra_bootstrap_session();
 
- $adminSession = new AdminSession();
- $account = $adminSession->resolveAuthenticatedAccount();
+$adminSession = new AdminSession();
+$account = $adminSession->resolveAuthenticatedAccount();
 
 if ($account === null) {
     http_response_code(401);
@@ -18,7 +18,9 @@ if ($account === null) {
     exit;
 }
 
-if (($account['role'] ?? 'user') !== 'admin') {
+$role = strtolower(trim((string) ($account['role'] ?? 'staff')));
+
+if (!in_array($role, ['admin', 'staff'], true)) {
     http_response_code(403);
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;

@@ -548,7 +548,7 @@ class AuthController
     {
         $account = $this->getAdminSession()->requireAuthenticatedAccount();
 
-        if (($account['role'] ?? 'user') === 'admin') {
+        if (($account['role'] ?? 'staff') === 'admin') {
             header('Location: index.php?url=admin/dashboard');
             exit;
         }
@@ -561,7 +561,7 @@ class AuthController
     {
         $account = $this->getAdminSession()->requireAuthenticatedAccount();
 
-        if (($account['role'] ?? 'user') === 'admin') {
+        if (($account['role'] ?? 'staff') === 'admin') {
             header('Location: index.php?url=admin/settings');
             exit;
         }

@@ -1,8 +1,8 @@
 <?php
 $userPanelAccount = $userPanelAccount ?? null;
 
-$topbarName = trim((string) ($userPanelAccount['full_name'] ?? 'User Account'));
-$topbarRole = trim((string) ($userPanelAccount['role'] ?? 'User'));
+$topbarName = trim((string) ($userPanelAccount['full_name'] ?? 'Staff Account'));
+$topbarRole = trim((string) ($userPanelAccount['role'] ?? 'Staff'));
 $topbarAvatar = trim((string) ($userPanelAccount['avatar'] ?? ''));
 $topbarInitials = '';
 
@@ -11,7 +11,7 @@ foreach (array_slice(array_values(array_filter(explode(' ', $topbarName))), 0, 2
 }
 
 if ($topbarInitials === '') {
-    $topbarInitials = 'US';
+    $topbarInitials = 'ST';
 }
 
 if ($topbarAvatar !== '') {
@@ -56,7 +56,7 @@ if ($topbarAvatar !== '') {
         <a class="topbar-user" href="index.php?url=user/settings" aria-label="Open user settings">
             <div>
                 <span class="user-name"><?= htmlspecialchars($topbarName) ?></span>
-                <span class="user-role"><?= htmlspecialchars($topbarRole !== '' ? $topbarRole : 'User') ?></span>
+                <span class="user-role"><?= htmlspecialchars($topbarRole !== '' ? $topbarRole : 'Staff') ?></span>
             </div>
             <div class="avatar">
                 <?php if ($topbarAvatar !== ''): ?>

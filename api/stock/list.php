@@ -9,8 +9,8 @@ require_once __DIR__ . '/../../config/db.php';
 
 inventra_bootstrap_session();
 
- $adminSession = new AdminSession();
- $account = $adminSession->resolveAuthenticatedAccount();
+$session = new AdminSession();
+$account = $session->resolveAuthenticatedAccount();
 
 if ($account === null) {
     http_response_code(401);
@@ -18,7 +18,9 @@ if ($account === null) {
     exit;
 }
 
-if (($account['role'] ?? 'user') !== 'admin') {
+$role = strtolower(trim((string) ($account['role'] ?? 'staff')));
+
+if (!in_array($role, ['admin', 'staff'], true)) {
     http_response_code(403);
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
@@ -38,24 +40,17 @@ $result = $conn->query("
         COALESCE(sm.incoming_status, '') AS incoming_status,
         COALESCE(sm.movement_status, '') AS movement_status,
         sm.created_at,
-        p.name AS product_name
+        COALESCE(p.name, 'Unknown product') AS product_name
     FROM stock_movements sm
-    INNER JOIN products p ON p.id = sm.product_id
+    LEFT JOIN products p ON p.id = sm.product_id
     ORDER BY sm.created_at DESC, sm.id DESC
-    LIMIT 8
+    LIMIT 20
 ");
 
 $movements = [];
-$lastRecordText = 'No movements recorded yet';
 
 foreach ($result->fetchAll() as $row) {
     $timestamp = strtotime((string) $row['created_at']);
-    $label = $timestamp ? date('M d, Y h:i A', $timestamp) : (string) $row['created_at'];
-
-    if ($lastRecordText === 'No movements recorded yet' && $timestamp) {
-        $lastRecordText = 'Last record: ' . date('M d, Y h:i A', $timestamp);
-    }
-
     $movements[] = [
         'id' => (int) $row['id'],
         'reference' => $row['reference'],
@@ -66,13 +61,12 @@ foreach ($result->fetchAll() as $row) {
         'payment_method' => $row['payment_method'],
         'incoming_status' => $row['incoming_status'],
         'movement_status' => $row['movement_status'],
-        'created_at_label' => $label,
+        'created_at_label' => $timestamp ? date('M d, Y h:i A', $timestamp) : (string) $row['created_at'],
         'product_name' => $row['product_name'],
     ];
 }
 
 echo json_encode([
     'success' => true,
-    'last_record_text' => $lastRecordText,
     'movements' => $movements,
 ]);
