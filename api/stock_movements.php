@@ -15,6 +15,19 @@ if (function_exists('inventra_bootstrap_session')) {
 
     session_start();
 }
+
+// We enforce timeout here because this API can be called directly.
+if (function_exists('inventra_check_session_timeout') && inventra_check_session_timeout()) {
+    header('Content-Type: application/json');
+    http_response_code(401);
+    echo json_encode([
+        'success'         => false,
+        'message'         => 'Your session has expired. Please log in again.',
+        'session_expired' => true,
+    ]);
+    exit;
+}
+
 header('Content-Type: application/json');
 
 require_once __DIR__ . '/../config/database.php';
