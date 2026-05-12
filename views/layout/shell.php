@@ -152,9 +152,5 @@ if (strpos($url, 'user/') === 0) {
     <script src="<?= BASE_URL ?>public/js/user-dashboard.js<?= asset_version('public/js/user-dashboard.js') ?>"></script>
   <?php endif; ?>
 
-  <?php // We pass the backend timeout to the shared frontend monitor. ?>
-  <script>window.INVENTRA_SESSION_TIMEOUT = <?= json_encode(INVENTRA_SESSION_TIMEOUT_SECONDS) ?>;</script>
-  <script src="<?= BASE_URL ?>public/js/session-timeout.js<?= asset_version('public/js/session-timeout.js') ?>"></script>
-
 </body>
 </html>

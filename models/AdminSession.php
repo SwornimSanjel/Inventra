@@ -48,25 +48,6 @@ class AdminSession
             return self::$resolvedAccount;
         }
 
-        // We enforce timeout during every auth lookup, covering direct API and page requests.
-        if (function_exists('inventra_check_session_timeout') && inventra_check_session_timeout()) {
-            self::$accountResolved = true;
-            self::$resolvedAccount = null;
-
-            if ($this->requestWantsJson()) {
-                http_response_code(401);
-                header('Content-Type: application/json');
-                echo json_encode([
-                    'success'         => false,
-                    'message'         => 'Your session has expired. Please log in again.',
-                    'session_expired' => true,
-                ]);
-                exit;
-            }
-
-            return null;
-        }
-
         if (!inventra_is_authenticated()) {
             self::$accountResolved = true;
             self::$resolvedAccount = null;
