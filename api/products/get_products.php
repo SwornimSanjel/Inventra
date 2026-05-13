@@ -39,7 +39,9 @@ if (!in_array($role, ['admin', 'staff'], true)) {
 
 try {
     $search = trim((string) ($_GET['search'] ?? ''));
-    $status = trim((string) ($_GET['status'] ?? ''));
+    $status = strtolower(trim((string) ($_GET['status'] ?? '')));
+    $allowedStatuses = ['low', 'medium', 'adequate', 'out_of_stock', 'overstocked'];
+    $status = in_array($status, $allowedStatuses, true) ? $status : '';
     $categoryId = (int) ($_GET['category_id'] ?? 0);
 
     $skuColumn = Database::columnExists('products', 'sku') ? 'sku' : null;
@@ -77,21 +79,21 @@ try {
 
     if ($search !== '') {
         $searchConditions = [
-            'p.name ILIKE ?',
-            'COALESCE(p.description, \'\') ILIKE ?',
+            'LOWER(COALESCE(p.name, \'\')) LIKE ?',
+            'LOWER(COALESCE(p.description, \'\')) LIKE ?',
             ($categoryTextColumn !== null
-                ? 'COALESCE(c.name, p."' . $categoryTextColumn . '", \'\') ILIKE ?'
-                : 'COALESCE(c.name, \'\') ILIKE ?')
+                ? 'LOWER(COALESCE(c.name, p."' . $categoryTextColumn . '", \'\')) LIKE ?'
+                : 'LOWER(COALESCE(c.name, \'\')) LIKE ?')
         ];
 
-        $like = '%' . $search . '%';
+        $like = '%' . strtolower($search) . '%';
 
         $params[] = $like;
         $params[] = $like;
         $params[] = $like;
 
         if ($skuColumn !== null) {
-            $searchConditions[] = 'COALESCE(p."' . $skuColumn . '", \'\') ILIKE ?';
+            $searchConditions[] = 'LOWER(COALESCE(p."' . $skuColumn . '", \'\')) LIKE ?';
             $params[] = $like;
         }
 

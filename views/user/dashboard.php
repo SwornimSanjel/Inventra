@@ -3,7 +3,6 @@
         <div>
             <p class="page-subtitle dashboard-page__intro">Track inventory health, activity, and low stock risk across the current system.</p>
         </div>
-        <a href="index.php?url=user/products" class="btn-outline">View products</a>
     </div>
 
     <section class="dashboard-stats" id="dashboardStats">
