@@ -1,7 +1,7 @@
 <?php
 
 // We keep Admin and Staff on the same 30-minute inactivity window.
-define('INVENTRA_SESSION_TIMEOUT_SECONDS', 10);
+define('INVENTRA_SESSION_TIMEOUT_SECONDS', 1800);
 
 function inventra_auth_debug_log(string $event, array $data = []): void
 {
