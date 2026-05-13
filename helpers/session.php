@@ -47,6 +47,17 @@ function inventra_session_cookie_path(): string
     return $basePath !== '' ? $basePath : '/';
 }
 
+function inventra_send_no_store_headers(): void
+{
+    if (headers_sent()) {
+        return;
+    }
+
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+    header('Expires: Sat, 01 Jan 2000 00:00:00 GMT');
+}
+
 function inventra_build_default_password(string $fullName): string
 {
     $normalized = trim(preg_replace('/\s+/', ' ', strtolower($fullName)) ?? '');

@@ -2,7 +2,6 @@
 
 /**
  * Shared inventory helpers for the user products page.
- * These mirror the Inventra1 implementation so the user view keeps the same
  * status labels, filtering, and pagination behavior.
  */
 function inventra_product_inventory_allowed_statuses(): array

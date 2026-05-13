@@ -6,6 +6,11 @@ if (is_file($sessionHelperPath)) {
     require_once $sessionHelperPath;
 }
 
+$adminSessionPath = __DIR__ . '/../models/AdminSession.php';
+if (is_file($adminSessionPath)) {
+    require_once $adminSessionPath;
+}
+
 if (function_exists('inventra_bootstrap_session')) {
     inventra_bootstrap_session();
 } elseif (session_status() !== PHP_SESSION_ACTIVE) {
@@ -29,6 +34,20 @@ if (function_exists('inventra_check_session_timeout') && inventra_check_session_
 }
 
 header('Content-Type: application/json');
+
+if (class_exists('AdminSession')) {
+    $session = new AdminSession();
+    $account = $session->resolveAuthenticatedAccount();
+
+    if ($account === null) {
+        http_response_code(401);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Authentication required.',
+        ]);
+        exit;
+    }
+}
 
 require_once __DIR__ . '/../config/database.php';
 

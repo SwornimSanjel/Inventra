@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/../../helpers/protected_view.php';
+inventra_guard_protected_view('admin/ai-forecasting', 'admin');
+
 $forecastApiUrl = $forecastingPageState['forecast_api_url'] ?? 'index.php?url=admin/ai-forecasting/data';
 $productDetailApiUrl = $forecastingPageState['product_detail_api_url'] ?? 'index.php?url=admin/ai-forecasting/product-detail';
 $generateInsightApiUrl = $forecastingPageState['generate_insight_api_url'] ?? 'index.php?url=admin/ai-forecasting/generate-insight';

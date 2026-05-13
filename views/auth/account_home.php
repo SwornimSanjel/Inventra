@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/../../helpers/protected_view.php';
+inventra_guard_protected_view('account/home', 'any');
+
 $accountName = trim((string) ($account['full_name'] ?? inventra_authenticated_user_name() ?? 'Account User'));
 $error = $error ?? '';
 $success = $success ?? '';

@@ -1,3 +1,9 @@
+<?php
+if (!defined('BASE_URL')) {
+  require_once __DIR__ . '/../../helpers/protected_view.php';
+  inventra_guard_redirect(inventra_guard_login_url());
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 

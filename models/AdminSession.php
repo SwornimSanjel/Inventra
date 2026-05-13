@@ -50,6 +50,10 @@ class AdminSession
 
         // We enforce timeout during every auth lookup, covering direct API and page requests.
         if (function_exists('inventra_check_session_timeout') && inventra_check_session_timeout()) {
+            if (function_exists('inventra_send_no_store_headers')) {
+                inventra_send_no_store_headers();
+            }
+
             self::$accountResolved = true;
             self::$resolvedAccount = null;
 
@@ -71,6 +75,10 @@ class AdminSession
             self::$accountResolved = true;
             self::$resolvedAccount = null;
             return null;
+        }
+
+        if (function_exists('inventra_send_no_store_headers')) {
+            inventra_send_no_store_headers();
         }
 
         $accountId = inventra_authenticated_user_id();

@@ -70,6 +70,8 @@ class AuthController
 
     public function showLogin(): void
     {
+        inventra_send_no_store_headers();
+
         inventra_auth_debug_log('show_login:start', [
             'is_authenticated' => inventra_is_authenticated(),
         ]);
@@ -519,6 +521,7 @@ class AuthController
 
                     inventra_clear_authenticated_user();
                     inventra_clear_password_change_required();
+                    unset($_SESSION['auth_error']);
                     $_SESSION['auth_success'] = 'Password updated successfully. Please log in with your new password.';
                     session_regenerate_id(true);
 
@@ -613,6 +616,8 @@ class AuthController
 
     public function logout(): void
     {
+        inventra_send_no_store_headers();
+
         inventra_clear_authenticated_user();
         $_SESSION = [];
 

@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/../../helpers/protected_view.php';
+inventra_guard_protected_view('admin/users', 'admin');
+
 $usersApiBase = $usersPageState['users_api_base'] ?? 'index.php?url=admin/users';
 ?>
 

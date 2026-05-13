@@ -17,9 +17,7 @@ if (inventra_check_session_timeout()) {
 
 // We send no-store headers so the browser back button cannot reopen protected content.
 if (inventra_is_authenticated()) {
-    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-    header('Pragma: no-cache');
-    header('Expires: Sat, 01 Jan 2000 00:00:00 GMT');
+    inventra_send_no_store_headers();
 }
 
 define('BASE_URL', './');

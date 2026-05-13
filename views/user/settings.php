@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/../../helpers/protected_view.php';
+inventra_guard_protected_view('user/settings', 'staff');
+
 $settings = $settings ?? [];
 $profile = $settings['profile'] ?? [];
 $notifications = $settings['notifications'] ?? [];

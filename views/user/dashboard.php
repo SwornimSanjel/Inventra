@@ -1,3 +1,4 @@
+<?php require_once __DIR__ . '/../../helpers/protected_view.php'; inventra_guard_protected_view('user/dashboard', 'staff'); ?>
 <div class="dashboard-page">
     <div class="page-header dashboard-page__header">
         <div>

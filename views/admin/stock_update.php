@@ -1,3 +1,4 @@
+<?php require_once __DIR__ . '/../../helpers/protected_view.php'; inventra_guard_protected_view('admin/stock-update', 'admin'); ?>
 <div class="stock-page">
     <div class="page-header stock-page__header">
         <div class="stock-page__heading">

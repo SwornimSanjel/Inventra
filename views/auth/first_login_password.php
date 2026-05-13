@@ -1,3 +1,4 @@
+<?php require_once __DIR__ . '/../../helpers/protected_view.php'; inventra_guard_protected_view('auth/first-login-password', 'any'); ?>
 <div class="auth-wrapper auth-login-wrapper">
     <span class="auth-watermark auth-watermark-top" aria-hidden="true">INV</span>
     <span class="auth-watermark auth-watermark-bottom" aria-hidden="true">ENTRA</span>
