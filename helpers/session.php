@@ -1,5 +1,8 @@
 <?php
 
+// We keep Admin and Staff on the same 30-minute inactivity window.
+define('INVENTRA_SESSION_TIMEOUT_SECONDS', 10);
+
 function inventra_auth_debug_log(string $event, array $data = []): void
 {
     $logDir = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'logs';
@@ -116,7 +119,7 @@ function inventra_bootstrap_session(): void
     }
 
     ini_set('session.save_path', $sessionSavePath);
-
+    ini_set('session.gc_maxlifetime', (string) INVENTRA_SESSION_TIMEOUT_SECONDS);
     session_name(inventra_session_cookie_name());
 
     session_set_cookie_params([
@@ -137,6 +140,52 @@ function inventra_bootstrap_session(): void
     }
 
     session_start();
+}
+
+function inventra_check_session_timeout(): bool
+{
+    if (!inventra_is_authenticated()) {
+        return false;
+    }
+
+    $lastActivity = $_SESSION['last_activity']
+        ?? $_SESSION['auth']['last_activity']
+        ?? 0;
+
+    // We expire the session as soon as the shared idle limit is reached.
+    if ($lastActivity > 0 && (time() - $lastActivity) >= INVENTRA_SESSION_TIMEOUT_SECONDS) {
+        inventra_auth_debug_log('session_timeout:expired', [
+            'last_activity' => date('Y-m-d H:i:s', $lastActivity),
+            'idle_seconds'  => time() - $lastActivity,
+        ]);
+
+        inventra_clear_authenticated_user();
+        $_SESSION = [];
+
+        if (ini_get('session.use_cookies')) {
+            $params = session_get_cookie_params();
+            setcookie(
+                session_name(),
+                '',
+                time() - 42000,
+                $params['path'],
+                $params['domain'],
+                $params['secure'],
+                $params['httponly']
+            );
+        }
+
+        session_destroy();
+        return true;
+    }
+
+    // We refresh activity here so every guarded request extends the same session window.
+    $_SESSION['last_activity'] = time();
+    if (isset($_SESSION['auth']) && is_array($_SESSION['auth'])) {
+        $_SESSION['auth']['last_activity'] = time();
+    }
+
+    return false;
 }
 
 function inventra_set_authenticated_user(array $user): void

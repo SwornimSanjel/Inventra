@@ -9,6 +9,19 @@ date_default_timezone_set('Asia/Kathmandu');
 require_once __DIR__ . '/helpers/session.php';
 inventra_bootstrap_session();
 
+// We check timeout before routing so every page request follows the same expiry rule.
+if (inventra_check_session_timeout()) {
+    header('Location: index.php?url=login&error=session_expired');
+    exit;
+}
+
+// We send no-store headers so the browser back button cannot reopen protected content.
+if (inventra_is_authenticated()) {
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+    header('Expires: Sat, 01 Jan 2000 00:00:00 GMT');
+}
+
 define('BASE_URL', './');
 
 $url = isset($_GET['url']) ? trim($_GET['url'], '/') : '';
