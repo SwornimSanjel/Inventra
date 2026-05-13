@@ -2,11 +2,15 @@
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../helpers/stock_status.php';
 
-$statusFilter = trim((string) ($_GET['status'] ?? ''));
+$allowedStatusFilters = ['low', 'medium', 'adequate', 'out_of_stock', 'overstocked'];
+$statusFilter = strtolower(trim((string) ($_GET['status'] ?? '')));
+$statusFilter = in_array($statusFilter, $allowedStatusFilters, true) ? $statusFilter : '';
 $searchTerm = trim((string) ($_GET['search'] ?? ''));
 $categoryFilter = (int) ($_GET['category_id'] ?? 0);
 
 $db = Database::connect();
+$skuColumn = Database::columnExists('products', 'sku') ? 'sku' : null;
+$categoryTextColumn = Database::columnExists('products', 'category') ? 'category' : null;
 $categories = $db->query('SELECT id, name FROM categories ORDER BY name ASC')->fetchAll();
 $categoryOptionsById = [];
 foreach ($categories as $categoryRow) {
@@ -43,11 +47,27 @@ $sql = "
 $params = [];
 
 if ($searchTerm !== '') {
-    $searchLike = '%' . $searchTerm . '%';
-    $sql .= " AND (p.name LIKE ? OR COALESCE(p.description, '') LIKE ? OR COALESCE(c.name, p.category, '') LIKE ?)";
+    $searchLike = '%' . strtolower($searchTerm) . '%';
+    $searchConditions = [
+        "LOWER(COALESCE(p.name, '')) LIKE ?",
+        "LOWER(COALESCE(p.description, '')) LIKE ?",
+        $categoryTextColumn !== null
+            ? "LOWER(COALESCE(c.name, p.\"{$categoryTextColumn}\", '')) LIKE ?"
+            : "LOWER(COALESCE(c.name, '')) LIKE ?",
+    ];
+
+    if ($skuColumn !== null) {
+        $searchConditions[] = "LOWER(COALESCE(p.\"{$skuColumn}\", '')) LIKE ?";
+    }
+
+    $sql .= ' AND (' . implode(' OR ', $searchConditions) . ')';
     $params[] = $searchLike;
     $params[] = $searchLike;
     $params[] = $searchLike;
+
+    if ($skuColumn !== null) {
+        $params[] = $searchLike;
+    }
 }
 
 if ($categoryFilter > 0) {

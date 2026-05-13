@@ -17,6 +17,11 @@
   justify-content:center;
 }
 
+.products-page a.btn-outline:hover,
+.products-page a.btn-outline:focus{
+  text-decoration:none;
+}
+
 .chip-low,
 .chip-out_of_stock{
   background:#FEE2E2;

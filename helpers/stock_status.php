@@ -6,7 +6,7 @@ function getStockStatus($qty, $lower, $upper){
         return "Out of Stock";
     }
 
-    if($qty < $lower){
+    if($qty <= $lower){
         return "Low";
     }
 

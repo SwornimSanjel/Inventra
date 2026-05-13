@@ -94,6 +94,8 @@ class Database
             );
 
             try {
+                $isTransactionPooler = str_contains(strtolower($host), '.pooler.supabase.com') || $port === '6543';
+
                 self::$pdo = new PDO(
                     $dsn,
                     $username,
@@ -101,6 +103,10 @@ class Database
                     [
                         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                        // Supabase transaction poolers do not preserve server-side prepared
+                        // statements across requests, so PDO emulation avoids "statement does
+                        // not exist" errors on reused pooled connections.
+                        PDO::ATTR_EMULATE_PREPARES => $isTransactionPooler,
                     ]
                 );
             } catch (PDOException $e) {
