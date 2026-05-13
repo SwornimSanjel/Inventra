@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../helpers/avatar.php';
 require_once __DIR__ . '/UserModel.php';
 require_once __DIR__ . '/UserManagementModel.php';
 
@@ -79,11 +80,16 @@ class AccountModel
             $conditions = ['id = ?'];
             $params = [$id];
 
+            $columns = ['id', 'full_name', 'email', 'role', 'password_hash'];
+
             if ($this->adminModel->hasAdminColumn('username')) {
-                $sql = 'SELECT id, full_name, email, role, password_hash, username FROM admin WHERE id = ? LIMIT 1';
-            } else {
-                $sql = 'SELECT id, full_name, email, role, password_hash FROM admin WHERE id = ? LIMIT 1';
+                $columns[] = 'username';
             }
+
+            $sql = sprintf(
+                'SELECT %s FROM admin WHERE id = ? LIMIT 1',
+                implode(', ', $columns)
+            );
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute($params);
@@ -245,6 +251,10 @@ class AccountModel
 
         if ($id <= 0) {
             return false;
+        }
+
+        if ($avatarPath !== null) {
+            $this->ensureAvatarColumnCanStoreSharedImage($source);
         }
 
         if ($source === 'admin') {
@@ -626,17 +636,41 @@ class AccountModel
 
     private function normalizeAvatarPath(mixed $avatar): ?string
     {
-        if (!is_string($avatar) || trim($avatar) === '') {
-            return null;
+        return inventra_avatar_url($avatar);
+    }
+
+    private function ensureAvatarColumnCanStoreSharedImage(string $source): void
+    {
+        $table = $source === 'admin' ? 'admin' : ($source === 'users' ? 'users' : '');
+
+        if ($table === '') {
+            return;
         }
 
-        $avatar = str_replace('\\', '/', trim($avatar));
-        $baseUrl = defined('BASE_URL') ? BASE_URL : './';
-
-        if (strpos($avatar, 'public/') === 0) {
-            return $baseUrl . ltrim($avatar, '/');
+        if (!Database::columnExists($table, 'avatar')) {
+            $this->db->exec('ALTER TABLE ' . $table . ' ADD COLUMN avatar TEXT');
+            if ($table === 'users') {
+                $this->usersColumns = null;
+            }
+            return;
         }
 
-        return $avatar;
+        $stmt = $this->db->prepare('
+            SELECT data_type
+            FROM information_schema.columns
+            WHERE table_schema = ?
+              AND table_name = ?
+              AND column_name = ?
+            LIMIT 1
+        ');
+        $stmt->execute(['public', $table, 'avatar']);
+        $dataType = strtolower((string) $stmt->fetchColumn());
+
+        if ($dataType !== 'text') {
+            $this->db->exec('ALTER TABLE ' . $table . ' ALTER COLUMN avatar TYPE TEXT');
+            if ($table === 'users') {
+                $this->usersColumns = null;
+            }
+        }
     }
 }

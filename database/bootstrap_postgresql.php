@@ -23,7 +23,7 @@ CREATE TABLE admin (
     password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(20) NOT NULL DEFAULT 'admin',
     phone VARCHAR(30),
-    avatar VARCHAR(255),
+    avatar TEXT,
     notify_low_stock BOOLEAN NOT NULL DEFAULT TRUE,
     notify_weekly_summary BOOLEAN NOT NULL DEFAULT TRUE
 )
@@ -58,7 +58,7 @@ CREATE TABLE users (
     password VARCHAR(255) NOT NULL,
     role VARCHAR(20) NOT NULL DEFAULT 'staff' CHECK (role IN ('admin', 'staff')),
     status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
-    avatar VARCHAR(255),
+    avatar TEXT,
     notify_low_stock BOOLEAN NOT NULL DEFAULT TRUE,
     notify_weekly_summary BOOLEAN NOT NULL DEFAULT TRUE,
     password_change_required BOOLEAN NOT NULL DEFAULT FALSE,

@@ -31,7 +31,7 @@ class UserManagementModel
         ");
 
         $this->ensureColumnExists('phone', 'ALTER TABLE users ADD COLUMN phone VARCHAR(30)');
-        $this->ensureColumnExists('avatar', 'ALTER TABLE users ADD COLUMN avatar VARCHAR(255)');
+        $this->ensureColumnExists('avatar', 'ALTER TABLE users ADD COLUMN avatar TEXT');
         $this->ensureColumnExists('notify_low_stock', 'ALTER TABLE users ADD COLUMN notify_low_stock BOOLEAN NOT NULL DEFAULT TRUE');
         $this->ensureColumnExists('notify_weekly_summary', 'ALTER TABLE users ADD COLUMN notify_weekly_summary BOOLEAN NOT NULL DEFAULT TRUE');
         $this->ensureColumnExists('password_change_required', 'ALTER TABLE users ADD COLUMN password_change_required BOOLEAN NOT NULL DEFAULT FALSE');

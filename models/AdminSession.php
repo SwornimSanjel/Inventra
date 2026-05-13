@@ -139,10 +139,6 @@ class AdminSession
             'full_name' => (string) ($account['full_name'] ?? ''),
             'role' => (string) ($account['role'] ?? 'staff'),
         ]);
-
-        if (array_key_exists('avatar', $account)) {
-            $_SESSION['admin_avatar'] = (string) ($account['avatar'] ?? '');
-        }
     }
 
     private function enforcePasswordChangeGate(): void

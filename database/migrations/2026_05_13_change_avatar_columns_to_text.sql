@@ -1,0 +1,5 @@
+ALTER TABLE admin
+    ALTER COLUMN avatar TYPE TEXT;
+
+ALTER TABLE users
+    ALTER COLUMN avatar TYPE TEXT;

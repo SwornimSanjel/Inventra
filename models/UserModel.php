@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../helpers/avatar.php';
 
 class UserModel
 {
@@ -184,7 +185,7 @@ class UserModel
     {
         $columnDefinitions = [
             'phone' => 'ALTER TABLE admin ADD COLUMN phone VARCHAR(30)',
-            'avatar' => 'ALTER TABLE admin ADD COLUMN avatar VARCHAR(255)',
+            'avatar' => 'ALTER TABLE admin ADD COLUMN avatar TEXT',
             'notify_low_stock' => 'ALTER TABLE admin ADD COLUMN notify_low_stock BOOLEAN NOT NULL DEFAULT TRUE',
             'notify_weekly_summary' => 'ALTER TABLE admin ADD COLUMN notify_weekly_summary BOOLEAN NOT NULL DEFAULT TRUE',
         ];
@@ -350,18 +351,7 @@ class UserModel
 
     private function normalizeAvatarPath(mixed $avatar): ?string
     {
-        if (!is_string($avatar) || trim($avatar) === '') {
-            return null;
-        }
-
-        $avatar = str_replace('\\', '/', trim($avatar));
-        $baseUrl = defined('BASE_URL') ? BASE_URL : './';
-
-        if (strpos($avatar, 'public/') === 0) {
-            return $baseUrl . ltrim($avatar, '/');
-        }
-
-        return $avatar;
+        return inventra_avatar_url($avatar);
     }
 
     private function archivePasswordHistory(int $adminId, string $currentHash): void

@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../models/AccountModel.php';
 require_once __DIR__ . '/../models/AdminSession.php';
 require_once __DIR__ . '/../models/NotificationService.php';
+require_once __DIR__ . '/../helpers/avatar.php';
 require_once __DIR__ . '/../helpers/session.php';
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -10,7 +11,6 @@ use PHPMailer\PHPMailer\PHPMailer;
 
 class SettingsController
 {
-    private const PROFILE_UPLOAD_DIR = __DIR__ . '/../public/uploads/images/profile';
     private const MAX_AVATAR_BYTES = 5242880;
 
     private AccountModel $accountModel;
@@ -124,7 +124,6 @@ class SettingsController
                 'full_name' => (string) $updatedAdmin['full_name'],
                 'role' => (string) ($updatedAdmin['role_value'] ?? 'admin'),
             ]);
-            $_SESSION['admin_avatar'] = (string) ($updatedAdmin['avatar'] ?? '');
         } else {
             $_SESSION['admin_email'] = $email;
         }
@@ -297,22 +296,14 @@ class SettingsController
             return ['path' => null, 'error' => 'Only JPG, JPEG, and PNG files are allowed.'];
         }
 
-        if (!is_dir(self::PROFILE_UPLOAD_DIR) && !mkdir(self::PROFILE_UPLOAD_DIR, 0775, true) && !is_dir(self::PROFILE_UPLOAD_DIR)) {
-            return ['path' => null, 'error' => 'Unable to prepare the avatar upload directory.'];
-        }
+        $avatarDataUri = inventra_avatar_data_uri($tmpName, $mimeType);
 
-        $extension = $allowedMimeTypes[$mimeType];
-        $accountId = (string) (inventra_authenticated_user_id() ?? 'user');
-        $accountSource = (string) (inventra_authenticated_user_source() ?? 'account');
-        $fileName = sprintf('account_%s_%s_%s.%s', $accountSource, $accountId, bin2hex(random_bytes(8)), $extension);
-        $destination = self::PROFILE_UPLOAD_DIR . DIRECTORY_SEPARATOR . $fileName;
-
-        if (!move_uploaded_file($tmpName, $destination)) {
+        if ($avatarDataUri === null) {
             return ['path' => null, 'error' => 'Unable to save the uploaded avatar.'];
         }
 
         return [
-            'path' => 'public/uploads/images/profile/' . $fileName,
+            'path' => $avatarDataUri,
             'error' => null,
         ];
     }
