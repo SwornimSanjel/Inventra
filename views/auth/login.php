@@ -23,7 +23,7 @@
             <?php endif; ?>
 
             <?php if (!empty($success)): ?>
-                <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
+                <div class="alert alert-success" data-auto-dismiss-ms="10000"><?= htmlspecialchars($success) ?></div>
             <?php endif; ?>
 
             <form method="POST" action="index.php?url=auth/login" class="auth-login-form">
@@ -89,5 +89,17 @@ document.querySelectorAll('.password-toggle').forEach(function (button) {
         button.classList.toggle('is-visible', !isVisible);
         button.setAttribute('aria-label', isVisible ? 'Show password' : 'Hide password');
     });
+});
+
+document.querySelectorAll('[data-auto-dismiss-ms]').forEach(function (message) {
+    var delay = parseInt(message.getAttribute('data-auto-dismiss-ms'), 10);
+
+    if (isNaN(delay) || delay <= 0) {
+        return;
+    }
+
+    window.setTimeout(function () {
+        message.remove();
+    }, delay);
 });
 </script>

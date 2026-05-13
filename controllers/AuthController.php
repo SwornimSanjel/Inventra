@@ -90,7 +90,6 @@ class AuthController
         $error = $_SESSION['auth_error'] ?? '';
         $success = $_SESSION['auth_success'] ?? '';
         $oldIdentifier = $_SESSION['auth_old']['identifier'] ?? '';
-        $loggedOut = isset($_GET['logout']);
         unset($_SESSION['auth_error'], $_SESSION['auth_success'], $_SESSION['auth_old']);
 
         if (isset($_GET['error']) && $error === '') {
@@ -99,10 +98,6 @@ class AuthController
             } elseif ($_GET['error'] === 'unauthorized') {
                 $error = 'You do not have permission to access that page.';
             }
-        }
-
-        if ($loggedOut && $success === '') {
-            $success = 'You have been logged out successfully.';
         }
 
         $view = 'login';
@@ -617,22 +612,10 @@ class AuthController
         inventra_clear_authenticated_user();
         $_SESSION = [];
 
-        if (ini_get('session.use_cookies')) {
-            $params = session_get_cookie_params();
-            setcookie(
-                session_name(),
-                '',
-                time() - 42000,
-                $params['path'],
-                $params['domain'],
-                $params['secure'],
-                $params['httponly']
-            );
-        }
+        session_regenerate_id(true);
+        $_SESSION['auth_success'] = 'You have been logged out successfully.';
 
-        session_destroy();
-
-        header('Location: index.php?url=login&logout=1');
+        header('Location: index.php?url=login');
         exit;
     }
 
