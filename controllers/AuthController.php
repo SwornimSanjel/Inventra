@@ -519,6 +519,7 @@ class AuthController
 
                     inventra_clear_authenticated_user();
                     inventra_clear_password_change_required();
+                    unset($_SESSION['auth_error'], $_SESSION['auth_old']);
                     $_SESSION['auth_success'] = 'Password updated successfully. Please log in with your new password.';
                     session_regenerate_id(true);
 

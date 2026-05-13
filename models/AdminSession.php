@@ -151,8 +151,6 @@ class AdminSession
             return;
         }
 
-        $_SESSION['auth_error'] = 'Please change your default password before accessing Inventra.';
-
         if ($this->requestWantsJson()) {
             http_response_code(403);
             header('Content-Type: application/json');
@@ -163,6 +161,8 @@ class AdminSession
             ]);
             exit;
         }
+
+        $_SESSION['auth_error'] = 'Please change your default password before accessing Inventra.';
 
         header('Location: index.php?url=' . inventra_forced_password_change_url());
         exit;
