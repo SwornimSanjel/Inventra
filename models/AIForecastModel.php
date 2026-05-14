@@ -549,10 +549,10 @@ class AIForecastModel
         }
 
         return sprintf(
-            '%s is trending at an average daily usage of %.2f units and may run out in %.2f days.',
+            '%s is moving at %s and may run out in %s.',
             $productName,
-            $dailyAverageUsage,
-            (float) $runoutTimeDays
+            $this->formatDailyUsageSentence($dailyAverageUsage),
+            $this->formatRunoutSentence($runoutTimeDays)
         );
     }
 
@@ -940,6 +940,49 @@ class AIForecastModel
 
         $rounded = (abs($runoutDays - round($runoutDays)) < 0.05) ? (string) ((int) round($runoutDays)) : number_format($runoutDays, 1);
         return $rounded . ' days';
+    }
+
+    private function formatDailyUsageSentence(float $dailyAverageUsage): string
+    {
+        if ($dailyAverageUsage <= 0) {
+            return 'no measurable daily movement right now';
+        }
+
+        if ($dailyAverageUsage < 1) {
+            return 'less than 1 unit per day';
+        }
+
+        $rounded = (int) round($dailyAverageUsage);
+        return 'around ' . $rounded . ' ' . ($rounded === 1 ? 'unit' : 'units') . ' per day';
+    }
+
+    private function formatRunoutSentence(?float $runoutTimeDays): string
+    {
+        if ($runoutTimeDays === null) {
+            return 'an unknown timeframe';
+        }
+
+        if ($runoutTimeDays <= 0) {
+            return 'less than 1 day';
+        }
+
+        if ($runoutTimeDays < 1) {
+            return 'less than 1 day';
+        }
+
+        if ($runoutTimeDays < 1.5) {
+            return 'about 1 day';
+        }
+
+        $floor = (int) floor($runoutTimeDays);
+        $ceil = (int) ceil($runoutTimeDays);
+
+        if (($ceil - $floor) === 1 && ($runoutTimeDays - $floor) >= 0.25 && ($runoutTimeDays - $floor) <= 0.75) {
+            return 'about ' . $floor . '-' . $ceil . ' days';
+        }
+
+        $rounded = (int) round($runoutTimeDays);
+        return 'about ' . $rounded . ' days';
     }
 
     private function extractCategories(array $products): array

@@ -476,6 +476,19 @@
     ].join('');
   }
 
+  function formatDailyUsage(value) {
+    var number = Number(value);
+    if (!isFinite(number) || number <= 0) {
+      return '0';
+    }
+
+    if (number < 1) {
+      return 'less than 1';
+    }
+
+    return 'around ' + String(Math.round(number));
+  }
+
   function formatRunoutDays(value) {
     if (value == null || value === '') {
       return 'N/A';
@@ -486,12 +499,23 @@
       return String(value);
     }
 
-    if (number === 0) {
-      return '0 days';
+    if (number <= 0 || number < 1) {
+      return 'less than 1 day';
     }
 
-    var display = Math.abs(number - Math.round(number)) < 0.05 ? String(Math.round(number)) : number.toFixed(1);
-    return display + ' days';
+    if (number < 1.5) {
+      return 'about 1 day';
+    }
+
+    var lower = Math.floor(number);
+    var upper = Math.ceil(number);
+    var fraction = number - lower;
+
+    if ((upper - lower) === 1 && fraction >= 0.25 && fraction <= 0.75) {
+      return 'about ' + lower + '-' + upper + ' days';
+    }
+
+    return 'about ' + Math.round(number) + ' days';
   }
 
   function formatConfidence(value) {
@@ -581,7 +605,7 @@
     if (detailPrimaryMetrics) {
       detailPrimaryMetrics.innerHTML = [
         detailPrimaryMetricMarkup('Current stock', String(detail.product.current_stock || 0), 'units', 'default'),
-        detailPrimaryMetricMarkup('Daily usage', Number(detail.stock_signals.daily_average_usage || 0).toFixed(1), '/day', 'default'),
+        detailPrimaryMetricMarkup('Daily usage', formatDailyUsage(detail.stock_signals.daily_average_usage), 'units/day', 'default'),
         detailPrimaryMetricMarkup('Runs out in', formatRunoutDays(detail.stock_signals.runout_time_days), '', 'alert'),
         detailPrimaryMetricMarkup('Suggested reorder', String(detail.reorder_data.suggested_reorder_quantity || 0), 'units', 'dark')
       ].join('');
